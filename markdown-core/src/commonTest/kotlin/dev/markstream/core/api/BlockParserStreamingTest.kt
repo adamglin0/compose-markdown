@@ -42,6 +42,27 @@ class BlockParserStreamingTest {
     }
 
     @Test
+    fun fenceClosesAcrossChunksWhileKeepingBlockIdentity() {
+        val engine = MarkdownEngine()
+
+        val opening = engine.append("```kotlin\nval x")
+        val body = engine.append(" = 1\n")
+        val closing = engine.append("```")
+
+        val openingBlock = assertIs<BlockNode.FencedCodeBlock>(opening.snapshot.document.blocks.single())
+        val bodyBlock = assertIs<BlockNode.FencedCodeBlock>(body.snapshot.document.blocks.single())
+        val closingBlock = assertIs<BlockNode.FencedCodeBlock>(closing.snapshot.document.blocks.single())
+
+        assertEquals(openingBlock.id, bodyBlock.id)
+        assertEquals(bodyBlock.id, closingBlock.id)
+        assertFalse(openingBlock.isClosed)
+        assertFalse(bodyBlock.isClosed)
+        assertTrue(closingBlock.isClosed)
+        assertEquals("kotlin", closingBlock.infoString)
+        assertEquals("val x = 1", closingBlock.literal)
+    }
+
+    @Test
     fun chunkSplitInsideListItemKeepsListIdentity() {
         val engine = MarkdownEngine()
 

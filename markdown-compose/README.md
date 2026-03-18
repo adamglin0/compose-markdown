@@ -1,18 +1,17 @@
 # markdown-compose
 
-Planned home of the Compose Multiplatform rendering layer.
+Compose Multiplatform rendering layer built on top of `markdown-core`.
 
-Stage 2 status: Kotlin Multiplatform module provides a snapshot-driven placeholder Compose surface on top of `markdown-core`.
+Stage 6 status:
 
-Current public shape:
+- public entry points render from `MarkdownSnapshot`, `MarkdownDocument`, or `MarkdownRendererState`,
+- rendering happens per top-level block with stable block ID keys; nested children are updated through whole-block replacement payloads,
+- `MarkdownRendererState.apply(delta)` only replaces changed blocks and removes deleted ones,
+- paragraphs, headings, lists, block quotes, fenced code blocks, and thematic breaks have baseline readable styling,
+- inline content maps to per-block `AnnotatedString` values with clickable links and selectable text,
+- `rememberMarkdownState()` remains available as the engine-driving helper used by the sample app.
 
-- render from `MarkdownSnapshot` via `Markdown(...)` or `MarkdownSnapshotView(...)`,
-- drive placeholder state through `rememberMarkdownState()` plus `append()` / `finish()` / `reset()`,
-- temporary Material3 styling is only for the Stage 2 placeholder renderer and is not a long-term API commitment.
+Non-goals for this stage:
 
-Planned responsibilities:
-
-- block-level composables,
-- RenderIR rendering,
-- keyed updates using stable block IDs,
-- renderer-specific theming hooks.
+- no table, task-list, reference-link, or image rendering,
+- no core/UI boundary changes beyond consuming `MarkdownSnapshot`, `ParseDelta`, and `MarkdownDocument`.

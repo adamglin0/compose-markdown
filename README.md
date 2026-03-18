@@ -68,8 +68,8 @@ The roadmap below describes the intended end-state for each stage. The current r
 - Stage 3: `BlockParser` for `ChatFast` v0 blocks.
 - Stage 4: `InlineParser` for `ChatFast` v0 inline syntax.
 - Stage 5: append-only `IncrementalEngine`, dirty-region tracking, parse deltas, cache reuse.
-- Stage 6: `RenderIR` and `markdown-compose` block-level rendering.
-- Stage 7: `sample-chat` demo plus first benchmark scenarios.
+- Stage 6: `markdown-compose` block-level rendering and snapshot/delta-driven renderer state.
+- Stage 7: broader sample polish plus first benchmark scenarios.
 - Stage 8: compatibility hardening, `CommonMarkCore`, then selected `GfmCompat` features.
 
 Each stage must define:
@@ -82,10 +82,10 @@ Each stage must define:
 
 ## Current Status
 
-This repository currently ships a Stage 5 checkpoint for the append-only ChatFast engine.
+This repository currently ships a Stage 6 checkpoint for the append-only ChatFast engine plus Compose renderer wiring.
 
-- Current checkpoint: append-only `SourceBuffer` and `LineIndex`, normalized newline handling, line-based `BlockParser`, inline parsing, stable prefix / mutable tail tracking, explicit dirty regions, block cache reuse, inline cache reuse, and a sample-chat incremental debug surface.
-- Not done yet: Compose UI main rendering, RenderIR, broader dialect compatibility, or benchmark coverage.
+- Current checkpoint: append-only `SourceBuffer` and `LineIndex`, normalized newline handling, line-based `BlockParser`, inline parsing, stable prefix / mutable tail tracking, explicit dirty regions, block cache reuse, inline cache reuse, block-keyed Compose rendering, and a streaming sample-chat demo.
+- Not done yet: broader dialect compatibility, richer renderer coverage, dedicated RenderIR, or benchmark coverage.
 
 ## Project Structure
 
@@ -109,8 +109,8 @@ This repository currently ships a Stage 5 checkpoint for the append-only ChatFas
 ```
 
 - `markdown-core`: Kotlin Multiplatform block-layer engine, immutable document model, and tests.
-- `markdown-compose`: snapshot-driven placeholder renderer built on top of `markdown-core`; temporary Material3 styling is still provisional and not a long-term API commitment.
-- `sample-chat`: desktop-first sample app that wires input text into the block snapshot debug surface.
+- `markdown-compose`: snapshot/delta-driven Compose renderer built on top of `markdown-core`, with keyed block updates and per-block inline text mapping.
+- `sample-chat`: desktop-first sample app that simulates chunked chat streaming into the renderer and exposes delta/snapshot diagnostics.
 - `docs`: Stage 0 architecture, ADRs, and API drafts preserved as the source of truth for later stages.
 
 Start with:

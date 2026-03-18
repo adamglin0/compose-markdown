@@ -1,11 +1,10 @@
 # sample-chat
 
-Desktop-first Compose Multiplatform sample app for the current Stage 5 checkpoint.
-
-It is the incremental delta/stats debugging entry for the append-only ChatFast engine rather than a planned-only module.
+Desktop-first Compose Multiplatform sample app for the Stage 6 streaming renderer checkpoint.
 
 Current responsibilities:
 
-- drive `MarkdownEngine.append()` with chat-like chunks,
-- visualize block-level updates plus delta/stats diagnostics,
-- provide a manual debugging surface for incremental parser behavior in the primary chat scenario.
+- simulate LLM-style chunked output with start, stop, reset, script selection, and chunk-delay controls,
+- drive `MarkdownEngine.append()` incrementally while wiring each `ParseDelta` into `MarkdownRendererState`,
+- render the current message through `markdown-compose` with block-keyed updates,
+- expose delta and snapshot debug text so block reuse and fence closure behavior stay easy to verify.
