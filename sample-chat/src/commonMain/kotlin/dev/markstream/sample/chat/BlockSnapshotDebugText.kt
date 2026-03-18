@@ -65,6 +65,21 @@ private fun StringBuilder.appendBlock(block: BlockNode, depth: Int) {
             "${indent}Paragraph id=${block.id.raw} text=${block.children.inlineLiteral().debugLiteral()} range=${block.range.start}..${block.range.endExclusive}",
         )
 
+        is BlockNode.TableBlock -> {
+            appendLine("${indent}TableBlock id=${block.id.raw} columns=${block.header.cells.size} rows=${block.rows.size} range=${block.range.start}..${block.range.endExclusive}")
+            appendBlock(block.header, depth + 1)
+            block.rows.forEach { row -> appendBlock(row, depth + 1) }
+        }
+
+        is BlockNode.TableCell -> appendLine(
+            "${indent}TableCell id=${block.id.raw} text=${block.children.inlineLiteral().debugLiteral()} range=${block.range.start}..${block.range.endExclusive}",
+        )
+
+        is BlockNode.TableRow -> {
+            appendLine("${indent}TableRow(header=${block.isHeader}) id=${block.id.raw} range=${block.range.start}..${block.range.endExclusive}")
+            block.cells.forEach { cell -> appendBlock(cell, depth + 1) }
+        }
+
         is BlockNode.RawTextBlock -> appendLine(
             "${indent}RawTextBlock id=${block.id.raw} literal=${block.literal.debugLiteral()} range=${block.range.start}..${block.range.endExclusive}",
         )
@@ -84,6 +99,7 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.CodeSpan -> node.literal
         is InlineNode.Emphasis -> node.children.inlineLiteral()
         is InlineNode.HardBreak -> "\\n"
+        is InlineNode.Image -> node.alt.inlineLiteral()
         is InlineNode.Link -> node.children.inlineLiteral()
         is InlineNode.SoftBreak -> "\\n"
         is InlineNode.Strikethrough -> node.children.inlineLiteral()

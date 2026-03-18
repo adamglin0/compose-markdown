@@ -1,6 +1,6 @@
 # Core Model Invariants
 
-This document freezes the Stage 3 core model boundary in `markdown-core`.
+This document tracks the Stage 7 core model boundary in `markdown-core`.
 
 ## Public Surface
 
@@ -37,12 +37,14 @@ This document freezes the Stage 3 core model boundary in `markdown-core`.
 - After `finish()`, `append()` is invalid until `reset()` is called or a new engine is created.
 - `stablePrefixRange` tracks the prefix that the current engine implementation considers reusable without reinterpretation.
 - `ParseDelta.hasStateChange` marks snapshot-level mutations that remain observable even when block diffs are empty.
-- `dirtyRegion` marks the earliest source offset the engine actually reparsed for the latest operation; the current block-layer MVP still reparses the whole document, so non-no-op rebuilds report the full `0..sourceLength` range.
+- `dirtyRegion` marks the earliest source offset the engine actually reparsed for the latest operation.
+- Append-only reparsing stays localized to the mutable tail, plus small retroactive windows for setext headings, pipe tables, and quote/list continuation.
+- Late reference definitions do not trigger whole-document reparsing; the engine reprocesses only dependent preserved top-level blocks through the dependency index.
 
-## Placeholder Delta Metrics
+## Delta Metrics
 
 - `changedBlocks` is top-level only; nested structure changes are represented through the changed parent block payload.
-- `ParseStats` currently counts parsed, changed, and reused blocks at that same top-level granularity.
+- `ParseStats` counts parsed, changed, and reused blocks at that same top-level granularity.
 
 ## Internal Reserved State
 
@@ -51,13 +53,20 @@ The internal packages keep mutable append-time state for future incremental pars
 - open block stack,
 - line index,
 - block cache / ID reuse state,
-- append-only source buffer.
+- inline cache state,
+- append-only source buffer,
+- reference-definition dependency index.
 
-## Stage 3 Block Layer Notes
+## Stage 7 Block And Inline Notes
 
-- `BlockNode` snapshots now come from a line-based ChatFast block parser instead of the Stage 2 placeholder classifier.
+- `BlockNode` snapshots come from a line-based parser that keeps the same append-only / snapshot / `ParseDelta` boundary.
 - Unfinished fenced code blocks may appear in non-final snapshots with `isClosed = false`.
 - `finish()` finalizes EOF state, but `isClosed = false` still means the source never emitted an explicit closing fence.
-- Paragraph and list handling are intentionally basic; fine-grained CommonMark tight/loose rules remain future work.
+- `BlockNode.Heading` now records `HeadingStyle` so ATX and setext upgrades stay distinguishable.
+- `BlockNode.ListItem` can carry nullable `taskState` for task-list syntax.
+- `BlockNode.TableBlock`, `BlockNode.TableRow`, and `BlockNode.TableCell` represent pipe tables.
+- `InlineNode.Link` and `InlineNode.Image` can record `referenceLabel` when resolved from definitions.
+- Reference definitions are intentionally non-rendering; they live in the engine dependency index instead of the public document block list.
+- Raw HTML remains disabled for every preset in this stage.
 
 These types are intentionally not part of the public API so a real parser can replace the placeholder implementation without breaking consumers.

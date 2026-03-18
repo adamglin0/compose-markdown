@@ -69,8 +69,8 @@ The roadmap below describes the intended end-state for each stage. The current r
 - Stage 4: `InlineParser` for `ChatFast` v0 inline syntax.
 - Stage 5: append-only `IncrementalEngine`, dirty-region tracking, parse deltas, cache reuse.
 - Stage 6: `markdown-compose` block-level rendering and snapshot/delta-driven renderer state.
-- Stage 7: broader sample polish plus first benchmark scenarios.
-- Stage 8: compatibility hardening, `CommonMarkCore`, then selected `GfmCompat` features.
+- Stage 7: `ChatFast` polish plus first `CommonMarkCore` / `GfmCompat` preset expansion.
+- Stage 8: benchmarks, compatibility hardening, and broader dialect coverage.
 
 Each stage must define:
 
@@ -82,10 +82,18 @@ Each stage must define:
 
 ## Current Status
 
-This repository currently ships a Stage 6 checkpoint for the append-only ChatFast engine plus Compose renderer wiring.
+This repository currently ships a Stage 7 checkpoint for the append-only engine, Compose renderer wiring, and the first dialect preset expansion.
 
-- Current checkpoint: append-only `SourceBuffer` and `LineIndex`, normalized newline handling, line-based `BlockParser`, inline parsing, stable prefix / mutable tail tracking, explicit dirty regions, block cache reuse, inline cache reuse, block-keyed Compose rendering, and a streaming sample-chat demo.
-- Not done yet: broader dialect compatibility, richer renderer coverage, dedicated RenderIR, or benchmark coverage.
+- Current checkpoint: append-only `SourceBuffer` and `LineIndex`, normalized newline handling, line-based `BlockParser`, inline parsing, stable prefix / mutable tail tracking, explicit dirty regions, block cache reuse, inline cache reuse, block-keyed Compose rendering, dialect presets (`ChatFast`, `CommonMarkCore`, `GfmCompat`), setext headings, tables, task lists, reference-style links/definitions, and localized dependency-driven invalidation for late definitions.
+- Not done yet: raw HTML support, full CommonMark delimiter edge cases, full table alignment/render fidelity, dedicated RenderIR, or benchmark coverage.
+
+## Dialect Snapshot
+
+- `ChatFast`: default preset for streaming chat; keeps raw HTML off, enables setext/task-list/tables, and leaves reference-style links off by default to avoid cross-block work unless the caller opts into a richer preset.
+- `CommonMarkCore`: enables reference-style links and definitions, setext headings, and stricter core compatibility while still keeping raw HTML disabled in this repository checkpoint.
+- `GfmCompat`: adds task lists, tables, strikethrough, and reference links on top of the same append-only engine model.
+
+See `docs/dialect-matrix.md`, `docs/dialect-presets.md`, and `docs/reference-links.md` for the support matrix and invalidation rules.
 
 ## Project Structure
 

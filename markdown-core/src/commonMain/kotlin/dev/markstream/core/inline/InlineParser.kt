@@ -1,28 +1,33 @@
 package dev.markstream.core.inline
 
 import dev.markstream.core.dialect.MarkdownDialect
+import dev.markstream.core.internal.LinkReferenceDefinition
 import dev.markstream.core.model.InlineId
 import dev.markstream.core.model.InlineNode
 import dev.markstream.core.model.TextRange
 
 internal class InlineParser(
-    // TODO(stage-4): ChatFast currently uses a single inline rule set; keep dialect for future multi-dialect dispatch.
     private val dialect: MarkdownDialect,
+    private val referenceDefinitions: Map<String, LinkReferenceDefinition>,
 ) {
-    fun parse(literal: String, range: TextRange): List<InlineNode> {
+    fun parse(literal: String, range: TextRange): InlineParseResult {
         if (literal.isEmpty()) {
-            return emptyList()
+            return InlineParseResult(nodes = emptyList(), unresolvedReferenceLabels = emptySet())
         }
-        return InlineScanner(
+        val scanner = InlineScanner(
             text = literal,
             baseOffset = range.start,
-        ).parseSegment(start = 0, endExclusive = literal.length)
+        )
+        val nodes = scanner.parseSegment(start = 0, endExclusive = literal.length)
+        return InlineParseResult(nodes = nodes, unresolvedReferenceLabels = scanner.unresolvedReferenceLabels)
     }
 
     private inner class InlineScanner(
         private val text: String,
         private val baseOffset: Int,
     ) {
+        val unresolvedReferenceLabels: MutableSet<String> = linkedSetOf()
+
         fun parseSegment(start: Int, endExclusive: Int): List<InlineNode> {
             if (start >= endExclusive) {
                 return emptyList()
@@ -80,7 +85,7 @@ internal class InlineParser(
                     continue
                 }
 
-                if (char == '`') {
+                if (char == '`' && dialect.inlineFeatures.inlineCode) {
                     val parsed = parseCodeSpan(index = index, endExclusive = endExclusive)
                     if (parsed != null) {
                         flushText(index)
@@ -91,7 +96,18 @@ internal class InlineParser(
                     }
                 }
 
-                if (char == '[') {
+                if (char == '!' && dialect.inlineFeatures.images) {
+                    val parsed = parseImage(index = index, endExclusive = endExclusive)
+                    if (parsed != null) {
+                        flushText(index)
+                        nodes += parsed.node
+                        index = parsed.nextIndex
+                        textStart = index
+                        continue
+                    }
+                }
+
+                if (char == '[' && dialect.inlineFeatures.inlineLinks) {
                     val parsed = parseInlineLink(index = index, endExclusive = endExclusive)
                     if (parsed != null) {
                         flushText(index)
@@ -102,7 +118,18 @@ internal class InlineParser(
                     }
                 }
 
-                if (char == '<') {
+                if (char == '[' && dialect.inlineFeatures.referenceLinks) {
+                    val parsed = parseReferenceLink(index = index, endExclusive = endExclusive)
+                    if (parsed != null) {
+                        flushText(index)
+                        nodes += parsed.node
+                        index = parsed.nextIndex
+                        textStart = index
+                        continue
+                    }
+                }
+
+                if (char == '<' && dialect.inlineFeatures.autolinks) {
                     val parsed = parseAutolink(index = index, endExclusive = endExclusive)
                     if (parsed != null) {
                         flushText(index)
@@ -113,65 +140,73 @@ internal class InlineParser(
                     }
                 }
 
-                val bareAutolink = parseBareAutolink(index = index, start = start, endExclusive = endExclusive)
-                if (bareAutolink != null) {
-                    flushText(index)
-                    nodes += bareAutolink.node
-                    index = bareAutolink.nextIndex
-                    textStart = index
-                    continue
+                if (dialect.inlineFeatures.bareAutolinks) {
+                    val bareAutolink = parseBareAutolink(index = index, start = start, endExclusive = endExclusive)
+                    if (bareAutolink != null) {
+                        flushText(index)
+                        nodes += bareAutolink.node
+                        index = bareAutolink.nextIndex
+                        textStart = index
+                        continue
+                    }
                 }
 
-                val strike = parseDelimitedRun(
-                    index = index,
-                    endExclusive = endExclusive,
-                    marker = "~~",
-                    kind = DelimitedKind.Strikethrough,
-                )
-                if (strike != null) {
-                    flushText(index)
-                    nodes += strike.node
-                    index = strike.nextIndex
-                    textStart = index
-                    continue
+                if (dialect.inlineFeatures.strikethrough) {
+                    val strike = parseDelimitedRun(
+                        index = index,
+                        endExclusive = endExclusive,
+                        marker = "~~",
+                        kind = DelimitedKind.Strikethrough,
+                    )
+                    if (strike != null) {
+                        flushText(index)
+                        nodes += strike.node
+                        index = strike.nextIndex
+                        textStart = index
+                        continue
+                    }
                 }
 
-                val strong = parseDelimitedRun(
-                    index = index,
-                    endExclusive = endExclusive,
-                    marker = "**",
-                    kind = DelimitedKind.Strong,
-                ) ?: parseDelimitedRun(
-                    index = index,
-                    endExclusive = endExclusive,
-                    marker = "__",
-                    kind = DelimitedKind.Strong,
-                )
-                if (strong != null) {
-                    flushText(index)
-                    nodes += strong.node
-                    index = strong.nextIndex
-                    textStart = index
-                    continue
+                if (dialect.inlineFeatures.strong) {
+                    val strong = parseDelimitedRun(
+                        index = index,
+                        endExclusive = endExclusive,
+                        marker = "**",
+                        kind = DelimitedKind.Strong,
+                    ) ?: parseDelimitedRun(
+                        index = index,
+                        endExclusive = endExclusive,
+                        marker = "__",
+                        kind = DelimitedKind.Strong,
+                    )
+                    if (strong != null) {
+                        flushText(index)
+                        nodes += strong.node
+                        index = strong.nextIndex
+                        textStart = index
+                        continue
+                    }
                 }
 
-                val emphasis = parseDelimitedRun(
-                    index = index,
-                    endExclusive = endExclusive,
-                    marker = "*",
-                    kind = DelimitedKind.Emphasis,
-                ) ?: parseDelimitedRun(
-                    index = index,
-                    endExclusive = endExclusive,
-                    marker = "_",
-                    kind = DelimitedKind.Emphasis,
-                )
-                if (emphasis != null) {
-                    flushText(index)
-                    nodes += emphasis.node
-                    index = emphasis.nextIndex
-                    textStart = index
-                    continue
+                if (dialect.inlineFeatures.emphasis) {
+                    val emphasis = parseDelimitedRun(
+                        index = index,
+                        endExclusive = endExclusive,
+                        marker = "*",
+                        kind = DelimitedKind.Emphasis,
+                    ) ?: parseDelimitedRun(
+                        index = index,
+                        endExclusive = endExclusive,
+                        marker = "_",
+                        kind = DelimitedKind.Emphasis,
+                    )
+                    if (emphasis != null) {
+                        flushText(index)
+                        nodes += emphasis.node
+                        index = emphasis.nextIndex
+                        textStart = index
+                        continue
+                    }
                 }
 
                 index += 1
@@ -189,7 +224,7 @@ internal class InlineParser(
                 cursor -= 1
             }
 
-            if (trailingSpaces >= 2) {
+            if (dialect.inlineFeatures.hardBreaks && trailingSpaces >= 2) {
                 val flushEnd = index - trailingSpaces
                 return ParsedBreakNode(
                     flushEnd = flushEnd,
@@ -200,17 +235,24 @@ internal class InlineParser(
                 )
             }
 
-            return ParsedBreakNode(
-                flushEnd = index,
-                node = InlineNode.SoftBreak(
-                    id = inlineId(kind = "soft-break", range = toRange(index, index + 1), salt = 0L),
-                    range = toRange(index, index + 1),
-                ),
-            )
+            val range = toRange(index, index + 1)
+            val node = if (dialect.inlineFeatures.softBreaks) {
+                InlineNode.SoftBreak(
+                    id = inlineId(kind = "soft-break", range = range, salt = 0L),
+                    range = range,
+                )
+            } else {
+                InlineNode.Text(
+                    id = inlineId(kind = "text", range = range, salt = '\n'.code.toLong()),
+                    range = range,
+                    literal = "\n",
+                )
+            }
+            return ParsedBreakNode(flushEnd = index, node = node)
         }
 
         private fun parseBackslashHardBreak(index: Int, endExclusive: Int): ParsedInlineNode? {
-            if (index + 1 >= endExclusive || text[index + 1] != '\n') {
+            if (!dialect.inlineFeatures.hardBreaks || index + 1 >= endExclusive || text[index + 1] != '\n') {
                 return null
             }
             val range = toRange(index, index + 2)
@@ -248,6 +290,9 @@ internal class InlineParser(
         }
 
         private fun parseInlineLink(index: Int, endExclusive: Int): ParsedInlineNode? {
+            if (index > 0 && text[index - 1] == '!') {
+                return null
+            }
             val closingBracket = findMatchingBracket(from = index + 1, endExclusive = endExclusive) ?: return null
             if (closingBracket + 1 >= endExclusive || text[closingBracket + 1] != '(') {
                 return null
@@ -270,6 +315,107 @@ internal class InlineParser(
                     children = labelChildren,
                 ),
                 nextIndex = closingParen + 1,
+            )
+        }
+
+        private fun parseReferenceLink(index: Int, endExclusive: Int): ParsedInlineNode? {
+            val linkCandidate = parseReferenceCandidate(index = index, endExclusive = endExclusive, isImage = false) ?: return null
+            val definition = referenceDefinitions[linkCandidate.label]
+            if (definition == null) {
+                unresolvedReferenceLabels += linkCandidate.label
+                return null
+            }
+            return ParsedInlineNode(
+                node = InlineNode.Link(
+                    id = inlineId(kind = "ref-link", range = linkCandidate.range, salt = definition.destination.hashCode().toLong()),
+                    range = linkCandidate.range,
+                    destination = definition.destination,
+                    title = definition.title,
+                    children = linkCandidate.children,
+                    referenceLabel = definition.label,
+                ),
+                nextIndex = linkCandidate.nextIndex,
+            )
+        }
+
+        private fun parseImage(index: Int, endExclusive: Int): ParsedInlineNode? {
+            if (index + 1 >= endExclusive || text[index + 1] != '[') {
+                return null
+            }
+            val closingBracket = findMatchingBracket(from = index + 2, endExclusive = endExclusive) ?: return null
+            val altChildren = parseSegment(start = index + 2, endExclusive = closingBracket)
+            if (closingBracket + 1 < endExclusive && text[closingBracket + 1] == '(') {
+                val closingParen = findMatchingParen(from = closingBracket + 2, endExclusive = endExclusive) ?: return null
+                val destinationRaw = text.substring(closingBracket + 2, closingParen).trim()
+                if (destinationRaw.isEmpty()) {
+                    return null
+                }
+                val destination = unescapeDestination(destinationRaw)
+                val range = toRange(index, closingParen + 1)
+                return ParsedInlineNode(
+                    node = InlineNode.Image(
+                        id = inlineId(kind = "image", range = range, salt = destination.hashCode().toLong()),
+                        range = range,
+                        destination = destination,
+                        title = null,
+                        alt = altChildren,
+                    ),
+                    nextIndex = closingParen + 1,
+                )
+            }
+            if (!dialect.inlineFeatures.referenceLinks) {
+                return null
+            }
+            val candidate = parseReferenceCandidate(index = index + 1, endExclusive = endExclusive, isImage = true) ?: return null
+            val definition = referenceDefinitions[candidate.label]
+            if (definition == null) {
+                unresolvedReferenceLabels += candidate.label
+                return null
+            }
+            return ParsedInlineNode(
+                node = InlineNode.Image(
+                    id = inlineId(kind = "ref-image", range = toRange(index, candidate.range.endExclusive - baseOffset), salt = definition.destination.hashCode().toLong()),
+                    range = toRange(index, candidate.range.endExclusive - baseOffset),
+                    destination = definition.destination,
+                    title = definition.title,
+                    alt = altChildren,
+                    referenceLabel = definition.label,
+                ),
+                nextIndex = candidate.nextIndex,
+            )
+        }
+
+        private fun parseReferenceCandidate(index: Int, endExclusive: Int, isImage: Boolean): ReferenceCandidate? {
+            if (index > 0 && !isImage && text[index - 1] == '!') {
+                return null
+            }
+            val closingBracket = findMatchingBracket(from = index + 1, endExclusive = endExclusive) ?: return null
+            val children = parseSegment(start = index + 1, endExclusive = closingBracket)
+            val innerLiteral = text.substring(index + 1, closingBracket)
+            val explicitLabelRangeStart = closingBracket + 1
+
+            if (explicitLabelRangeStart < endExclusive && text[explicitLabelRangeStart] == '[') {
+                val explicitLabelEnd = text.indexOf(']', startIndex = explicitLabelRangeStart + 1)
+                if (explicitLabelEnd != -1 && explicitLabelEnd < endExclusive) {
+                    val explicitLabel = text.substring(explicitLabelRangeStart + 1, explicitLabelEnd)
+                    val normalized = normalizeReferenceLabel(if (explicitLabel.isEmpty()) innerLiteral else explicitLabel)
+                    if (normalized != null) {
+                        return ReferenceCandidate(
+                            label = normalized,
+                            children = children,
+                            range = toRange(index, explicitLabelEnd + 1),
+                            nextIndex = explicitLabelEnd + 1,
+                        )
+                    }
+                }
+            }
+
+            val shortcutLabel = normalizeReferenceLabel(innerLiteral) ?: return null
+            return ReferenceCandidate(
+                label = shortcutLabel,
+                children = children,
+                range = toRange(index, closingBracket + 1),
+                nextIndex = closingBracket + 1,
             )
         }
 
@@ -558,6 +704,18 @@ internal class InlineParser(
         return merged
     }
 
+    private fun normalizeReferenceLabel(raw: String): String? {
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) {
+            return null
+        }
+        return trimmed
+            .split(REFERENCE_WHITESPACE)
+            .filter { it.isNotEmpty() }
+            .joinToString(separator = " ")
+            .lowercase()
+    }
+
     private enum class DelimitedKind {
         Emphasis,
         Strong,
@@ -574,11 +732,24 @@ internal class InlineParser(
         val node: InlineNode,
     )
 
+    private data class ReferenceCandidate(
+        val label: String,
+        val children: List<InlineNode>,
+        val range: TextRange,
+        val nextIndex: Int,
+    )
+
     private companion object {
         val ESCAPABLE_CHARS: Set<Char> = setOf(
             '\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '#', '+', '-', '.', '!', '~', '>', '<',
         )
         val BARE_AUTOLINK_STOP_CHARS: Set<Char> = setOf('<', '>', '"', '\'', ')', ']')
         val BARE_AUTOLINK_TRAILING_PUNCTUATION: Set<Char> = setOf('.', ',', ':', ';', '!', '?')
+        val REFERENCE_WHITESPACE: Regex = Regex("\\s+")
     }
 }
+
+internal data class InlineParseResult(
+    val nodes: List<InlineNode>,
+    val unresolvedReferenceLabels: Set<String>,
+)

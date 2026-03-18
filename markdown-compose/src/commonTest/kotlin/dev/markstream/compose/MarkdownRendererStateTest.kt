@@ -240,6 +240,7 @@ private fun List<InlineNode>.inlineText(): String = joinToString(separator = "")
         is InlineNode.CodeSpan -> node.literal
         is InlineNode.Emphasis -> node.children.inlineText()
         is InlineNode.HardBreak -> "\n"
+        is InlineNode.Image -> node.alt.inlineText()
         is InlineNode.Link -> node.children.inlineText()
         is InlineNode.SoftBreak -> "\n"
         is InlineNode.Strikethrough -> node.children.inlineText()

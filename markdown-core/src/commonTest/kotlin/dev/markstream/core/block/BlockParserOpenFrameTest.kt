@@ -1,5 +1,6 @@
 package dev.markstream.core.block
 
+import dev.markstream.core.dialect.MarkdownDialect
 import dev.markstream.core.model.BlockId
 import dev.markstream.core.source.LineIndex
 import dev.markstream.core.source.SourceBuffer
@@ -16,6 +17,7 @@ class BlockParserOpenFrameTest {
         val result = BlockParser(
             sourceBuffer = sourceBuffer,
             lineIndex = lineIndex,
+            dialect = MarkdownDialect.ChatFast,
             allocateBlockId = { _, _, _ -> BlockId(1L) },
         ).parse(isFinal = false)
 

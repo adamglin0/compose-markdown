@@ -25,6 +25,7 @@ sealed interface BlockNode {
         override val lineRange: LineRange,
         val level: Int,
         val children: List<InlineNode>,
+        val style: HeadingStyle = HeadingStyle.Atx,
     ) : BlockNode {
         init {
             require(level in 1..6) { "level must be between 1 and 6" }
@@ -62,6 +63,31 @@ sealed interface BlockNode {
         override val lineRange: LineRange,
         val marker: String,
         val children: List<BlockNode>,
+        val taskState: TaskState? = null,
+    ) : BlockNode
+
+    data class TableBlock(
+        override val id: BlockId,
+        override val range: TextRange,
+        override val lineRange: LineRange,
+        val header: TableRow,
+        val alignments: List<TableAlignment>,
+        val rows: List<TableRow>,
+    ) : BlockNode
+
+    data class TableRow(
+        override val id: BlockId,
+        override val range: TextRange,
+        override val lineRange: LineRange,
+        val cells: List<TableCell>,
+        val isHeader: Boolean,
+    ) : BlockNode
+
+    data class TableCell(
+        override val id: BlockId,
+        override val range: TextRange,
+        override val lineRange: LineRange,
+        val children: List<InlineNode>,
     ) : BlockNode
 
     data class ThematicBreak(
@@ -90,6 +116,23 @@ sealed interface BlockNode {
 enum class ListStyle {
     Unordered,
     Ordered,
+}
+
+enum class HeadingStyle {
+    Atx,
+    Setext,
+}
+
+enum class TaskState {
+    Checked,
+    Unchecked,
+}
+
+enum class TableAlignment {
+    Default,
+    Left,
+    Center,
+    Right,
 }
 
 data class BlockChange(

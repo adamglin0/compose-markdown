@@ -221,6 +221,9 @@ private fun List<BlockNode>.debugShape(): String = joinToString(separator = "\n"
         is BlockNode.ListItem -> "item(${block.marker},${block.children.debugShape()})"
         is BlockNode.Paragraph -> "paragraph(${block.children.inlineLiteral()})"
         is BlockNode.RawTextBlock -> "raw(${block.literal.replace("\n", "\\n")})"
+        is BlockNode.TableBlock -> "table(${block.header.cells.size},${block.rows.size})"
+        is BlockNode.TableCell -> "cell(${block.children.inlineLiteral()})"
+        is BlockNode.TableRow -> "row(${block.cells.joinToString(separator = "|") { it.children.inlineLiteral() }})"
         is BlockNode.ThematicBreak -> "break(${block.marker})"
         is BlockNode.UnsupportedBlock -> "unsupported(${block.literal.replace("\n", "\\n")})"
     }
@@ -231,6 +234,7 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.CodeSpan -> node.literal
         is InlineNode.Emphasis -> node.children.inlineLiteral()
         is InlineNode.HardBreak -> "\n"
+        is InlineNode.Image -> node.alt.inlineLiteral()
         is InlineNode.Link -> node.children.inlineLiteral()
         is InlineNode.SoftBreak -> "\n"
         is InlineNode.Strikethrough -> node.children.inlineLiteral()

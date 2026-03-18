@@ -22,6 +22,7 @@ internal class EngineSessionState(
     var isFinal: Boolean = snapshot.isFinal
     var nextBlockId: Long = 1L
     var suppressLeadingLineFeed: Boolean = false
+    val dependencyIndex: DependencyIndex = DependencyIndex()
 }
 
 internal data class OpenBlockFrame(
@@ -35,9 +36,29 @@ internal class ParseCacheState {
     val inlineByBlockId: MutableMap<Long, InlineCacheEntry> = linkedMapOf()
 }
 
+internal class DependencyIndex {
+    val definitionsByLabel: MutableMap<String, LinkReferenceDefinition> = linkedMapOf()
+    val unresolvedBlocksByLabel: MutableMap<String, MutableSet<Long>> = linkedMapOf()
+    val unresolvedLabelsByBlockId: MutableMap<Long, Set<String>> = linkedMapOf()
+
+    fun reset() {
+        definitionsByLabel.clear()
+        unresolvedBlocksByLabel.clear()
+        unresolvedLabelsByBlockId.clear()
+    }
+}
+
+internal data class LinkReferenceDefinition(
+    val label: String,
+    val destination: String,
+    val title: String?,
+    val range: TextRange,
+)
+
 internal data class CachedBlockRecord(
     val block: BlockNode,
     val isStable: Boolean,
+    val unresolvedReferenceLabels: Set<String>,
 )
 
 internal data class BlockIdentityKey(
@@ -49,9 +70,11 @@ internal data class BlockIdentityKey(
 internal data class InlineCacheKey(
     val range: TextRange,
     val literalHash: Int,
+    val referenceRevision: Int,
 )
 
 internal data class InlineCacheEntry(
     val key: InlineCacheKey,
     val nodes: List<InlineNode>,
+    val unresolvedReferenceLabels: Set<String>,
 )

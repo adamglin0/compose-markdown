@@ -174,6 +174,27 @@ private fun MarkdownBlock(
             modifier = modifier,
         )
 
+        is BlockNode.TableBlock -> TableBlock(
+            block = block,
+            styles = styles,
+            onLinkClick = onLinkClick,
+            modifier = modifier,
+        )
+
+        is BlockNode.TableRow -> SelectableAnnotatedText(
+            text = block.cells.joinToString(separator = " | ") { cell ->
+                cell.children.toAnnotatedString(styles.inline, onLinkClick).text
+            }.let(::AnnotatedString),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = modifier,
+        )
+
+        is BlockNode.TableCell -> SelectableAnnotatedText(
+            text = block.children.toAnnotatedString(styles.inline, onLinkClick),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = modifier,
+        )
+
         is BlockNode.Paragraph -> SelectableAnnotatedText(
             text = block.children.toAnnotatedString(styles.inline, onLinkClick),
             style = MaterialTheme.typography.bodyLarge,
@@ -320,7 +341,13 @@ private fun ListItemBlock(
         verticalAlignment = Alignment.Top,
     ) {
         Text(
-            text = block.marker,
+            text = buildString {
+                if (block.taskState != null) {
+                    append(if (block.taskState == dev.markstream.core.model.TaskState.Checked) "[x]" else "[ ]")
+                } else {
+                    append(block.marker)
+                }
+            },
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             modifier = Modifier.padding(top = 1.dp),
         )
@@ -333,6 +360,58 @@ private fun ListItemBlock(
                     block = child,
                     styles = styles,
                     onLinkClick = onLinkClick,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TableBlock(
+    block: BlockNode.TableBlock,
+    styles: MarkdownBlockStyles,
+    onLinkClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
+                shape = RoundedCornerShape(10.dp),
+            )
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        TableRowBlock(block.header, styles, onLinkClick, isHeader = true)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        block.rows.forEach { row ->
+            TableRowBlock(row, styles, onLinkClick, isHeader = false)
+        }
+    }
+}
+
+@Composable
+private fun TableRowBlock(
+    row: BlockNode.TableRow,
+    styles: MarkdownBlockStyles,
+    onLinkClick: (String) -> Unit,
+    isHeader: Boolean,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        row.cells.forEach { cell ->
+            Box(modifier = Modifier.weight(1f)) {
+                SelectableAnnotatedText(
+                    text = cell.children.toAnnotatedString(styles.inline, onLinkClick),
+                    style = if (isHeader) {
+                        MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                    } else {
+                        MaterialTheme.typography.bodyMedium
+                    },
                 )
             }
         }
@@ -447,6 +526,8 @@ private fun AnnotatedString.Builder.appendInlineNodes(
             }
 
             is InlineNode.SoftBreak -> append("\n")
+
+            is InlineNode.Image -> appendInlineNodes(node.alt, styles, onLinkClick)
 
             is InlineNode.Strikethrough -> withStyle(styles.strike) {
                 appendInlineNodes(node.children, styles, onLinkClick)

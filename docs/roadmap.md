@@ -60,13 +60,13 @@ Status: implemented in the current repository checkpoint, including newline-norm
 - Docs: renderer usage guide and sample integration notes.
 - Stop point: renderer is usable, but demo app and benchmarks may still be incomplete.
 
-## Stage 7 - Sample Chat Demo
+## Stage 7 - ChatFast Polish And Preset Expansion
 
-- Goal: show the intended streaming user experience.
-- Deliverables: `sample-chat` app, append simulation, snapshot visualization, diagnostics panel for block deltas.
-- Tests: smoke tests for sample behavior where practical, manual verification script.
-- Docs: demo usage instructions and known limitations.
-- Stop point: project is demonstrable end to end for the primary use case.
+- Goal: harden the primary streaming flow while expanding beyond the initial `ChatFast` v0 subset.
+- Deliverables: preset-level support for setext headings, tables, task lists, reference-style links/definitions, and localized dependency-driven invalidation for late definitions.
+- Tests: parser and incremental fixtures for newly enabled syntax, plus targeted renderer/sample smoke coverage for new node kinds.
+- Docs: update dialect matrix, preset docs, core model notes, and sample usage text to reflect the expanded Stage 7 boundary.
+- Stop point: the append-only engine, Compose wiring, and dialect presets are aligned for the current repository checkpoint, but dedicated benchmarks and broader compatibility work still wait for Stage 8.
 
 ## Stage 8 - Benchmarks And Compatibility Expansion
 

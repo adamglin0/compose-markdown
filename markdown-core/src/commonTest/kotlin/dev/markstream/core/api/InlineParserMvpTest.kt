@@ -136,6 +136,7 @@ class InlineParserMvpTest {
             is InlineNode.CodeSpan -> node.literal
             is InlineNode.Emphasis -> node.children.inlineLiteral()
             is InlineNode.HardBreak -> "\\n"
+            is InlineNode.Image -> node.alt.inlineLiteral()
             is InlineNode.Link -> node.children.inlineLiteral()
             is InlineNode.SoftBreak -> "\\n"
             is InlineNode.Strikethrough -> node.children.inlineLiteral()

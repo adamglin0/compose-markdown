@@ -4,12 +4,14 @@ import dev.markstream.core.api.MarkdownEngine
 import dev.markstream.core.block.BlockParseResult
 import dev.markstream.core.block.BlockParser
 import dev.markstream.core.dialect.MarkdownDialect
+import dev.markstream.core.inline.InlineParseResult
 import dev.markstream.core.inline.InlineParser
 import dev.markstream.core.internal.BlockIdentityKey
 import dev.markstream.core.internal.CachedBlockRecord
 import dev.markstream.core.internal.EngineSessionState
 import dev.markstream.core.internal.InlineCacheEntry
 import dev.markstream.core.internal.InlineCacheKey
+import dev.markstream.core.internal.LinkReferenceDefinition
 import dev.markstream.core.model.BlockChange
 import dev.markstream.core.model.BlockId
 import dev.markstream.core.model.BlockNode
@@ -64,6 +66,7 @@ internal class PlaceholderMarkdownEngine(
         state.cacheState.blockIdsByKey.clear()
         state.cacheState.inlineByBlockId.clear()
         state.lineIndex.reset()
+        state.dependencyIndex.reset()
         state.version = 0L
         state.nextBlockId = 1L
         state.stablePrefixEnd = 0
@@ -81,13 +84,14 @@ internal class PlaceholderMarkdownEngine(
         val previousRecords = state.cacheState.blockRecords.toList()
         val previousIndexes = previousBlocks.mapIndexed { index, block -> block.id to index }.toMap()
         val previousIds = previousBlocks.flatMap(::flattenBlocks).map { it.id }.toSet()
+        val previousDefinitions = state.dependencyIndex.definitionsByLabel.toMap()
+        val previousUnresolvedByLabel = state.dependencyIndex.unresolvedBlocksByLabel.mapValues { it.value.toSet() }
         val reparsePlan = createReparsePlan(
             previousSnapshot = previousSnapshot,
             previousRecords = previousRecords,
         )
-        val preservedBlocks = previousRecords
+        val preservedRecords = previousRecords
             .takeWhile { it.block.range.endExclusive <= reparsePlan.dirtyStart }
-            .map { it.block }
         val blockIdLookup = previousBlocks
             .flatMap(::flattenBlocks)
             .filter { it.range.endExclusive > reparsePlan.dirtyStart }
@@ -96,6 +100,7 @@ internal class PlaceholderMarkdownEngine(
         val parser = BlockParser(
             sourceBuffer = state.source,
             lineIndex = state.lineIndex,
+            dialect = dialect,
             allocateBlockId = { kind, start, discriminator ->
                 allocateBlockId(
                     kind = kind,
@@ -111,6 +116,7 @@ internal class PlaceholderMarkdownEngine(
                 blocks = emptyList(),
                 openBlockStack = emptyList(),
                 processedLineCount = 0,
+                parsedDefinitions = emptyMap(),
             )
         } else {
             parser.parse(
@@ -119,21 +125,54 @@ internal class PlaceholderMarkdownEngine(
             )
         }
         val stablePrefixEnd = stablePrefixEnd(parseResult = parseResult)
-        val inlineParser = InlineParser(dialect = dialect)
+        val effectiveDefinitions = linkedMapOf<String, LinkReferenceDefinition>().apply {
+            putAll(previousDefinitions)
+            parseResult.parsedDefinitions.forEach { (label, definition) -> putIfAbsent(label, definition) }
+        }
+        val inlineParser = InlineParser(
+            dialect = dialect,
+            referenceDefinitions = effectiveDefinitions,
+        )
+        val referenceRevision = effectiveDefinitions.hashCode()
         val inlineStats = InlineResolutionStats()
-        val reparsedBlocks = parseResult.blocks.map { block ->
-            hydrateInline(
+        val reparsedTopLevelBlocks = parseResult.blocks.map { block ->
+            hydrateTopLevelBlock(
                 block = block,
                 inlineParser = inlineParser,
+                referenceRevision = referenceRevision,
                 stablePrefixEnd = stablePrefixEnd,
                 sourceLength = state.source.length,
                 inlineStats = inlineStats,
             )
         }
+        val newDefinitionLabels = parseResult.parsedDefinitions.keys.filterNot(previousDefinitions::containsKey).toSet()
+        val affectedPreservedBlockIds = newDefinitionLabels
+            .flatMap { label -> previousUnresolvedByLabel[label].orEmpty() }
+            .toSet()
+        val rehydratedPreservedBlocks = preservedRecords.map { record ->
+            if (record.block.id.raw in affectedPreservedBlockIds) {
+                reparseSingleBlock(
+                    block = record.block,
+                    inlineParser = inlineParser,
+                    referenceRevision = referenceRevision,
+                    stablePrefixEnd = stablePrefixEnd,
+                    sourceLength = state.source.length,
+                    inlineStats = inlineStats,
+                    blockIdLookup = blockIdLookup,
+                )
+            } else {
+                HydratedTopLevelBlock(
+                    block = record.block,
+                    unresolvedReferenceLabels = record.unresolvedReferenceLabels,
+                )
+            }
+        }
+
         state.openBlockStack.clear()
         state.openBlockStack += parseResult.openBlockStack
 
-        val blocks = preservedBlocks + reparsedBlocks
+        val hydratedBlocks = rehydratedPreservedBlocks + reparsedTopLevelBlocks
+        val blocks = hydratedBlocks.map { it.block }
         val currentIds = blocks.flatMap(::flattenBlocks).map { it.id }.toSet()
         val removedBlockIds = previousIds.subtract(currentIds).toList()
         state.cacheState.inlineByBlockId.keys.retainAll(currentIds.map { it.raw }.toSet())
@@ -171,15 +210,28 @@ internal class PlaceholderMarkdownEngine(
         state.stablePrefixEnd = stablePrefixEnd
         state.mutableTailStart = stablePrefixEnd
         state.cacheState.blockRecords.clear()
-        state.cacheState.blockRecords += blocks.map { block ->
+        state.cacheState.blockRecords += hydratedBlocks.map { hydrated ->
             CachedBlockRecord(
-                block = block,
-                isStable = block.range.endExclusive <= stablePrefixEnd,
+                block = hydrated.block,
+                isStable = hydrated.block.range.endExclusive <= stablePrefixEnd,
+                unresolvedReferenceLabels = hydrated.unresolvedReferenceLabels,
             )
         }
         state.cacheState.blockIdsByKey.clear()
         blocks.flatMap(::flattenBlocks).forEach { block ->
             state.cacheState.blockIdsByKey.getOrPut(identityKey(block)) { mutableListOf() } += block.id.raw
+        }
+        state.dependencyIndex.reset()
+        effectiveDefinitions.forEach { (label, definition) ->
+            state.dependencyIndex.definitionsByLabel[label] = definition
+        }
+        hydratedBlocks.forEach { hydrated ->
+            if (hydrated.unresolvedReferenceLabels.isNotEmpty()) {
+                state.dependencyIndex.unresolvedLabelsByBlockId[hydrated.block.id.raw] = hydrated.unresolvedReferenceLabels
+                hydrated.unresolvedReferenceLabels.forEach { label ->
+                    state.dependencyIndex.unresolvedBlocksByLabel.getOrPut(label) { linkedSetOf() } += hydrated.block.id.raw
+                }
+            }
         }
         state.snapshot = snapshot
 
@@ -193,15 +245,15 @@ internal class PlaceholderMarkdownEngine(
             dirtyRegion = dirtyRegion,
             snapshot = snapshot,
             stats = ParseStats(
-                parsedBlockCount = reparsedBlocks.size,
+                parsedBlockCount = reparsedTopLevelBlocks.size + affectedPreservedBlockIds.size,
                 changedBlockCount = changedBlocks.size,
-                reusedBlockCount = preservedBlocks.size,
+                reusedBlockCount = (preservedRecords.size - affectedPreservedBlockIds.size).coerceAtLeast(0),
                 inlineParsedBlockCount = inlineStats.parsedBlockCount,
                 inlineCacheHitBlockCount = inlineStats.cacheHitBlockCount,
                 appendedChars = appendedChunk?.length ?: 0,
                 processedLines = parseResult.processedLineCount,
-                reparsedBlocks = reparsedBlocks.size,
-                preservedBlocks = preservedBlocks.size,
+                reparsedBlocks = reparsedTopLevelBlocks.size + affectedPreservedBlockIds.size,
+                preservedBlocks = (preservedRecords.size - affectedPreservedBlockIds.size).coerceAtLeast(0),
                 fallbackCount = 0,
                 fallbackReason = null,
             ),
@@ -219,13 +271,37 @@ internal class PlaceholderMarkdownEngine(
             return ReparsePlan(dirtyStart = 0)
         }
         if (mutableTailStart >= previousLength) {
-            return ReparsePlan(dirtyStart = previousLength)
+            val retroactiveStart = if (canRetroactivelyExtendPreviousBlock(previousLength)) {
+                previousRecords.lastOrNull()?.block?.takeIf(::shouldBackUpForRetroactiveInterpretation)?.range?.start
+            } else {
+                null
+            }
+            return ReparsePlan(dirtyStart = retroactiveStart ?: previousLength)
         }
 
         val boundary = previousRecords.firstOrNull { record ->
             mutableTailStart >= record.block.range.start && mutableTailStart < record.block.range.endExclusive
         }?.block?.range?.start
         return ReparsePlan(dirtyStart = boundary ?: 0)
+    }
+
+    private fun shouldBackUpForRetroactiveInterpretation(block: BlockNode): Boolean = when (block) {
+        is BlockNode.Paragraph -> dialect.blockFeatures.setextHeadings || dialect.blockFeatures.tables
+        is BlockNode.BlockQuote,
+        is BlockNode.ListBlock,
+        -> true
+        else -> false
+    }
+
+    private fun canRetroactivelyExtendPreviousBlock(previousLength: Int): Boolean {
+        if (previousLength <= 0) {
+            return false
+        }
+        val source = state.source.snapshot()
+        if (previousLength > source.length || source[previousLength - 1] != '\n') {
+            return false
+        }
+        return previousLength == 1 || source[previousLength - 2] != '\n'
     }
 
     private fun normalizeChunk(chunk: String): String {
@@ -268,6 +344,12 @@ internal class PlaceholderMarkdownEngine(
             is BlockNode.Document -> block.children.forEach { addAll(flattenBlocks(it)) }
             is BlockNode.ListBlock -> block.items.forEach { addAll(flattenBlocks(it)) }
             is BlockNode.ListItem -> block.children.forEach { addAll(flattenBlocks(it)) }
+            is BlockNode.TableBlock -> {
+                addAll(flattenBlocks(block.header))
+                block.rows.forEach { addAll(flattenBlocks(it)) }
+            }
+            is BlockNode.TableRow -> block.cells.forEach { addAll(flattenBlocks(it)) }
+            is BlockNode.TableCell,
             is BlockNode.FencedCodeBlock,
             is BlockNode.Heading,
             is BlockNode.Paragraph,
@@ -278,120 +360,240 @@ internal class PlaceholderMarkdownEngine(
         }
     }
 
-    private fun hydrateInline(
+    private fun hydrateTopLevelBlock(
         block: BlockNode,
         inlineParser: InlineParser,
+        referenceRevision: Int,
         stablePrefixEnd: Int,
         sourceLength: Int,
         inlineStats: InlineResolutionStats,
-    ): BlockNode = when (block) {
-        is BlockNode.Paragraph -> block.copy(
-            children = resolveInlineChildren(
-                blockId = block.id,
-                blockRange = block.range,
-                children = block.children,
-                inlineParser = inlineParser,
-                stablePrefixEnd = stablePrefixEnd,
-                sourceLength = sourceLength,
-                inlineStats = inlineStats,
-            ),
+    ): HydratedTopLevelBlock {
+        val hydration = hydrateInline(
+            block = block,
+            topLevelBlockId = block.id,
+            inlineParser = inlineParser,
+            referenceRevision = referenceRevision,
+            stablePrefixEnd = stablePrefixEnd,
+            sourceLength = sourceLength,
+            inlineStats = inlineStats,
         )
-
-        is BlockNode.Heading -> block.copy(
-            children = resolveInlineChildren(
-                blockId = block.id,
-                blockRange = block.range,
-                children = block.children,
-                inlineParser = inlineParser,
-                stablePrefixEnd = stablePrefixEnd,
-                sourceLength = sourceLength,
-                inlineStats = inlineStats,
-            ),
+        return HydratedTopLevelBlock(
+            block = hydration.block,
+            unresolvedReferenceLabels = hydration.unresolvedReferenceLabels,
         )
+    }
 
-        is BlockNode.BlockQuote -> block.copy(
-            children = block.children.map { child ->
-                hydrateInline(
-                    block = child,
-                    inlineParser = inlineParser,
-                    stablePrefixEnd = stablePrefixEnd,
-                    sourceLength = sourceLength,
-                    inlineStats = inlineStats,
+    private fun reparseSingleBlock(
+        block: BlockNode,
+        inlineParser: InlineParser,
+        referenceRevision: Int,
+        stablePrefixEnd: Int,
+        sourceLength: Int,
+        inlineStats: InlineResolutionStats,
+        blockIdLookup: Map<BlockIdentityKey, MutableList<Long>>,
+    ): HydratedTopLevelBlock {
+        val preservedBlockIdLookup = flattenBlocks(block)
+            .groupBy(::identityKey)
+            .mapValues { (_, blocks) -> blocks.map { it.id.raw }.toMutableList() }
+        val parser = BlockParser(
+            sourceBuffer = state.source,
+            lineIndex = state.lineIndex,
+            dialect = dialect,
+            allocateBlockId = { kind, start, discriminator ->
+                allocateBlockId(
+                    kind = kind,
+                    start = start,
+                    discriminator = discriminator,
+                    blockIdLookup = preservedBlockIdLookup,
                 )
             },
         )
-
-        is BlockNode.ListBlock -> block.copy(
-            items = block.items.map { item ->
-                hydrateInline(
-                    block = item,
-                    inlineParser = inlineParser,
-                    stablePrefixEnd = stablePrefixEnd,
-                    sourceLength = sourceLength,
-                    inlineStats = inlineStats,
-                ) as BlockNode.ListItem
-            },
+        val result = parser.parse(
+            isFinal = true,
+            range = block.range,
         )
-
-        is BlockNode.ListItem -> block.copy(
-            children = block.children.map { child ->
-                hydrateInline(
-                    block = child,
-                    inlineParser = inlineParser,
-                    stablePrefixEnd = stablePrefixEnd,
-                    sourceLength = sourceLength,
-                    inlineStats = inlineStats,
-                )
-            },
+        val reparsed = result.blocks.singleOrNull() ?: block
+        return hydrateTopLevelBlock(
+            block = reparsed,
+            inlineParser = inlineParser,
+            referenceRevision = referenceRevision,
+            stablePrefixEnd = stablePrefixEnd,
+            sourceLength = sourceLength,
+            inlineStats = inlineStats,
         )
+    }
+
+    private fun hydrateInline(
+        block: BlockNode,
+        topLevelBlockId: BlockId,
+        inlineParser: InlineParser,
+        referenceRevision: Int,
+        stablePrefixEnd: Int,
+        sourceLength: Int,
+        inlineStats: InlineResolutionStats,
+    ): InlineHydration = when (block) {
+        is BlockNode.Paragraph -> resolveInlineChildren(
+            blockId = block.id,
+            topLevelBlockId = topLevelBlockId,
+            blockRange = block.range,
+            children = block.children,
+            inlineParser = inlineParser,
+            referenceRevision = referenceRevision,
+            stablePrefixEnd = stablePrefixEnd,
+            sourceLength = sourceLength,
+            inlineStats = inlineStats,
+        ).let { resolved ->
+            InlineHydration(
+                block = block.copy(children = resolved.nodes),
+                unresolvedReferenceLabels = resolved.unresolvedReferenceLabels,
+            )
+        }
+
+        is BlockNode.Heading -> resolveInlineChildren(
+            blockId = block.id,
+            topLevelBlockId = topLevelBlockId,
+            blockRange = block.range,
+            children = block.children,
+            inlineParser = inlineParser,
+            referenceRevision = referenceRevision,
+            stablePrefixEnd = stablePrefixEnd,
+            sourceLength = sourceLength,
+            inlineStats = inlineStats,
+        ).let { resolved ->
+            InlineHydration(
+                block = block.copy(children = resolved.nodes),
+                unresolvedReferenceLabels = resolved.unresolvedReferenceLabels,
+            )
+        }
+
+        is BlockNode.TableCell -> resolveInlineChildren(
+            blockId = block.id,
+            topLevelBlockId = topLevelBlockId,
+            blockRange = block.range,
+            children = block.children,
+            inlineParser = inlineParser,
+            referenceRevision = referenceRevision,
+            stablePrefixEnd = stablePrefixEnd,
+            sourceLength = sourceLength,
+            inlineStats = inlineStats,
+        ).let { resolved ->
+            InlineHydration(
+                block = block.copy(children = resolved.nodes),
+                unresolvedReferenceLabels = resolved.unresolvedReferenceLabels,
+            )
+        }
+
+        is BlockNode.BlockQuote -> {
+            val children = block.children.map {
+                hydrateInline(it, topLevelBlockId, inlineParser, referenceRevision, stablePrefixEnd, sourceLength, inlineStats)
+            }
+            InlineHydration(
+                block = block.copy(children = children.map { it.block }),
+                unresolvedReferenceLabels = children.flatMapTo(linkedSetOf()) { it.unresolvedReferenceLabels },
+            )
+        }
+
+        is BlockNode.ListBlock -> {
+            val items = block.items.map {
+                hydrateInline(it, topLevelBlockId, inlineParser, referenceRevision, stablePrefixEnd, sourceLength, inlineStats)
+            }
+            InlineHydration(
+                block = block.copy(items = items.map { it.block as BlockNode.ListItem }),
+                unresolvedReferenceLabels = items.flatMapTo(linkedSetOf()) { it.unresolvedReferenceLabels },
+            )
+        }
+
+        is BlockNode.ListItem -> {
+            val children = block.children.map {
+                hydrateInline(it, topLevelBlockId, inlineParser, referenceRevision, stablePrefixEnd, sourceLength, inlineStats)
+            }
+            InlineHydration(
+                block = block.copy(children = children.map { it.block }),
+                unresolvedReferenceLabels = children.flatMapTo(linkedSetOf()) { it.unresolvedReferenceLabels },
+            )
+        }
+
+        is BlockNode.TableBlock -> {
+            val header = hydrateInline(block.header, topLevelBlockId, inlineParser, referenceRevision, stablePrefixEnd, sourceLength, inlineStats)
+            val rows = block.rows.map {
+                hydrateInline(it, topLevelBlockId, inlineParser, referenceRevision, stablePrefixEnd, sourceLength, inlineStats)
+            }
+            InlineHydration(
+                block = block.copy(
+                    header = header.block as BlockNode.TableRow,
+                    rows = rows.map { it.block as BlockNode.TableRow },
+                ),
+                unresolvedReferenceLabels = buildSet {
+                    addAll(header.unresolvedReferenceLabels)
+                    rows.forEach { addAll(it.unresolvedReferenceLabels) }
+                },
+            )
+        }
+
+        is BlockNode.TableRow -> {
+            val cells = block.cells.map {
+                hydrateInline(it, topLevelBlockId, inlineParser, referenceRevision, stablePrefixEnd, sourceLength, inlineStats)
+            }
+            InlineHydration(
+                block = block.copy(cells = cells.map { it.block as BlockNode.TableCell }),
+                unresolvedReferenceLabels = cells.flatMapTo(linkedSetOf()) { it.unresolvedReferenceLabels },
+            )
+        }
 
         is BlockNode.Document,
         is BlockNode.FencedCodeBlock,
         is BlockNode.RawTextBlock,
         is BlockNode.ThematicBreak,
         is BlockNode.UnsupportedBlock,
-        -> block
+        -> InlineHydration(block = block, unresolvedReferenceLabels = emptySet())
     }
 
     private fun resolveInlineChildren(
         blockId: BlockId,
+        topLevelBlockId: BlockId,
         blockRange: TextRange,
         children: List<InlineNode>,
         inlineParser: InlineParser,
+        referenceRevision: Int,
         stablePrefixEnd: Int,
         sourceLength: Int,
         inlineStats: InlineResolutionStats,
-    ): List<InlineNode> {
-        val sourceText = children.singleOrNull() as? InlineNode.Text ?: return children
+    ): ResolvedInline {
+        val sourceText = children.singleOrNull() as? InlineNode.Text ?: return ResolvedInline(children, emptySet())
         val shouldParseNow = shouldParseInline(
             blockRange = blockRange,
             stablePrefixEnd = stablePrefixEnd,
             sourceLength = sourceLength,
         )
         if (!shouldParseNow) {
-            return children
+            return ResolvedInline(children, emptySet())
         }
 
         val cacheKey = InlineCacheKey(
             range = sourceText.range,
             literalHash = sourceText.literal.hashCode(),
+            referenceRevision = referenceRevision,
         )
         val cached = state.cacheState.inlineByBlockId[blockId.raw]
         if (cached?.key == cacheKey) {
             inlineStats.cacheHitBlockCount += 1
-            return cached.nodes
+            return ResolvedInline(cached.nodes, cached.unresolvedReferenceLabels)
         }
 
-        val parsedNodes = inlineParser.parse(
+        val parsed = inlineParser.parse(
             literal = sourceText.literal,
             range = sourceText.range,
         )
         inlineStats.parsedBlockCount += 1
         state.cacheState.inlineByBlockId[blockId.raw] = InlineCacheEntry(
             key = cacheKey,
-            nodes = parsedNodes,
+            nodes = parsed.nodes,
+            unresolvedReferenceLabels = parsed.unresolvedReferenceLabels,
         )
-        return parsedNodes
+        return ResolvedInline(
+            nodes = parsed.nodes,
+            unresolvedReferenceLabels = parsed.unresolvedReferenceLabels,
+        )
     }
 
     private fun shouldParseInline(blockRange: TextRange, stablePrefixEnd: Int, sourceLength: Int): Boolean {
@@ -409,11 +611,14 @@ internal class PlaceholderMarkdownEngine(
         is BlockNode.BlockQuote -> BlockIdentityKey(kind = "blockquote", start = block.range.start, discriminator = "container")
         is BlockNode.Document -> BlockIdentityKey(kind = "document", start = block.range.start, discriminator = "root")
         is BlockNode.FencedCodeBlock -> BlockIdentityKey(kind = "fenced-code", start = block.range.start, discriminator = block.infoString.orEmpty())
-        is BlockNode.Heading -> BlockIdentityKey(kind = "heading", start = block.range.start, discriminator = block.level.toString())
+        is BlockNode.Heading -> BlockIdentityKey(kind = "heading", start = block.range.start, discriminator = "${block.style}:${block.level}")
         is BlockNode.ListBlock -> BlockIdentityKey(kind = "list-block", start = block.range.start, discriminator = block.style.name)
         is BlockNode.ListItem -> BlockIdentityKey(kind = "list-item", start = block.range.start, discriminator = block.marker)
         is BlockNode.Paragraph -> BlockIdentityKey(kind = "paragraph", start = block.range.start, discriminator = "paragraph")
         is BlockNode.RawTextBlock -> BlockIdentityKey(kind = "raw-text", start = block.range.start, discriminator = block.literal.take(16))
+        is BlockNode.TableBlock -> BlockIdentityKey(kind = "table", start = block.range.start, discriminator = block.alignments.joinToString(separator = ","))
+        is BlockNode.TableCell -> BlockIdentityKey(kind = "table-cell", start = block.range.start, discriminator = block.range.endExclusive.toString())
+        is BlockNode.TableRow -> BlockIdentityKey(kind = "table-row", start = block.range.start, discriminator = block.isHeader.toString())
         is BlockNode.ThematicBreak -> BlockIdentityKey(kind = "thematic-break", start = block.range.start, discriminator = block.marker.filterNot(Char::isWhitespace))
         is BlockNode.UnsupportedBlock -> BlockIdentityKey(kind = "unsupported", start = block.range.start, discriminator = block.reason.orEmpty())
     }
@@ -492,5 +697,20 @@ internal class PlaceholderMarkdownEngine(
 
     private data class ReparsePlan(
         val dirtyStart: Int,
+    )
+
+    private data class ResolvedInline(
+        val nodes: List<InlineNode>,
+        val unresolvedReferenceLabels: Set<String>,
+    )
+
+    private data class InlineHydration(
+        val block: BlockNode,
+        val unresolvedReferenceLabels: Set<String>,
+    )
+
+    private data class HydratedTopLevelBlock(
+        val block: BlockNode,
+        val unresolvedReferenceLabels: Set<String>,
     )
 }

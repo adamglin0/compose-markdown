@@ -151,6 +151,9 @@ private fun BlockNode.debugShape(depth: Int): String {
 
         is BlockNode.Paragraph -> "${indent}paragraph(text=${children.inlineLiteral()})"
         is BlockNode.RawTextBlock -> "${indent}raw(${literal.replace("\n", "\\n")})"
+        is BlockNode.TableBlock -> "${indent}table(columns=${header.cells.size}, rows=${rows.size})"
+        is BlockNode.TableCell -> "${indent}cell(${children.inlineLiteral()})"
+        is BlockNode.TableRow -> "${indent}row(${cells.joinToString(separator = "|") { it.children.inlineLiteral() }})"
         is BlockNode.ThematicBreak -> "${indent}break($marker)"
         is BlockNode.UnsupportedBlock -> "${indent}unsupported(${literal.replace("\n", "\\n")})"
     }
@@ -161,6 +164,7 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.CodeSpan -> node.literal
         is InlineNode.Emphasis -> node.children.inlineLiteral()
         is InlineNode.HardBreak -> "\n"
+        is InlineNode.Image -> node.alt.inlineLiteral()
         is InlineNode.Link -> node.children.inlineLiteral()
         is InlineNode.SoftBreak -> "\n"
         is InlineNode.Strikethrough -> node.children.inlineLiteral()

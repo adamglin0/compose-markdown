@@ -34,6 +34,16 @@ sealed interface InlineNode {
         val destination: String,
         val title: String?,
         val children: List<InlineNode>,
+        val referenceLabel: String? = null,
+    ) : InlineNode
+
+    data class Image(
+        override val id: InlineId,
+        override val range: TextRange,
+        val destination: String,
+        val title: String?,
+        val alt: List<InlineNode>,
+        val referenceLabel: String? = null,
     ) : InlineNode
 
     data class SoftBreak(

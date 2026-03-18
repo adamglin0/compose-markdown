@@ -1,12 +1,17 @@
 package dev.markstream.core.block
 
+import dev.markstream.core.dialect.MarkdownDialect
+import dev.markstream.core.internal.LinkReferenceDefinition
 import dev.markstream.core.internal.OpenBlockFrame
 import dev.markstream.core.model.BlockId
 import dev.markstream.core.model.BlockNode
+import dev.markstream.core.model.HeadingStyle
 import dev.markstream.core.model.InlineId
 import dev.markstream.core.model.InlineNode
 import dev.markstream.core.model.LineRange
 import dev.markstream.core.model.ListStyle
+import dev.markstream.core.model.TableAlignment
+import dev.markstream.core.model.TaskState
 import dev.markstream.core.model.TextRange
 import dev.markstream.core.source.LineIndex
 import dev.markstream.core.source.SourceBuffer
@@ -14,6 +19,7 @@ import dev.markstream.core.source.SourceBuffer
 internal class BlockParser(
     private val sourceBuffer: SourceBuffer,
     private val lineIndex: LineIndex,
+    private val dialect: MarkdownDialect,
     private val allocateBlockId: (kind: String, start: Int, discriminator: String) -> BlockId,
 ) {
     fun parse(
@@ -22,7 +28,12 @@ internal class BlockParser(
     ): BlockParseResult {
         val source = sourceBuffer.snapshot()
         if (source.isEmpty() || range.isEmpty) {
-            return BlockParseResult(blocks = emptyList(), openBlockStack = emptyList(), processedLineCount = 0)
+            return BlockParseResult(
+                blocks = emptyList(),
+                openBlockStack = emptyList(),
+                processedLineCount = 0,
+                parsedDefinitions = emptyMap(),
+            )
         }
 
         val lines = lineIndex.lines(
@@ -42,10 +53,12 @@ internal class BlockParser(
             )
         }
         val session = ParserSession(isFinal = isFinal)
+        val blocks = session.parseBlocks(lines = lines)
         return BlockParseResult(
-            blocks = session.parseBlocks(lines = lines),
+            blocks = blocks,
             openBlockStack = session.openFrames.toList(),
             processedLineCount = lines.size,
+            parsedDefinitions = session.parsedDefinitions,
         )
     }
 
@@ -54,6 +67,7 @@ internal class BlockParser(
     ) {
         private val frameStack: MutableList<OpenBlockFrame> = mutableListOf()
         val openFrames: MutableList<OpenBlockFrame> = mutableListOf()
+        val parsedDefinitions: MutableMap<String, LinkReferenceDefinition> = linkedMapOf()
 
         fun parseBlocks(lines: List<ParserLine>): List<BlockNode> {
             val blocks = mutableListOf<BlockNode>()
@@ -101,7 +115,7 @@ internal class BlockParser(
                 val heading = matchAtxHeading(content = trimmed)
                 if (heading != null) {
                     blocks += BlockNode.Heading(
-                        id = allocateBlockId("heading", line.range.start, heading.level.toString()),
+                        id = allocateBlockId("heading", line.range.start, "atx-${heading.level}"),
                         range = line.range,
                         lineRange = line.lineRange,
                         level = heading.level,
@@ -109,8 +123,30 @@ internal class BlockParser(
                             literal = heading.content,
                             range = heading.contentRange(line = line),
                         ),
+                        style = HeadingStyle.Atx,
                     )
                     index += 1
+                    continue
+                }
+
+                val definition = parseReferenceDefinition(line)
+                if (definition != null) {
+                    parsedDefinitions.putIfAbsent(definition.label, definition)
+                    index += 1
+                    continue
+                }
+
+                val tableBlock = parseTable(lines = lines, startIndex = index)
+                if (tableBlock != null) {
+                    blocks += tableBlock.block
+                    index = tableBlock.nextIndex
+                    continue
+                }
+
+                val setextHeading = parseSetextHeading(lines = lines, startIndex = index)
+                if (setextHeading != null) {
+                    blocks += setextHeading.block
+                    index = setextHeading.nextIndex
                     continue
                 }
 
@@ -138,6 +174,9 @@ internal class BlockParser(
         }
 
         private fun parseFencedCodeBlock(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
+            if (!dialect.blockFeatures.fencedCodeBlocks) {
+                return null
+            }
             val opener = matchFence(content = lines[startIndex].content) ?: return null
             var index = startIndex + 1
             var isClosed = false
@@ -175,6 +214,9 @@ internal class BlockParser(
         }
 
         private fun parseBlockQuote(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
+            if (!dialect.blockFeatures.blockQuotes) {
+                return null
+            }
             val first = stripBlockQuote(line = lines[startIndex]) ?: return null
             val quoteLines = mutableListOf(first)
             var index = startIndex + 1
@@ -216,6 +258,9 @@ internal class BlockParser(
         }
 
         private fun parseListBlock(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
+            if (!dialect.blockFeatures.lists) {
+                return null
+            }
             val firstMarker = matchListMarker(content = lines[startIndex].content) ?: return null
             val items = mutableListOf<BlockNode.ListItem>()
             var index = startIndex
@@ -224,65 +269,68 @@ internal class BlockParser(
             withFrame(marker = "list-${firstMarker.style.name.lowercase()}", startOffset = lines[startIndex].range.start) {
                 while (index < lines.size) {
                     val marker = matchListMarker(content = lines[index].content) ?: break
-                    if (marker.style != firstMarker.style) {
+                    if (marker.style != firstMarker.style || marker.indent != firstMarker.indent) {
                         break
                     }
 
                     val itemStartLine = lines[index]
-                    val itemLines = mutableListOf<ParserLine>()
-                    itemLines += lines[index].copy(
+                    val firstContent = lines[index].copy(
                         content = marker.content,
                         contentRange = TextRange(
                             start = (lines[index].contentRange.start + marker.contentIndent).coerceAtMost(lines[index].contentRange.endExclusive),
                             endExclusive = lines[index].contentRange.endExclusive,
                         ),
                     )
+                    val taskMatch = matchTaskMarker(firstContent)
+                    val normalizedFirstContent = taskMatch?.strippedLine ?: firstContent
                     index += 1
 
-                    withFrame(marker = "list-item", startOffset = itemStartLine.range.start) {
-                        var children = emptyList<BlockNode>()
-                        while (index < lines.size) {
-                            val current = lines[index]
-                            if (current.isBlank) {
-                                itemLines += current.copy(content = "", contentRange = TextRange(start = current.range.start, endExclusive = current.range.start))
-                                isLoose = true
-                                index += 1
-                                continue
-                            }
+                    val itemLines = mutableListOf<ParserLine>()
+                    itemLines += normalizedFirstContent
 
-                            val nextMarker = matchListMarker(content = current.content)
-                            if (nextMarker != null && nextMarker.style == firstMarker.style) {
-                                break
-                            }
+                    while (index < lines.size) {
+                        val current = lines[index]
+                        if (current.isBlank) {
+                            itemLines += current.copy(content = "", contentRange = TextRange(start = current.range.start, endExclusive = current.range.start))
+                            isLoose = true
+                            index += 1
+                            continue
+                        }
 
-                            if (current.leadingSpaces >= marker.contentIndent) {
-                                itemLines += current.copy(
-                                    content = current.content.drop(marker.contentIndent),
-                                    contentRange = TextRange(
-                                        start = (current.contentRange.start + marker.contentIndent).coerceAtMost(current.contentRange.endExclusive),
-                                        endExclusive = current.contentRange.endExclusive,
-                                    ),
-                                )
-                                index += 1
-                                continue
-                            }
-
+                        val siblingMarker = matchListMarker(content = current.content)
+                        if (siblingMarker != null && siblingMarker.style == firstMarker.style && siblingMarker.indent == firstMarker.indent) {
                             break
                         }
 
-                        val meaningfulLines = itemLines.trimTrailingBlankLines()
-                        children = parseBlocks(lines = meaningfulLines)
-                        if (!isFinal && index == lines.size) {
-                            rememberOpenFrames()
+                        val continuationIndent = firstMarker.contentIndent + firstMarker.indent
+                        if (current.leadingSpaces >= continuationIndent) {
+                            itemLines += current.copy(
+                                content = current.content.drop(continuationIndent),
+                                contentRange = TextRange(
+                                    start = (current.contentRange.start + continuationIndent).coerceAtMost(current.contentRange.endExclusive),
+                                    endExclusive = current.contentRange.endExclusive,
+                                ),
+                            )
+                            index += 1
+                            continue
                         }
-                        items += BlockNode.ListItem(
-                            id = allocateBlockId("list-item", itemStartLine.range.start, marker.marker),
-                            range = meaningfulLines.combinedRange(),
-                            lineRange = meaningfulLines.combinedLineRange(),
-                            marker = marker.marker,
-                            children = children,
-                        )
+
+                        break
                     }
+
+                    val meaningfulLines = itemLines.trimTrailingBlankLines()
+                    val children = parseBlocks(lines = meaningfulLines)
+                    if (!isFinal && index == lines.size) {
+                        rememberOpenFrames()
+                    }
+                    items += BlockNode.ListItem(
+                        id = allocateBlockId("list-item", itemStartLine.range.start, marker.marker),
+                        range = meaningfulLines.combinedRange(),
+                        lineRange = meaningfulLines.combinedLineRange(),
+                        marker = marker.marker,
+                        children = children,
+                        taskState = taskMatch?.state,
+                    )
 
                     while (index < lines.size && lines[index].isBlank) {
                         index += 1
@@ -317,6 +365,101 @@ internal class BlockParser(
             )
         }
 
+        private fun parseTable(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
+            if (!dialect.blockFeatures.tables || startIndex + 1 >= lines.size) {
+                return null
+            }
+            val headerLine = lines[startIndex]
+            val delimiterLine = lines[startIndex + 1]
+            if (!looksLikeTableRow(headerLine.content) || !isTableDelimiterRow(delimiterLine.content)) {
+                return null
+            }
+
+            val headerCells = splitTableCells(headerLine)
+            val alignments = parseTableAlignments(delimiterLine.content)
+            if (headerCells.isEmpty() || alignments.isEmpty()) {
+                return null
+            }
+            val normalizedColumnCount = maxOf(headerCells.size, alignments.size)
+            var index = startIndex + 2
+            val rows = mutableListOf<BlockNode.TableRow>()
+            while (index < lines.size) {
+                val line = lines[index]
+                if (line.isBlank || !looksLikeTableRow(line.content) || startsBlock(line.content)) {
+                    break
+                }
+                val cells = splitTableCells(line).padTo(normalizedColumnCount, line)
+                rows += createTableRow(line = line, cells = cells, isHeader = false)
+                index += 1
+            }
+
+            val consumed = lines.subList(startIndex, index)
+            return ParsedBlock(
+                block = BlockNode.TableBlock(
+                    id = allocateBlockId("table", headerLine.range.start, normalizedColumnCount.toString()),
+                    range = consumed.combinedRange(),
+                    lineRange = consumed.combinedLineRange(),
+                    header = createTableRow(
+                        line = headerLine,
+                        cells = headerCells.padTo(normalizedColumnCount, headerLine),
+                        isHeader = true,
+                    ),
+                    alignments = alignments.padTo(normalizedColumnCount, TableAlignment.Default),
+                    rows = rows,
+                ),
+                nextIndex = index,
+            )
+        }
+
+        private fun parseSetextHeading(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
+            if (!dialect.blockFeatures.setextHeadings || startIndex + 1 >= lines.size) {
+                return null
+            }
+            var index = startIndex
+            while (index + 1 < lines.size) {
+                val line = lines[index]
+                if (line.isBlank) {
+                    return null
+                }
+                if (index > startIndex && startsBlock(line.content)) {
+                    return null
+                }
+                if (
+                    dialect.blockFeatures.tables &&
+                    index == startIndex &&
+                    looksLikeTableRow(lines[startIndex].content) &&
+                    isTableDelimiterRow(lines[index + 1].content)
+                ) {
+                    return null
+                }
+                val underline = matchSetextUnderline(lines[index + 1].content)
+                if (underline != null) {
+                    val contentLines = lines.subList(startIndex, index + 1)
+                    if (startsBlock(contentLines.first().content)) {
+                        return null
+                    }
+                    val content = trimLiteralWithRange(
+                        literal = contentLines.joinToString(separator = "\n") { it.content },
+                        range = contentLines.combinedContentRange(),
+                    )
+                    val consumed = lines.subList(startIndex, index + 2)
+                    return ParsedBlock(
+                        block = BlockNode.Heading(
+                            id = allocateBlockId("heading", contentLines.first().range.start, "setext-${underline.level}"),
+                            range = consumed.combinedRange(),
+                            lineRange = consumed.combinedLineRange(),
+                            level = underline.level,
+                            children = inlineTextNodes(content.literal, content.range),
+                            style = HeadingStyle.Setext,
+                        ),
+                        nextIndex = index + 2,
+                    )
+                }
+                index += 1
+            }
+            return null
+        }
+
         private fun parseParagraphEnd(lines: List<ParserLine>, startIndex: Int): Int {
             var index = startIndex
             while (index < lines.size) {
@@ -327,6 +470,15 @@ internal class BlockParser(
                 if (index > startIndex && startsBlock(content = current.content)) {
                     break
                 }
+                if (
+                    dialect.blockFeatures.tables &&
+                    index == startIndex &&
+                    index + 1 < lines.size &&
+                    looksLikeTableRow(lines[startIndex].content) &&
+                    isTableDelimiterRow(lines[index + 1].content)
+                ) {
+                    break
+                }
                 index += 1
             }
             return index
@@ -334,9 +486,9 @@ internal class BlockParser(
 
         private fun startsBlock(content: String): Boolean {
             val trimmed = content.trimStart()
-            return matchFence(content = trimmed) != null ||
-                stripBlockQuote(line = ParserLine.empty(content = content)) != null ||
-                matchListMarker(content = content) != null ||
+            return (dialect.blockFeatures.fencedCodeBlocks && matchFence(content = trimmed) != null) ||
+                (dialect.blockFeatures.blockQuotes && stripBlockQuote(line = ParserLine.empty(content = content)) != null) ||
+                (dialect.blockFeatures.lists && matchListMarker(content = content) != null) ||
                 matchAtxHeading(content = trimmed) != null ||
                 isThematicBreak(content = trimmed)
         }
@@ -350,6 +502,150 @@ internal class BlockParser(
                     id = inlineId(range = range, salt = literal.hashCode().toLong()),
                     range = range,
                     literal = literal,
+                ),
+            )
+        }
+
+        private fun createTableRow(line: ParserLine, cells: List<TableCellDraft>, isHeader: Boolean): BlockNode.TableRow {
+            return BlockNode.TableRow(
+                id = allocateBlockId("table-row", line.range.start, if (isHeader) "header" else "row"),
+                range = line.range,
+                lineRange = line.lineRange,
+                cells = cells.mapIndexed { index, cell ->
+                    BlockNode.TableCell(
+                        id = allocateBlockId("table-cell", cell.range.start, "${line.range.start}:$index"),
+                        range = cell.range,
+                        lineRange = line.lineRange,
+                        children = inlineTextNodes(cell.literal, cell.range),
+                    )
+                },
+                isHeader = isHeader,
+            )
+        }
+
+        private fun splitTableCells(line: ParserLine): List<TableCellDraft> {
+            val contentStart = line.content.indexOfFirst { !it.isWhitespace() }
+            if (contentStart == -1) {
+                return emptyList()
+            }
+            val contentEndExclusive = line.content.indexOfLast { !it.isWhitespace() } + 1
+            val compact = line.content.substring(contentStart, contentEndExclusive)
+            if (!compact.contains('|')) {
+                return emptyList()
+            }
+            val rawStart = contentStart + if (compact.startsWith("|")) 1 else 0
+            val rawEndExclusive = contentEndExclusive - if (compact.endsWith("|")) 1 else 0
+            val raw = line.content.substring(rawStart, rawEndExclusive)
+            val parts = raw.split('|')
+            var cursor = line.contentRange.start + rawStart
+            return parts.map { part ->
+                val leadingTrim = part.indexOfFirst { !it.isWhitespace() }.let { if (it == -1) part.length else it }
+                val trailingTrimExclusive = part.indexOfLast { !it.isWhitespace() }
+                    .let { if (it == -1) leadingTrim else it + 1 }
+                val start = (cursor + leadingTrim).coerceAtMost(line.contentRange.endExclusive)
+                val end = (cursor + trailingTrimExclusive).coerceIn(start, line.contentRange.endExclusive)
+                val cell = TableCellDraft(
+                    literal = part.substring(leadingTrim, trailingTrimExclusive),
+                    range = TextRange(start = start, endExclusive = end),
+                )
+                cursor += part.length + 1
+                cell
+            }
+        }
+
+        private fun looksLikeTableRow(content: String): Boolean = content.contains('|') && !content.trim().startsWith('>')
+
+        private fun isTableDelimiterRow(content: String): Boolean {
+            val compact = content.trim().removePrefix("|").removeSuffix("|")
+            if (!compact.contains('|') && compact.count { it == '-' || it == ':' || it.isWhitespace() } == compact.length) {
+                return compact.trim().length >= 3
+            }
+            val parts = compact.split('|')
+            return parts.isNotEmpty() && parts.all { part ->
+                val trimmed = part.trim()
+                trimmed.length >= 3 && trimmed.all { it == '-' || it == ':' }
+            }
+        }
+
+        private fun parseTableAlignments(content: String): List<TableAlignment> {
+            val compact = content.trim().removePrefix("|").removeSuffix("|")
+            val parts = compact.split('|')
+            return parts.mapNotNull { part ->
+                val trimmed = part.trim()
+                if (trimmed.length < 3 || trimmed.any { it != '-' && it != ':' }) {
+                    null
+                } else {
+                    when {
+                        trimmed.startsWith(':') && trimmed.endsWith(':') -> TableAlignment.Center
+                        trimmed.startsWith(':') -> TableAlignment.Left
+                        trimmed.endsWith(':') -> TableAlignment.Right
+                        else -> TableAlignment.Default
+                    }
+                }
+            }
+        }
+
+        private fun parseReferenceDefinition(line: ParserLine): LinkReferenceDefinition? {
+            if (!dialect.inlineFeatures.referenceLinks) {
+                return null
+            }
+            val trimmed = line.content.trimStart()
+            if (!trimmed.startsWith('[')) {
+                return null
+            }
+            val labelEnd = trimmed.indexOf(']')
+            if (labelEnd <= 1 || trimmed.getOrNull(labelEnd + 1) != ':' ) {
+                return null
+            }
+            val label = normalizeReferenceLabel(trimmed.substring(1, labelEnd)) ?: return null
+            val remainder = trimmed.substring(labelEnd + 2).trim()
+            if (remainder.isEmpty()) {
+                return null
+            }
+            val destination = remainder.substringBefore(' ').trim().trim('<', '>')
+            if (destination.isEmpty()) {
+                return null
+            }
+            val title = remainder.removePrefix(destination).trim().trim().takeIf { it.isNotEmpty() }?.trim('"', '\'')
+            return LinkReferenceDefinition(
+                label = label,
+                destination = destination,
+                title = title,
+                range = line.range,
+            )
+        }
+
+        private fun matchSetextUnderline(content: String): SetextUnderlineMatch? {
+            val trimmed = content.trim()
+            if (trimmed.length < 3) {
+                return null
+            }
+            return when {
+                trimmed.all { it == '=' } -> SetextUnderlineMatch(level = 1)
+                trimmed.all { it == '-' } -> SetextUnderlineMatch(level = 2)
+                else -> null
+            }
+        }
+
+        private fun matchTaskMarker(line: ParserLine): TaskMarkerMatch? {
+            if (!dialect.blockFeatures.taskListItems) {
+                return null
+            }
+            val content = line.content
+            if (content.length < 4 || content[0] != '[' || content[2] != ']' || content[3] != ' ') {
+                return null
+            }
+            val state = when (content[1]) {
+                ' ', '\t' -> TaskState.Unchecked
+                'x', 'X' -> TaskState.Checked
+                else -> return null
+            }
+            val contentStart = (line.contentRange.start + 4).coerceAtMost(line.contentRange.endExclusive)
+            return TaskMarkerMatch(
+                state = state,
+                strippedLine = line.copy(
+                    content = content.drop(4),
+                    contentRange = TextRange(start = contentStart, endExclusive = line.contentRange.endExclusive),
                 ),
             )
         }
@@ -441,6 +737,7 @@ internal class BlockParser(
                 marker = trimmed.substring(0, 1),
                 content = trimmed.drop(2),
                 contentIndent = 2,
+                indent = indent,
             )
         }
 
@@ -463,10 +760,14 @@ internal class BlockParser(
             marker = trimmed.substring(0, digitsEnd + 1),
             content = trimmed.drop(digitsEnd + 2),
             contentIndent = digitsEnd + 2,
+            indent = indent,
         )
     }
 
     private fun matchAtxHeading(content: String): HeadingMatch? {
+        if (!dialect.blockFeatures.atxHeadings) {
+            return null
+        }
         val markerLength = content.takeWhile { it == '#' }.length
         if (markerLength !in 1..6 || content.getOrNull(markerLength) != ' ') {
             return null
@@ -484,12 +785,21 @@ internal class BlockParser(
         }
         return compact.all { it == compact.first() } && compact.first() in charArrayOf('-', '*', '_')
     }
+
+    private fun normalizeReferenceLabel(raw: String): String? {
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) {
+            return null
+        }
+        return trimmed.split(REFERENCE_WHITESPACE).filter { it.isNotEmpty() }.joinToString(" ").lowercase()
+    }
 }
 
 internal data class BlockParseResult(
     val blocks: List<BlockNode>,
     val openBlockStack: List<OpenBlockFrame>,
     val processedLineCount: Int,
+    val parsedDefinitions: Map<String, LinkReferenceDefinition>,
 )
 
 internal data class ParserLine(
@@ -532,6 +842,7 @@ private data class ListMarkerMatch(
     val marker: String,
     val content: String,
     val contentIndent: Int,
+    val indent: Int,
 )
 
 private data class HeadingMatch(
@@ -545,6 +856,25 @@ private data class HeadingMatch(
         return TextRange(start = contentStart, endExclusive = contentEnd)
     }
 }
+
+private data class SetextUnderlineMatch(
+    val level: Int,
+)
+
+private data class TaskMarkerMatch(
+    val state: TaskState,
+    val strippedLine: ParserLine,
+)
+
+private data class TableCellDraft(
+    val literal: String,
+    val range: TextRange,
+)
+
+private data class LiteralWithRange(
+    val literal: String,
+    val range: TextRange,
+)
 
 private fun List<ParserLine>.trimTrailingBlankLines(): List<ParserLine> {
     var endExclusive = size
@@ -568,3 +898,45 @@ private fun List<ParserLine>.combinedContentRange(): TextRange = TextRange(
     start = first().contentRange.start,
     endExclusive = last().contentRange.endExclusive,
 )
+
+private fun trimLiteralWithRange(literal: String, range: TextRange): LiteralWithRange {
+    if (literal.isEmpty()) {
+        return LiteralWithRange(literal = literal, range = range)
+    }
+    val firstContentIndex = literal.indexOfFirst { !it.isWhitespace() }
+    if (firstContentIndex == -1) {
+        return LiteralWithRange(
+            literal = "",
+            range = TextRange(start = range.endExclusive, endExclusive = range.endExclusive),
+        )
+    }
+    val lastContentIndex = literal.indexOfLast { !it.isWhitespace() }
+    return LiteralWithRange(
+        literal = literal.substring(firstContentIndex, lastContentIndex + 1),
+        range = TextRange(
+            start = range.start + firstContentIndex,
+            endExclusive = range.start + lastContentIndex + 1,
+        ),
+    )
+}
+
+private fun List<TableCellDraft>.padTo(size: Int, line: ParserLine): List<TableCellDraft> {
+    if (this.size >= size) {
+        return this
+    }
+    return this + List(size - this.size) {
+        TableCellDraft(
+            literal = "",
+            range = TextRange(start = line.contentRange.endExclusive, endExclusive = line.contentRange.endExclusive),
+        )
+    }
+}
+
+private fun <T> List<T>.padTo(size: Int, element: T): List<T> {
+    if (this.size >= size) {
+        return this
+    }
+    return this + List(size - this.size) { element }
+}
+
+private val REFERENCE_WHITESPACE: Regex = Regex("\\s+")

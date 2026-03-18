@@ -1,147 +1,61 @@
 # Dialect Matrix
 
-The repository follows a three-step dialect strategy instead of trying to ship full compatibility at once.
+This repository now ships three concrete presets on top of the same append-only, snapshot-based core engine.
 
-The route below describes the planned dialect surface, and the current repository checkpoint is Stage 5: append-only incremental parsing for ChatFast.
-
-## Dialect Route
+## Preset Intent
 
 ### `ChatFast`
 
-The default dialect for v0 and the first implementation target.
-
-Focus:
-
-- predictable parsing,
-- low invalidation cost under append-only streaming,
-- good results for LLM-generated chat content,
-- graceful fallback when syntax is unsupported or incomplete.
+- default preset for streaming chat output
+- favors low-latency append behavior and graceful fallback
+- raw HTML stays disabled
+- reference-style links are off by default
 
 ### `CommonMarkCore`
 
-The second dialect target.
-
-Focus:
-
-- cover the CommonMark behaviors that users broadly expect,
-- tighten edge-case behavior,
-- preserve the incremental architecture instead of bypassing it.
+- tighter CommonMark-oriented preset without enabling GitHub-only block syntax
+- raw HTML still disabled in this repository checkpoint
+- reference-style links and definitions are enabled
 
 ### `GfmCompat`
 
-The third dialect target.
-
-Focus:
-
-- targeted GitHub-style extensions,
-- opt-in compatibility features,
-- explicit feature-specific invalidation rules.
-
-## ChatFast v0 Target Boundary
-
-### Supported In Scope
-
-- paragraph
-- ATX headings
-- fenced code blocks
-- block quotes
-- ordered and unordered lists
-- inline code
-- emphasis
-- strong
-- inline links
-- autolinks
-- strikethrough
-- hard breaks
-- soft breaks
-
-## Current Stage 5 Implementation Boundary
-
-Stage 5 keeps the Stage 4 ChatFast parse surface and adds append-only incremental reparsing, dirty-region tracking, parse deltas, and cache reuse.
-
-### Implemented Now
-
-- paragraph
-- ATX headings
-- fenced code blocks
-- block quotes
-- ordered and unordered lists
-- list items
-- thematic breaks
-- blank-line paragraph termination
-- inline code span
-- emphasis / strong
-- inline links (`[text](url)`)
-- autolinks (`<https://...>` and bare `http(s)://...` heuristic)
-- strikethrough (`~~`)
-- backslash escapes
-- hard breaks and soft breaks
-- append-only dirty-region tracking
-- block-level parse delta emission
-- stable prefix reuse with mutable-tail reparsing
-- block cache reuse and inline cache reuse
-
-### Known Limitations In Stage 5
-
-- emphasis delimiter flanking rules are simplified and do not yet match full CommonMark edge behavior
-- nested bracket/parenthesis handling in links targets common chat cases, not full spec corner cases
-- link titles and reference-style links are not supported
-- autolink detection is heuristic and intentionally conservative for chat streaming stability
-- underscore emphasis inside words may parse differently from CommonMark in some edge cases
-- parser stability is prioritized over exact compatibility for incomplete tail tokens during streaming
-- append-only reparsing is localized, but snapshot rebuild and cache-table refresh still include O(n) bookkeeping over top-level blocks
-
-### Supported With Deliberate Simplicity
-
-- lists prioritize chat-style common cases over every CommonMark corner case
-- autolinks prioritize angle-bracket links and bare `http://` or `https://` URL heuristics
-- block quotes and lists may use conservative continuation rules in v0
-- incomplete delimiters remain displayable as plain text or provisional syntax until later input resolves them
-
-### Deferred Or Out Of Scope For ChatFast v0
-
-- raw HTML
-- reference-style links
-- setext headings
-- images beyond simple future planning
-- footnotes
-- tables
-- task lists
-- HTML blocks
-- link reference definitions
-- full email autolink coverage
-
-## Graceful Degradation Rule
-
-Unsupported syntax must degrade to plain text or simpler block structure. It must not crash the parser and must not force whole-document invalidation by default.
+- compatibility-oriented preset for common GitHub-flavored content
+- keeps the same append-only engine model
+- enables tables, task lists, and strikethrough
 
 ## Feature Matrix
 
-| Feature | Current Repo (Stage 5) | ChatFast v0 Target | CommonMarkCore | GfmCompat | Notes |
-| --- | --- | --- | --- | --- | --- |
-| Paragraphs | Yes | Yes | Yes | Yes | Baseline block support |
-| ATX headings | Yes | Yes | Yes | Yes | Included in block parser MVP |
-| Setext headings | No | No | Planned | Planned | Deferred due to backward dependency on prior line |
-| Fenced code blocks | Yes | Yes | Yes | Yes | High priority for chat output |
-| Indented code blocks | No | No | Planned | Planned | Lower priority in chat scenarios |
-| Block quotes | Yes | Yes | Yes | Yes | Conservative continuation rules first |
-| Lists | Yes | Yes | Yes | Yes | ChatFast favors common cases over edge cases |
-| Thematic breaks | Yes | Route not frozen | Planned | Planned | Implemented in the Stage 3 block parser MVP |
-| Inline code | Yes | Yes | Yes | Yes | Implemented in InlineParser MVP |
-| Emphasis / strong | Yes | Yes | Yes | Yes | Simplified delimiter rules remain in Stage 5 |
-| Inline links | Yes | Yes | Yes | Yes | Reference links deferred |
-| Reference links | No | No | Planned | Planned | Needs future dependency tracking |
-| Autolinks | Yes | Yes | Yes | Yes | Includes angle autolinks + bare URL heuristic |
-| Strikethrough | Yes | Yes | No | Planned | ChatFast keeps it because chat content uses it often |
-| Hard / soft breaks | Yes | Yes | Yes | Yes | Important for streaming chat display |
-| Dirty-region tracking | Yes | Yes | N/A | N/A | Append-only incremental engine reports reparsed source range |
-| Parse deltas | Yes | Yes | N/A | N/A | Block-level inserted/updated/removed IDs for UI/debug surfaces |
-| Block and inline cache reuse | Yes | Yes | N/A | N/A | Stable prefix and mutable-tail reuse in the Stage 5 engine |
-| Raw HTML | No | No | Optional later | Optional later | Disabled by default |
-| Tables | No | No | No | Planned | Requires wider invalidation rules |
-| Task lists | No | No | No | Planned | GFM extension only |
-| Footnotes | No | No | No | Planned | Low priority |
+| Feature | ChatFast | CommonMarkCore | GfmCompat | Notes |
+| --- | --- | --- | --- | --- |
+| Paragraphs | Yes | Yes | Yes | Baseline block support |
+| ATX headings | Yes | Yes | Yes | Shared core block parser |
+| Setext headings | Yes | Yes | Yes | Uses a one-block retroactive invalidation window |
+| Fenced code blocks | Yes | Yes | Yes | Streaming-safe open fence handling remains supported |
+| Block quotes | Yes | Yes | Yes | Quote/list boundaries stay localized to affected containers |
+| Ordered / unordered lists | Yes | Yes | Yes | List continuation and sibling boundaries are corrected conservatively |
+| Task list items | Yes | No | Yes | `ChatFast` keeps them because chat output uses them often |
+| Tables | Yes | No | Yes | `CommonMarkCore` leaves them disabled; `ChatFast`/`GfmCompat` use a minimal retroactive table window |
+| Thematic breaks | Yes | Yes | Yes | Parsed as dedicated block nodes |
+| Inline code | Yes | Yes | Yes | Shared inline parser |
+| Emphasis / strong | Yes | Yes | Yes | Delimiter rules still target common cases first |
+| Strikethrough | Yes | No | Yes | CommonMark core preset keeps this off |
+| Inline links | Yes | Yes | Yes | `[text](url)` |
+| Reference-style links | No | Yes | Yes | Dependency index powers late-definition resolution |
+| Reference definitions | No | Yes | Yes | Definitions are non-rendering and update only dependent blocks |
+| Autolinks / bare URLs | Yes | Yes | Yes | Conservative URL heuristics stay in place |
+| Images | Yes | Yes | Yes | Parsed as inline nodes only; renderer currently falls back to alt text |
+| Raw HTML | No | No | No | Explicitly disabled, with plain-text fallback |
 
-## Current Stop Point
+## Incremental Invalidation Rules
 
-The repository is currently at the Stage 5 checkpoint. Remaining work shifts to renderer integration, sample polish, benchmarks, and broader dialect compatibility rather than Stage 4 parsing completion.
+- setext headings: when a delimiter line arrives, the engine backs up to the previous top-level paragraph block instead of reparsing the whole document
+- tables: when a delimiter row arrives, the engine backs up to the previous top-level paragraph block and reinterprets it as a table header
+- quote/list continuation: when a new sibling line can extend the previous quote or list, the engine backs up to that previous top-level container only
+- reference definitions: the engine keeps `label -> definition` plus `unresolved label -> dependent top-level block IDs`; a newly arrived definition reparses only the affected preserved blocks
+
+## Deliberate Limits
+
+- raw HTML remains disabled for all presets; there is no partial HTML support path
+- table parsing currently targets common pipe-table syntax and lightweight rendering, not full layout fidelity
+- reference definitions are currently one-line definitions; unsupported variants degrade to plain text
+- image nodes are parsed, but Compose/sample rendering intentionally stays minimal for this stage
