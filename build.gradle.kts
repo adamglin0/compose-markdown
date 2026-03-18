@@ -1,0 +1,20 @@
+plugins {
+    alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.compose.multiplatform) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+}
+
+allprojects {
+    group = "dev.markstream"
+    version = "0.1.0-SNAPSHOT"
+}
+
+tasks.register("test") {
+    group = "verification"
+    description = "Runs all configured multiplatform test tasks."
+    dependsOn(
+        ":markdown-core:allTests",
+        ":markdown-compose:allTests",
+        ":sample-chat:allTests",
+    )
+}
