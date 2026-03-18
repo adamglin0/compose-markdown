@@ -2,13 +2,13 @@
 
 Planned home of the Compose Multiplatform rendering layer.
 
-Stage 1 status: Kotlin Multiplatform module initialized as a scaffold checkpoint with snapshot-driven placeholder Compose APIs on top of `markdown-core`.
+Stage 2 status: Kotlin Multiplatform module provides a snapshot-driven placeholder Compose surface on top of `markdown-core`.
 
 Current public shape:
 
 - render from `MarkdownSnapshot` via `Markdown(...)` or `MarkdownSnapshotView(...)`,
 - drive placeholder state through `rememberMarkdownState()` plus `append()` / `finish()` / `reset()`,
-- temporary Material3 styling is only for the Stage 1 placeholder renderer and is not a long-term API commitment.
+- temporary Material3 styling is only for the Stage 2 placeholder renderer and is not a long-term API commitment.
 
 Planned responsibilities:
 

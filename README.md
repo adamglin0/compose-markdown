@@ -64,12 +64,13 @@ The roadmap below describes the intended end-state for each stage. The current r
 
 - Stage 0: architecture, ADRs, dialect boundaries, incremental model, public API draft.
 - Stage 1: `SourceBuffer`, `LineIndex`, text ranges, stable block IDs, immutable document skeleton.
-- Stage 2: `BlockParser` for `ChatFast` v0 blocks.
-- Stage 3: `InlineParser` for `ChatFast` v0 inline syntax.
-- Stage 4: append-only `IncrementalEngine`, dirty-region tracking, parse deltas, cache reuse.
-- Stage 5: `RenderIR` and `markdown-compose` block-level rendering.
-- Stage 6: `sample-chat` demo plus first benchmark scenarios.
-- Stage 7: compatibility hardening, `CommonMarkCore`, then selected `GfmCompat` features.
+- Stage 2: core API, AST, range, stable IDs, snapshot model, dialect boundary, placeholder engine, tests, docs.
+- Stage 3: `BlockParser` for `ChatFast` v0 blocks.
+- Stage 4: `InlineParser` for `ChatFast` v0 inline syntax.
+- Stage 5: append-only `IncrementalEngine`, dirty-region tracking, parse deltas, cache reuse.
+- Stage 6: `RenderIR` and `markdown-compose` block-level rendering.
+- Stage 7: `sample-chat` demo plus first benchmark scenarios.
+- Stage 8: compatibility hardening, `CommonMarkCore`, then selected `GfmCompat` features.
 
 Each stage must define:
 
@@ -81,11 +82,10 @@ Each stage must define:
 
 ## Current Status
 
-This repository currently ships a Stage 1 scaffold checkpoint, not the full Stage 1 target from the roadmap.
+This repository currently ships a Stage 2 checkpoint for the immutable core API and placeholder engine boundary.
 
-- Roadmap Stage 1 target: `SourceBuffer`, `LineIndex`, text ranges, stable block IDs, and an immutable document skeleton.
-- Current checkpoint: placeholder document models, append/finalize placeholder engine behavior, snapshot-driven Compose rendering scaffolding, and a sample app that proves module wiring.
-- Not done yet: real Markdown parsing, incremental reparsing, production renderer behavior, or benchmark coverage.
+- Current checkpoint: range and ID models, immutable document / snapshot / delta types, dialect boundary, placeholder append-only engine, internal mutable session placeholders, snapshot-driven Compose rendering scaffolding, and model-focused tests.
+- Not done yet: real block parsing, real inline parsing, incremental cache reuse beyond placeholder ID reuse, production renderer behavior, or benchmark coverage.
 
 ## Project Structure
 
@@ -109,7 +109,7 @@ This repository currently ships a Stage 1 scaffold checkpoint, not the full Stag
 ```
 
 - `markdown-core`: Kotlin Multiplatform placeholder engine, immutable document model, and tests.
-- `markdown-compose`: snapshot-driven placeholder renderer built on top of `markdown-core`; Material3 is only a temporary Stage 1 scaffold styling choice.
+- `markdown-compose`: snapshot-driven placeholder renderer built on top of `markdown-core`; temporary Material3 styling only serves the Stage 2 placeholder surface and is not a long-term API commitment.
 - `sample-chat`: desktop-first sample app that wires input text into the placeholder renderer.
 - `docs`: Stage 0 architecture, ADRs, and API drafts preserved as the source of truth for later stages.
 
@@ -117,6 +117,7 @@ Start with:
 
 - `docs/architecture.md`
 - `docs/api-draft.md`
+- `docs/core-model.md`
 - `docs/dialect-matrix.md`
 - `docs/incremental-model.md`
 - `docs/roadmap.md`

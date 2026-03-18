@@ -7,10 +7,10 @@ object SampleChatDefaults {
     val initialMessage: String = """
         Welcome to markstream.
 
-        This Stage 1 scaffold checkpoint only proves the module wiring:
+        This Stage 2 placeholder checkpoint proves the current snapshot pipeline:
         - sample-chat depends on markdown-compose
         - markdown-compose depends on markdown-core
-        - the preview shows one plain-text placeholder block
+        - finish() produces the stable final snapshot shown in the preview
     """.trimIndent()
 
     fun placeholderSnapshot(

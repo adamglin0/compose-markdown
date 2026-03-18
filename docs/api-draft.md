@@ -1,6 +1,6 @@
 # Public API Draft
 
-This document freezes the intended public surface before implementation starts. Names can still receive small adjustments during Stage 1, but the boundary and object roles should remain stable.
+This document now reflects the Stage 2 core-model checkpoint. Names may still receive small adjustments later, but the boundary and object roles should remain stable.
 
 ## Design Rules
 
@@ -16,6 +16,8 @@ This document freezes the intended public surface before implementation starts. 
 package dev.markstream.core.api
 
 interface MarkdownEngine {
+    val dialect: MarkdownDialect
+
     fun append(chunk: String): ParseDelta
     fun finish(): ParseDelta
     fun snapshot(): MarkdownSnapshot
@@ -24,14 +26,16 @@ interface MarkdownEngine {
 
 data class MarkdownSnapshot(
     val version: Long,
+    val dialect: MarkdownDialect,
     val document: MarkdownDocument,
-    val stablePrefixEnd: Int,
+    val stablePrefixRange: TextRange,
     val dirtyRegion: TextRange,
     val isFinal: Boolean,
 )
 
 data class MarkdownDocument(
     val sourceLength: Int,
+    val lineCount: Int,
     val blocks: List<BlockNode>,
 )
 
@@ -39,9 +43,11 @@ data class ParseDelta(
     val version: Long,
     val changedBlocks: List<BlockChange>,
     val removedBlockIds: List<BlockId>,
-    val stablePrefixEnd: Int,
+    val stablePrefixRange: TextRange,
     val dirtyRegion: TextRange,
     val snapshot: MarkdownSnapshot,
+    val stats: ParseStats,
+    val hasStateChange: Boolean,
 )
 ```
 
@@ -59,6 +65,7 @@ data class ParseDelta(
 Represents the latest displayable state. It contains:
 
 - a monotonically increasing version,
+- the active dialect,
 - the immutable document,
 - the current stable prefix boundary,
 - the current dirty region,
@@ -75,6 +82,7 @@ Describes what changed after one append or finish operation:
 - updated or inserted blocks,
 - removed block IDs,
 - the dirty region used by incremental reparsing,
+- whether the operation changed externally observable engine state even when block diffs stayed empty,
 - the post-update snapshot.
 
 ## Additional Public Types
@@ -85,27 +93,51 @@ The following types are expected to be public in some form:
 @JvmInline
 value class BlockId(val raw: Long)
 
+@JvmInline
+value class InlineId(val raw: Long)
+
 data class TextRange(
     val start: Int,
     val endExclusive: Int,
 )
 
+data class LineRange(
+    val startLine: Int,
+    val endLineExclusive: Int,
+)
+
 data class BlockChange(
     val id: BlockId,
+    val oldIndex: Int?,
     val newIndex: Int,
     val block: BlockNode,
 )
+
+data class ParseStats(
+    val parsedBlockCount: Int,
+    val changedBlockCount: Int,
+    val reusedBlockCount: Int,
+)
 ```
 
-`BlockNode` and inline node shapes remain intentionally narrow in Stage 0. They will be specified more concretely when Stage 1 establishes the immutable core model.
+`BlockNode` now covers the Stage 2 minimum set: `Document`, `Paragraph`, `Heading`, `FencedCodeBlock`, `BlockQuote`, `ListBlock`, `ListItem`, `ThematicBreak`, `UnsupportedBlock`, and `RawTextBlock`.
+
+`InlineNode` now covers the Stage 2 minimum set: `Text`, `Emphasis`, `Strong`, `CodeSpan`, `Link`, `SoftBreak`, `HardBreak`, `Strikethrough`, and `UnsupportedInline`.
 
 ## API Invariants
 
 - `version` increases after every successful state mutation.
 - `snapshot()` is always safe to call after any `append()`.
-- `stablePrefixEnd` never moves backward unless `reset()` is called.
+- `stablePrefixRange` never moves backward unless `reset()` is called.
 - block IDs stay stable while a block's identity is preserved across reparses.
-- `dirtyRegion` is the smallest known invalidation window for the current dialect and feature set.
+- `hasStateChange` is true whenever the returned snapshot differs from the previous snapshot, including `finish()` transitions that only change `isFinal` or `stablePrefixRange`.
+- `dirtyRegion` covers the earliest source offset the current engine actually reparsed; the Stage 2 placeholder engine rebuilds the whole document, so any non-no-op rebuild reports `0..sourceLength`.
+- snapshots are safe for UI read access because they expose immutable values only.
+
+## Stage 2 Placeholder Metrics
+
+- `ParseDelta.changedBlocks` is reported at the top-level block list only; nested children are reflected through the replacement block payloads.
+- `ParseStats.parsedBlockCount`, `changedBlockCount`, and `reusedBlockCount` use the same top-level block granularity in the placeholder engine.
 
 ## Deferred Surface Area
 
@@ -118,6 +150,6 @@ Not part of the initial public API:
 - reference-link resolution hooks,
 - editor caret or selection models.
 
-## Stage 0 Stop Point
+## Stage 2 Stop Point
 
-This draft intentionally avoids finalizing every node subtype. Stage 1 may refine node names, but it must keep the engine-centered immutable boundary intact.
+Stage 2 freezes the immutable API boundary, the minimum block/inline node taxonomy, and the append-only placeholder engine contract. Full block and inline parsing are still deferred.

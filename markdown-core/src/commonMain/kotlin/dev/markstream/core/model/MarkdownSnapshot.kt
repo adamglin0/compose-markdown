@@ -1,18 +1,25 @@
 package dev.markstream.core.model
 
+import dev.markstream.core.dialect.MarkdownDialect
+
 data class MarkdownSnapshot(
     val version: Long,
+    val dialect: MarkdownDialect,
     val document: MarkdownDocument,
-    val stablePrefixEnd: Int,
+    val stablePrefixRange: TextRange,
     val dirtyRegion: TextRange,
     val isFinal: Boolean,
-)
+) {
+    init {
+        require(version >= 0L) { "version must be non-negative" }
+        require(stablePrefixRange.endExclusive <= document.sourceLength) {
+            "stablePrefixRange must stay within the document"
+        }
+        require(dirtyRegion.endExclusive <= document.sourceLength) {
+            "dirtyRegion must stay within the document"
+        }
+    }
 
-data class ParseDelta(
-    val version: Long,
-    val changedBlocks: List<BlockChange>,
-    val removedBlockIds: List<BlockId>,
-    val stablePrefixEnd: Int,
-    val dirtyRegion: TextRange,
-    val snapshot: MarkdownSnapshot,
-)
+    val stablePrefixEnd: Int
+        get() = stablePrefixRange.endExclusive
+}

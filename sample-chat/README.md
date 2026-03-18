@@ -2,7 +2,7 @@
 
 Planned streaming demo application.
 
-Stage 1 status: desktop-first Compose Multiplatform sample app initialized with a placeholder chat preview screen and default snapshot content provider.
+Stage 2 status: desktop-first Compose Multiplatform sample app exercises the placeholder snapshot pipeline and default content provider.
 
 Planned responsibilities:
 

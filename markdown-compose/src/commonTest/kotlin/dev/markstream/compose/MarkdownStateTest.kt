@@ -1,7 +1,8 @@
 package dev.markstream.compose
 
 import dev.markstream.core.api.MarkdownEngine
-import dev.markstream.core.model.PlainTextBlock
+import dev.markstream.core.model.BlockNode
+import dev.markstream.core.model.InlineNode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -17,8 +18,8 @@ class MarkdownStateTest {
         assertTrue(state.snapshot.document.blocks.isEmpty())
 
         state.append("hello")
-        val block = assertIs<PlainTextBlock>(state.snapshot.document.blocks.single())
-        assertEquals("hello", block.text)
+        val block = assertIs<BlockNode.Paragraph>(state.snapshot.document.blocks.single())
+        assertEquals("hello", assertIs<InlineNode.Text>(block.children.single()).literal)
         assertFalse(state.snapshot.isFinal)
 
         state.finish()

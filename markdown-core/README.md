@@ -2,7 +2,7 @@
 
 Planned home of the Kotlin Multiplatform core parser and incremental engine.
 
-Stage 1 status: Kotlin Multiplatform module initialized with placeholder engine, immutable model, and basic tests.
+Stage 2 status: immutable core API, AST, ranges, stable IDs, dialect boundary, placeholder append-only engine, and model-focused tests are in place.
 
 Planned responsibilities:
 

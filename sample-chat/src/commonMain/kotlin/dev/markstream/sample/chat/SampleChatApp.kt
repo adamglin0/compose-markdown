@@ -56,7 +56,7 @@ fun MarkstreamSampleApp() {
                 )
 
                     Text(
-                        text = "Desktop placeholder app for the Stage 1 scaffold checkpoint. Edit the text below to exercise the temporary append/finalize renderer wiring.",
+                        text = "Desktop placeholder app for the Stage 2 checkpoint. Edit the text below to exercise append(), finish(), and snapshot-driven preview updates.",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

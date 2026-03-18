@@ -12,8 +12,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.markstream.core.model.BlockNode
+import dev.markstream.core.model.InlineNode
 import dev.markstream.core.model.MarkdownSnapshot
-import dev.markstream.core.model.PlainTextBlock
 
 @Composable
 fun Markdown(
@@ -51,19 +52,15 @@ fun MarkdownSnapshotView(
 
             if (snapshot.document.blocks.isEmpty()) {
                 Text(
-                    text = "No blocks yet. Stage 1 renders plain text as a single placeholder block.",
+                    text = "No blocks yet. Stage 2 currently renders the latest placeholder snapshot.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             } else {
                 snapshot.document.blocks.forEach { block ->
-                    when (block) {
-                        is PlainTextBlock -> {
-                            Text(
-                                text = block.text,
-                                style = MaterialTheme.typography.bodyLarge,
-                            )
-                        }
-                    }
+                    Text(
+                        text = block.renderPreviewText(),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
                 }
             }
 
@@ -73,5 +70,32 @@ fun MarkdownSnapshotView(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+private fun BlockNode.renderPreviewText(): String = when (this) {
+    is BlockNode.BlockQuote -> children.joinToString(separator = "\n") { it.renderPreviewText() }
+    is BlockNode.Document -> children.joinToString(separator = "\n") { it.renderPreviewText() }
+    is BlockNode.FencedCodeBlock -> literal
+    is BlockNode.Heading -> children.renderInlineText()
+    is BlockNode.ListBlock -> items.joinToString(separator = "\n") { item -> "${item.marker} ${item.children.joinToString(" ") { it.renderPreviewText() }}" }
+    is BlockNode.ListItem -> children.joinToString(separator = " ") { it.renderPreviewText() }
+    is BlockNode.Paragraph -> children.renderInlineText()
+    is BlockNode.RawTextBlock -> literal
+    is BlockNode.ThematicBreak -> marker
+    is BlockNode.UnsupportedBlock -> literal
+}
+
+private fun List<InlineNode>.renderInlineText(): String = joinToString(separator = "") { node ->
+    when (node) {
+        is InlineNode.CodeSpan -> node.literal
+        is InlineNode.Emphasis -> node.children.renderInlineText()
+        is InlineNode.HardBreak -> "\n"
+        is InlineNode.Link -> node.children.renderInlineText()
+        is InlineNode.SoftBreak -> "\n"
+        is InlineNode.Strikethrough -> node.children.renderInlineText()
+        is InlineNode.Strong -> node.children.renderInlineText()
+        is InlineNode.Text -> node.literal
+        is InlineNode.UnsupportedInline -> node.literal
     }
 }
