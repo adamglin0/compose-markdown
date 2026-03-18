@@ -20,7 +20,7 @@ class BlockParserStreamingTest {
         val firstParagraph = assertIs<BlockNode.Paragraph>(first.snapshot.document.blocks.single())
         val secondParagraph = assertIs<BlockNode.Paragraph>(second.snapshot.document.blocks.single())
         assertEquals(firstParagraph.id, secondParagraph.id)
-        assertEquals("hello\nworld", assertIs<InlineNode.Text>(secondParagraph.children.single()).literal)
+        assertEquals("hello\nworld", secondParagraph.children.inlineLiteral())
         assertEquals(2, second.snapshot.document.lineCount)
     }
 
@@ -55,7 +55,7 @@ class BlockParserStreamingTest {
 
         val item = secondList.items.single()
         val paragraph = assertIs<BlockNode.Paragraph>(item.children.single())
-        assertEquals("hello", assertIs<InlineNode.Text>(paragraph.children.single()).literal)
+        assertEquals("hello", paragraph.children.inlineLiteral())
     }
 
     @Test
@@ -88,7 +88,7 @@ class BlockParserStreamingTest {
         assertEquals(2, list.items.size)
         val quote = assertIs<BlockNode.BlockQuote>(blocks[2])
         val quoteParagraph = assertIs<BlockNode.Paragraph>(quote.children.single())
-        assertEquals("quote", assertIs<InlineNode.Text>(quoteParagraph.children.single()).literal)
+        assertEquals("quote", quoteParagraph.children.inlineLiteral())
 
         assertEquals(2, second.snapshot.document.blocks.size)
     }
@@ -100,20 +100,35 @@ class BlockParserStreamingTest {
         val snapshot = engine.append("# Title\n> quote\n- item").snapshot
 
         val heading = assertIs<BlockNode.Heading>(snapshot.document.blocks[0])
-        val headingText = assertIs<InlineNode.Text>(heading.children.single())
+        assertEquals("Title", heading.children.inlineLiteral())
+        val headingText = heading.children.filterIsInstance<InlineNode.Text>().first()
         assertEquals(2, headingText.range.start)
         assertEquals(7, headingText.range.endExclusive)
 
         val quote = assertIs<BlockNode.BlockQuote>(snapshot.document.blocks[1])
         val quoteParagraph = assertIs<BlockNode.Paragraph>(quote.children.single())
-        val quoteText = assertIs<InlineNode.Text>(quoteParagraph.children.single())
+        val quoteText = quoteParagraph.children.filterIsInstance<InlineNode.Text>().first()
         assertEquals(10, quoteText.range.start)
         assertEquals(15, quoteText.range.endExclusive)
 
         val list = assertIs<BlockNode.ListBlock>(snapshot.document.blocks[2])
         val listParagraph = assertIs<BlockNode.Paragraph>(list.items.single().children.single())
-        val listText = assertIs<InlineNode.Text>(listParagraph.children.single())
+        val listText = listParagraph.children.filterIsInstance<InlineNode.Text>().first()
         assertEquals(18, listText.range.start)
         assertEquals(22, listText.range.endExclusive)
+    }
+}
+
+private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = "") { node ->
+    when (node) {
+        is InlineNode.CodeSpan -> node.literal
+        is InlineNode.Emphasis -> node.children.inlineLiteral()
+        is InlineNode.HardBreak -> "\n"
+        is InlineNode.Link -> node.children.inlineLiteral()
+        is InlineNode.SoftBreak -> "\n"
+        is InlineNode.Strikethrough -> node.children.inlineLiteral()
+        is InlineNode.Strong -> node.children.inlineLiteral()
+        is InlineNode.Text -> node.literal
+        is InlineNode.UnsupportedInline -> node.literal
     }
 }

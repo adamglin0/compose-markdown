@@ -118,6 +118,8 @@ data class ParseStats(
     val parsedBlockCount: Int,
     val changedBlockCount: Int,
     val reusedBlockCount: Int,
+    val inlineParsedBlockCount: Int,
+    val inlineCacheHitBlockCount: Int,
 )
 ```
 
@@ -140,6 +142,7 @@ data class ParseStats(
 
 - `ParseDelta.changedBlocks` is reported at the top-level block list only; nested children are reflected through the replacement block payloads.
 - `ParseStats.parsedBlockCount`, `changedBlockCount`, and `reusedBlockCount` use the same top-level block granularity in the placeholder engine.
+- `ParseStats.inlineParsedBlockCount` and `inlineCacheHitBlockCount` are counted on text-bearing blocks (`Paragraph`/`Heading`) during inline hydration.
 
 ## Deferred Surface Area
 

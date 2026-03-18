@@ -2,7 +2,7 @@
 
 The repository follows a three-step dialect strategy instead of trying to ship full compatibility at once.
 
-The route below describes the planned dialect surface, but the current repository stop point is still Stage 3: block parser MVP. ChatFast v0 inline syntax is part of the route, not part of the currently shipped implementation.
+The route below describes the planned dialect surface, and the current repository stop point is Stage 4: inline parser MVP for ChatFast.
 
 ## Dialect Route
 
@@ -55,9 +55,9 @@ Focus:
 - hard breaks
 - soft breaks
 
-## Current Stage 3 Implementation Boundary
+## Current Stage 4 Implementation Boundary
 
-Stage 3 only delivers the non-incremental block parser MVP for `ChatFast`.
+Stage 4 keeps the Stage 3 block parser and adds inline parsing for the ChatFast MVP surface.
 
 ### Implemented Now
 
@@ -69,18 +69,22 @@ Stage 3 only delivers the non-incremental block parser MVP for `ChatFast`.
 - list items
 - thematic breaks
 - blank-line paragraph termination
+- inline code span
+- emphasis / strong
+- inline links (`[text](url)`)
+- autolinks (`<https://...>` and bare `http(s)://...` heuristic)
+- strikethrough (`~~`)
+- backslash escapes
+- hard breaks and soft breaks
 
-### Explicitly Not Implemented Yet
+### Known Limitations In Stage 4
 
-- inline code
-- emphasis
-- strong
-- inline links
-- autolinks
-- strikethrough
-- hard breaks
-- soft breaks
-- full inline AST construction; blocks still expose placeholder text children in the current MVP
+- emphasis delimiter flanking rules are simplified and do not yet match full CommonMark edge behavior
+- nested bracket/parenthesis handling in links targets common chat cases, not full spec corner cases
+- link titles and reference-style links are not supported
+- autolink detection is heuristic and intentionally conservative for chat streaming stability
+- underscore emphasis inside words may parse differently from CommonMark in some edge cases
+- parser stability is prioritized over exact compatibility for incomplete tail tokens during streaming
 
 ### Supported With Deliberate Simplicity
 
@@ -108,7 +112,7 @@ Unsupported syntax must degrade to plain text or simpler block structure. It mus
 
 ## Feature Matrix
 
-| Feature | Current Repo (Stage 3) | ChatFast v0 Target | CommonMarkCore | GfmCompat | Notes |
+| Feature | Current Repo (Stage 4) | ChatFast v0 Target | CommonMarkCore | GfmCompat | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Paragraphs | Yes | Yes | Yes | Yes | Baseline block support |
 | ATX headings | Yes | Yes | Yes | Yes | Included in block parser MVP |
@@ -118,13 +122,13 @@ Unsupported syntax must degrade to plain text or simpler block structure. It mus
 | Block quotes | Yes | Yes | Yes | Yes | Conservative continuation rules first |
 | Lists | Yes | Yes | Yes | Yes | ChatFast favors common cases over edge cases |
 | Thematic breaks | Yes | Route not frozen | Planned | Planned | Implemented in the Stage 3 block parser MVP |
-| Inline code | No | Yes | Yes | Yes | Planned for Stage 4 inline parsing |
-| Emphasis / strong | No | Yes | Yes | Yes | Planned for Stage 4 inline parsing |
-| Inline links | No | Yes | Yes | Yes | Reference links deferred |
+| Inline code | Yes | Yes | Yes | Yes | Implemented in InlineParser MVP |
+| Emphasis / strong | Yes | Yes | Yes | Yes | Simplified delimiter rules in Stage 4 |
+| Inline links | Yes | Yes | Yes | Yes | Reference links deferred |
 | Reference links | No | No | Planned | Planned | Needs future dependency tracking |
-| Autolinks | No | Yes | Yes | Yes | Bare URL heuristic comes with inline parsing |
-| Strikethrough | No | Yes | No | Planned | ChatFast keeps it because chat content uses it often |
-| Hard / soft breaks | No | Yes | Yes | Yes | Important for streaming chat display |
+| Autolinks | Yes | Yes | Yes | Yes | Includes angle autolinks + bare URL heuristic |
+| Strikethrough | Yes | Yes | No | Planned | ChatFast keeps it because chat content uses it often |
+| Hard / soft breaks | Yes | Yes | Yes | Yes | Important for streaming chat display |
 | Raw HTML | No | No | Optional later | Optional later | Disabled by default |
 | Tables | No | No | No | Planned | Requires wider invalidation rules |
 | Task lists | No | No | No | Planned | GFM extension only |
@@ -132,4 +136,4 @@ Unsupported syntax must degrade to plain text or simpler block structure. It mus
 
 ## Current Stop Point
 
-The repository is currently stopped at Stage 3. New syntax should not be marked as implemented until the corresponding parser layer ships and this matrix is updated alongside the related docs and ADRs.
+The repository is currently stopped at Stage 4. Full incremental invalidation minimization and deeper cache efficiency remain Stage 5 work.

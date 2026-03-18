@@ -23,7 +23,7 @@ class MarkdownEngineTest {
         assertEquals(MarkdownDialect.ChatFast, delta.snapshot.dialect)
 
         val block = assertIs<BlockNode.Paragraph>(delta.snapshot.document.blocks.single())
-        assertEquals("hello\nworld", assertIs<InlineNode.Text>(block.children.single()).literal)
+        assertEquals("hello\nworld", block.children.inlineLiteral())
         assertEquals(0, block.range.start)
         assertEquals(11, block.range.endExclusive)
         assertFalse(delta.snapshot.isFinal)
@@ -105,5 +105,41 @@ class MarkdownEngineTest {
 
         assertEquals(5, delta.snapshot.stablePrefixEnd)
         assertEquals(0, delta.snapshot.stablePrefixRange.start)
+    }
+
+    @Test
+    fun unchangedStablePrefixBlockUsesInlineCacheWhileTailIsReparsed() {
+        val engine = MarkdownEngine()
+
+        engine.append("stable\n\nopen")
+        val delta = engine.append(" tail")
+
+        assertEquals(1, delta.stats.inlineCacheHitBlockCount)
+        assertEquals(1, delta.stats.inlineParsedBlockCount)
+    }
+
+    @Test
+    fun finalizedNewBlockAndDirtyTailBlockAreParsed() {
+        val engine = MarkdownEngine()
+
+        engine.append("stable\n\n")
+        val delta = engine.append("new-finalized\n\nopen")
+
+        assertEquals(1, delta.stats.inlineCacheHitBlockCount)
+        assertEquals(2, delta.stats.inlineParsedBlockCount)
+    }
+}
+
+private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = "") { node ->
+    when (node) {
+        is InlineNode.CodeSpan -> node.literal
+        is InlineNode.Emphasis -> node.children.inlineLiteral()
+        is InlineNode.HardBreak -> "\n"
+        is InlineNode.Link -> node.children.inlineLiteral()
+        is InlineNode.SoftBreak -> "\n"
+        is InlineNode.Strikethrough -> node.children.inlineLiteral()
+        is InlineNode.Strong -> node.children.inlineLiteral()
+        is InlineNode.Text -> node.literal
+        is InlineNode.UnsupportedInline -> node.literal
     }
 }

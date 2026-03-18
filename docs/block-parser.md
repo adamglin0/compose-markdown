@@ -28,10 +28,10 @@ Stage 3 introduces the first real ChatFast block layer in `markdown-core`.
 - `finish()` finalizes the snapshot and clears internal open block frames at EOF.
 - After `finish()`, the current engine session is closed; callers must `reset()` or create a new engine before calling `append()` again.
 - Stable block IDs are reused by block kind + start offset + small discriminator when append-only growth preserves identity.
-- Inline parsing is still placeholder-only: block nodes currently expose text children rather than a full inline AST.
+- Inline syntax is now handled by a separate `InlineParser` layer in the engine; `BlockParser` still only classifies block structure.
 
 ## Deliberate Limitations
 
 - Setext headings, tables, reference definitions, raw HTML blocks, and footnotes are still unsupported.
 - List tight/loose behavior is basic and only tracks a coarse `isLoose` flag.
-- The engine still reparses the whole document after each append; the current data structures are staged for later incremental parsing work.
+- The engine still reparses the whole document after each append; the current data structures are staged for deeper block-level incremental reparsing work.
