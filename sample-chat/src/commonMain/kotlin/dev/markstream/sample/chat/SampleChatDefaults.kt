@@ -5,12 +5,14 @@ import dev.markstream.core.model.MarkdownSnapshot
 
 object SampleChatDefaults {
     val initialMessage: String = """
-        Welcome to markstream.
+        # Welcome to markstream
 
-        This Stage 2 placeholder checkpoint proves the current snapshot pipeline:
-        - sample-chat depends on markdown-compose
-        - markdown-compose depends on markdown-core
-        - finish() produces the stable final snapshot shown in the preview
+        Stage 3 block parser debug snapshot:
+        - heading
+        - paragraph
+        - list item
+
+        > quoted tail
     """.trimIndent()
 
     fun placeholderSnapshot(

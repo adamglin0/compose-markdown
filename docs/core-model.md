@@ -1,6 +1,6 @@
 # Core Model Invariants
 
-This document freezes the Stage 2 core model boundary in `markdown-core`.
+This document freezes the Stage 3 core model boundary in `markdown-core`.
 
 ## Public Surface
 
@@ -20,7 +20,7 @@ This document freezes the Stage 2 core model boundary in `markdown-core`.
 ## Stable Block ID Rules
 
 - A block ID must stay stable when append-only reparsing preserves the same block identity.
-- In the placeholder engine, identity is anchored to block kind plus source start offset and a small discriminator.
+- In the current block parser, identity is anchored to block kind plus source start offset and a small discriminator.
 - If a block changes kind, splits, merges, or otherwise loses identity, it may receive a new ID.
 - `reset()` clears all stability guarantees because the source buffer is replaced.
 
@@ -34,9 +34,10 @@ This document freezes the Stage 2 core model boundary in `markdown-core`.
 
 - `append(chunk)` only appends source text to the tail.
 - `finish()` closes the current append session and marks the entire source as stable.
+- After `finish()`, `append()` is invalid until `reset()` is called or a new engine is created.
 - `stablePrefixRange` tracks the prefix that the current engine implementation considers reusable without reinterpretation.
 - `ParseDelta.hasStateChange` marks snapshot-level mutations that remain observable even when block diffs are empty.
-- `dirtyRegion` marks the earliest source offset the engine actually reparsed for the latest operation; the current placeholder engine reparses the whole document, so non-no-op rebuilds report the full `0..sourceLength` range.
+- `dirtyRegion` marks the earliest source offset the engine actually reparsed for the latest operation; the current block-layer MVP still reparses the whole document, so non-no-op rebuilds report the full `0..sourceLength` range.
 
 ## Placeholder Delta Metrics
 
@@ -45,11 +46,18 @@ This document freezes the Stage 2 core model boundary in `markdown-core`.
 
 ## Internal Reserved State
 
-The internal package keeps mutable placeholders for future incremental parsing work:
+The internal packages keep mutable append-time state for future incremental parsing work:
 
 - open block stack,
 - line index,
 - block cache / ID reuse state,
 - append-only source buffer.
+
+## Stage 3 Block Layer Notes
+
+- `BlockNode` snapshots now come from a line-based ChatFast block parser instead of the Stage 2 placeholder classifier.
+- Unfinished fenced code blocks may appear in non-final snapshots with `isClosed = false`.
+- `finish()` finalizes EOF state, but `isClosed = false` still means the source never emitted an explicit closing fence.
+- Paragraph and list handling are intentionally basic; fine-grained CommonMark tight/loose rules remain future work.
 
 These types are intentionally not part of the public API so a real parser can replace the placeholder implementation without breaking consumers.

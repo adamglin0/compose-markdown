@@ -2,6 +2,8 @@
 
 The repository follows a three-step dialect strategy instead of trying to ship full compatibility at once.
 
+The route below describes the planned dialect surface, but the current repository stop point is still Stage 3: block parser MVP. ChatFast v0 inline syntax is part of the route, not part of the currently shipped implementation.
+
 ## Dialect Route
 
 ### `ChatFast`
@@ -35,7 +37,7 @@ Focus:
 - opt-in compatibility features,
 - explicit feature-specific invalidation rules.
 
-## ChatFast v0 Support Boundary
+## ChatFast v0 Target Boundary
 
 ### Supported In Scope
 
@@ -52,6 +54,33 @@ Focus:
 - strikethrough
 - hard breaks
 - soft breaks
+
+## Current Stage 3 Implementation Boundary
+
+Stage 3 only delivers the non-incremental block parser MVP for `ChatFast`.
+
+### Implemented Now
+
+- paragraph
+- ATX headings
+- fenced code blocks
+- block quotes
+- ordered and unordered lists
+- list items
+- thematic breaks
+- blank-line paragraph termination
+
+### Explicitly Not Implemented Yet
+
+- inline code
+- emphasis
+- strong
+- inline links
+- autolinks
+- strikethrough
+- hard breaks
+- soft breaks
+- full inline AST construction; blocks still expose placeholder text children in the current MVP
 
 ### Supported With Deliberate Simplicity
 
@@ -79,27 +108,28 @@ Unsupported syntax must degrade to plain text or simpler block structure. It mus
 
 ## Feature Matrix
 
-| Feature | ChatFast v0 | CommonMarkCore | GfmCompat | Notes |
-| --- | --- | --- | --- | --- |
-| Paragraphs | Yes | Yes | Yes | Baseline block support |
-| ATX headings | Yes | Yes | Yes | Included early |
-| Setext headings | No | Planned | Planned | Deferred due to backward dependency on prior line |
-| Fenced code blocks | Yes | Yes | Yes | High priority for chat output |
-| Indented code blocks | No | Planned | Planned | Lower priority in chat scenarios |
-| Block quotes | Yes | Yes | Yes | Conservative continuation rules first |
-| Lists | Yes | Yes | Yes | ChatFast favors common cases over edge cases |
-| Inline code | Yes | Yes | Yes | Included early |
-| Emphasis / strong | Yes | Yes | Yes | Included early |
-| Inline links | Yes | Yes | Yes | Reference links deferred |
-| Reference links | No | Planned | Planned | Needs future dependency tracking |
-| Autolinks | Yes | Yes | Yes | Bare URL heuristic first in ChatFast |
-| Strikethrough | Yes | No | Planned | ChatFast keeps it because chat content uses it often |
-| Hard / soft breaks | Yes | Yes | Yes | Important for streaming chat display |
-| Raw HTML | No | Optional later | Optional later | Disabled by default |
-| Tables | No | No | Planned | Requires wider invalidation rules |
-| Task lists | No | No | Planned | GFM extension only |
-| Footnotes | No | No | Planned | Low priority |
+| Feature | Current Repo (Stage 3) | ChatFast v0 Target | CommonMarkCore | GfmCompat | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Paragraphs | Yes | Yes | Yes | Yes | Baseline block support |
+| ATX headings | Yes | Yes | Yes | Yes | Included in block parser MVP |
+| Setext headings | No | No | Planned | Planned | Deferred due to backward dependency on prior line |
+| Fenced code blocks | Yes | Yes | Yes | Yes | High priority for chat output |
+| Indented code blocks | No | No | Planned | Planned | Lower priority in chat scenarios |
+| Block quotes | Yes | Yes | Yes | Yes | Conservative continuation rules first |
+| Lists | Yes | Yes | Yes | Yes | ChatFast favors common cases over edge cases |
+| Thematic breaks | Yes | Route not frozen | Planned | Planned | Implemented in the Stage 3 block parser MVP |
+| Inline code | No | Yes | Yes | Yes | Planned for Stage 4 inline parsing |
+| Emphasis / strong | No | Yes | Yes | Yes | Planned for Stage 4 inline parsing |
+| Inline links | No | Yes | Yes | Yes | Reference links deferred |
+| Reference links | No | No | Planned | Planned | Needs future dependency tracking |
+| Autolinks | No | Yes | Yes | Yes | Bare URL heuristic comes with inline parsing |
+| Strikethrough | No | Yes | No | Planned | ChatFast keeps it because chat content uses it often |
+| Hard / soft breaks | No | Yes | Yes | Yes | Important for streaming chat display |
+| Raw HTML | No | No | Optional later | Optional later | Disabled by default |
+| Tables | No | No | No | Planned | Requires wider invalidation rules |
+| Task lists | No | No | No | Planned | GFM extension only |
+| Footnotes | No | No | No | Planned | Low priority |
 
-## Stage 0 Stop Point
+## Current Stop Point
 
-This document freezes the first-dialect boundary. New syntax should not be added casually during early implementation stages without updating this matrix and the related ADRs.
+The repository is currently stopped at Stage 3. New syntax should not be marked as implemented until the corresponding parser layer ships and this matrix is updated alongside the related docs and ADRs.

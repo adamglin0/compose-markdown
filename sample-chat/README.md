@@ -2,7 +2,7 @@
 
 Planned streaming demo application.
 
-Stage 2 status: desktop-first Compose Multiplatform sample app exercises the placeholder snapshot pipeline and default content provider.
+Stage 3 status: desktop-first Compose Multiplatform sample app exposes a plain-text block snapshot debugger driven by the ChatFast block parser.
 
 Planned responsibilities:
 

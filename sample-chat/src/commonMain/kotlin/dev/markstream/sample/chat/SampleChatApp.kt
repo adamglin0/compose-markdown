@@ -22,7 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import dev.markstream.compose.Markdown
 import dev.markstream.compose.rememberMarkdownState
 
 @Composable
@@ -56,7 +55,7 @@ fun MarkstreamSampleApp() {
                 )
 
                     Text(
-                        text = "Desktop placeholder app for the Stage 2 checkpoint. Edit the text below to exercise append(), finish(), and snapshot-driven preview updates.",
+                        text = "Stage 3 block parser debug surface. Edit the source text below to inspect the current block snapshot.",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -97,13 +96,20 @@ fun MarkstreamSampleApp() {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(
-                        text = "Rendered preview",
+                        text = "Block snapshot",
                         style = MaterialTheme.typography.titleMedium,
                     )
 
-                    Markdown(
-                        snapshot = markdownState.snapshot,
-                        modifier = Modifier.fillMaxWidth(),
+                    Text(
+                        text = markdownState.snapshot.toDebugText(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                shape = RoundedCornerShape(16.dp),
+                            )
+                            .padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }

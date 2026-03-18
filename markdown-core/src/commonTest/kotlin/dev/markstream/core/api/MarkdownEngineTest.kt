@@ -2,11 +2,13 @@ package dev.markstream.core.api
 
 import dev.markstream.core.dialect.MarkdownDialect
 import dev.markstream.core.model.BlockNode
+import dev.markstream.core.model.InlineNode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 class MarkdownEngineTest {
     @Test
@@ -21,7 +23,7 @@ class MarkdownEngineTest {
         assertEquals(MarkdownDialect.ChatFast, delta.snapshot.dialect)
 
         val block = assertIs<BlockNode.Paragraph>(delta.snapshot.document.blocks.single())
-        assertEquals(3, block.children.size)
+        assertEquals("hello\nworld", assertIs<InlineNode.Text>(block.children.single()).literal)
         assertEquals(0, block.range.start)
         assertEquals(11, block.range.endExclusive)
         assertFalse(delta.snapshot.isFinal)
@@ -38,6 +40,38 @@ class MarkdownEngineTest {
         assertEquals(14, delta.snapshot.stablePrefixEnd)
         assertEquals(0, delta.changedBlocks.size)
         assertFalse(delta.isNoOp)
+    }
+
+    @Test
+    fun appendAfterFinishFailsUntilReset() {
+        val engine = MarkdownEngine()
+
+        engine.append("# ok\n")
+        val finished = engine.finish()
+        val error = assertFailsWith<IllegalStateException> {
+            engine.append("> ```\n> code")
+        }
+
+        assertEquals(5, finished.snapshot.stablePrefixEnd)
+        assertEquals(
+            "Cannot call append() after finish(); call reset() or create a new MarkdownEngine.",
+            error.message,
+        )
+    }
+
+    @Test
+    fun resetAfterFinishAllowsAppendAgain() {
+        val engine = MarkdownEngine()
+
+        engine.append("# ok\n")
+        engine.finish()
+
+        engine.reset()
+        val delta = engine.append("> ```\n> code")
+
+        assertFalse(delta.snapshot.isFinal)
+        assertEquals(0, delta.snapshot.stablePrefixRange.start)
+        assertEquals(0, delta.snapshot.stablePrefixEnd)
     }
 
     @Test
@@ -61,5 +95,15 @@ class MarkdownEngineTest {
         val firstBlock = assertIs<BlockNode.Paragraph>(first.snapshot.document.blocks.single())
         val secondBlock = assertIs<BlockNode.Paragraph>(second.snapshot.document.blocks.single())
         assertEquals(firstBlock.id, secondBlock.id)
+    }
+
+    @Test
+    fun stablePrefixAdvancesPastClosedPrefixWhenTailRemainsOpen() {
+        val engine = MarkdownEngine()
+
+        val delta = engine.append("# ok\n> ```\n> code")
+
+        assertEquals(5, delta.snapshot.stablePrefixEnd)
+        assertEquals(0, delta.snapshot.stablePrefixRange.start)
     }
 }

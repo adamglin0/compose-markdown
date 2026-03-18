@@ -2,7 +2,7 @@
 
 Planned home of the Kotlin Multiplatform core parser and incremental engine.
 
-Stage 2 status: immutable core API, AST, ranges, stable IDs, dialect boundary, placeholder append-only engine, and model-focused tests are in place.
+Stage 3 status: immutable core API, ranges, stable IDs, ChatFast block parser, append-only engine session control, and model-focused tests are in place.
 
 Planned responsibilities:
 

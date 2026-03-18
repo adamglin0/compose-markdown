@@ -1,6 +1,6 @@
 # Public API Draft
 
-This document now reflects the Stage 2 core-model checkpoint. Names may still receive small adjustments later, but the boundary and object roles should remain stable.
+This document now reflects the Stage 3 block-layer checkpoint. Names may still receive small adjustments later, but the boundary and object roles should remain stable.
 
 ## Design Rules
 
@@ -57,6 +57,7 @@ data class ParseDelta(
 
 - `append(chunk: String)`: appends new source text and returns the block-level delta.
 - `finish()`: signals end-of-input so open constructs can close deterministically.
+- `append()` is invalid after `finish()` until `reset()` is called or a new engine is created.
 - `snapshot()`: returns the latest immutable snapshot without mutating parser state.
 - `reset()`: clears all source, caches, and parser state.
 
@@ -120,21 +121,22 @@ data class ParseStats(
 )
 ```
 
-`BlockNode` now covers the Stage 2 minimum set: `Document`, `Paragraph`, `Heading`, `FencedCodeBlock`, `BlockQuote`, `ListBlock`, `ListItem`, `ThematicBreak`, `UnsupportedBlock`, and `RawTextBlock`.
+`BlockNode` currently covers: `Document`, `Paragraph`, `Heading`, `FencedCodeBlock`, `BlockQuote`, `ListBlock`, `ListItem`, `ThematicBreak`, `UnsupportedBlock`, and `RawTextBlock`.
 
-`InlineNode` now covers the Stage 2 minimum set: `Text`, `Emphasis`, `Strong`, `CodeSpan`, `Link`, `SoftBreak`, `HardBreak`, `Strikethrough`, and `UnsupportedInline`.
+`InlineNode` currently exposes the planned public node set: `Text`, `Emphasis`, `Strong`, `CodeSpan`, `Link`, `SoftBreak`, `HardBreak`, `Strikethrough`, and `UnsupportedInline`.
 
 ## API Invariants
 
 - `version` increases after every successful state mutation.
 - `snapshot()` is always safe to call after any `append()`.
 - `stablePrefixRange` never moves backward unless `reset()` is called.
+- `append()` after `finish()` fails with a clear error until `reset()` is called or a new engine is created.
 - block IDs stay stable while a block's identity is preserved across reparses.
 - `hasStateChange` is true whenever the returned snapshot differs from the previous snapshot, including `finish()` transitions that only change `isFinal` or `stablePrefixRange`.
-- `dirtyRegion` covers the earliest source offset the current engine actually reparsed; the Stage 2 placeholder engine rebuilds the whole document, so any non-no-op rebuild reports `0..sourceLength`.
+- `dirtyRegion` covers the earliest source offset the current engine actually reparsed; the current Stage 3 block-layer engine still rebuilds the whole document, so any non-no-op rebuild reports `0..sourceLength`.
 - snapshots are safe for UI read access because they expose immutable values only.
 
-## Stage 2 Placeholder Metrics
+## Stage 3 Block-Layer Metrics
 
 - `ParseDelta.changedBlocks` is reported at the top-level block list only; nested children are reflected through the replacement block payloads.
 - `ParseStats.parsedBlockCount`, `changedBlockCount`, and `reusedBlockCount` use the same top-level block granularity in the placeholder engine.
@@ -150,6 +152,6 @@ Not part of the initial public API:
 - reference-link resolution hooks,
 - editor caret or selection models.
 
-## Stage 2 Stop Point
+## Stage 3 Stop Point
 
-Stage 2 freezes the immutable API boundary, the minimum block/inline node taxonomy, and the append-only placeholder engine contract. Full block and inline parsing are still deferred.
+Stage 3 freezes the immutable API boundary, the current block-node taxonomy, and the append-only block-layer engine contract. Inline parsing and incremental cache reuse are still deferred.

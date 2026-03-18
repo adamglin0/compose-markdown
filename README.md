@@ -82,10 +82,10 @@ Each stage must define:
 
 ## Current Status
 
-This repository currently ships a Stage 2 checkpoint for the immutable core API and placeholder engine boundary.
+This repository currently ships a Stage 3 checkpoint for the ChatFast block layer.
 
-- Current checkpoint: range and ID models, immutable document / snapshot / delta types, dialect boundary, placeholder append-only engine, internal mutable session placeholders, snapshot-driven Compose rendering scaffolding, and model-focused tests.
-- Not done yet: real block parsing, real inline parsing, incremental cache reuse beyond placeholder ID reuse, production renderer behavior, or benchmark coverage.
+- Current checkpoint: append-only `SourceBuffer` and `LineIndex`, line-based `BlockParser`, stable block IDs, open-block-stack-backed snapshot rebuilding, unfinished fenced block handling, and a sample-chat debug surface for block snapshots.
+- Not done yet: real inline parsing, incremental cache reuse beyond whole-document reparsing, production renderer behavior, or benchmark coverage.
 
 ## Project Structure
 
@@ -108,9 +108,9 @@ This repository currently ships a Stage 2 checkpoint for the immutable core API 
    `- adr/
 ```
 
-- `markdown-core`: Kotlin Multiplatform placeholder engine, immutable document model, and tests.
-- `markdown-compose`: snapshot-driven placeholder renderer built on top of `markdown-core`; temporary Material3 styling only serves the Stage 2 placeholder surface and is not a long-term API commitment.
-- `sample-chat`: desktop-first sample app that wires input text into the placeholder renderer.
+- `markdown-core`: Kotlin Multiplatform block-layer engine, immutable document model, and tests.
+- `markdown-compose`: snapshot-driven placeholder renderer built on top of `markdown-core`; temporary Material3 styling is still provisional and not a long-term API commitment.
+- `sample-chat`: desktop-first sample app that wires input text into the block snapshot debug surface.
 - `docs`: Stage 0 architecture, ADRs, and API drafts preserved as the source of truth for later stages.
 
 Start with:

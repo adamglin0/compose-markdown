@@ -18,15 +18,23 @@ This roadmap defines the implementation order and stop points. The order is deli
 - Docs: update architecture and API draft where naming becomes concrete.
 - Stop point: source and model layer are ready, but block parsing is still limited or stubbed.
 
-## Stage 2 - BlockParser For ChatFast v0
+## Stage 2 - Core API And Placeholder Engine
+
+- Goal: freeze the immutable public API, snapshot model, and append-only placeholder engine contract.
+- Deliverables: `MarkdownEngine`, immutable document and delta models, dialect boundary, stable block IDs, placeholder block classification, and baseline docs.
+- Tests: API behavior tests, model invariants, stable ID tests, placeholder delta tests.
+- Docs: update README, API draft, and core model notes with concrete names.
+- Stop point: block parsing is still provisional, but the public boundary is frozen.
+
+## Stage 3 - BlockParser For ChatFast v0
 
 - Goal: parse `ChatFast` v0 block structure in a non-incremental pass first.
 - Deliverables: paragraphs, ATX headings, fenced code blocks, block quotes, basic ordered and unordered lists.
 - Tests: block fixture tests, range tests, malformed tail tests, graceful degradation tests.
-- Docs: update dialect matrix and architecture examples.
+- Docs: update dialect matrix, API notes, and architecture examples.
 - Stop point: block parsing is reliable, but inline parsing is not yet complete.
 
-## Stage 3 - InlineParser For ChatFast v0
+## Stage 4 - InlineParser For ChatFast v0
 
 - Goal: parse inline syntax inside parsed block payloads.
 - Deliverables: inline code, emphasis, strong, links, autolinks, strikethrough, hard and soft breaks.
@@ -34,7 +42,7 @@ This roadmap defines the implementation order and stop points. The order is deli
 - Docs: update dialect matrix and API examples.
 - Stop point: full `ChatFast` v0 parse exists, but incremental reuse is still limited.
 
-## Stage 4 - Append-Only Incremental Engine
+## Stage 5 - Append-Only Incremental Engine
 
 - Goal: avoid whole-document reparsing on every append.
 - Deliverables: stable prefix tracking, mutable tail handling, dirty region calculation, block cache, inline cache, `ParseDelta` emission.
@@ -42,7 +50,7 @@ This roadmap defines the implementation order and stop points. The order is deli
 - Docs: expand incremental model with concrete invariants and examples.
 - Stop point: append-only streaming is efficient enough for parser-level usage, but UI layer may still be provisional.
 
-## Stage 5 - RenderIR And Compose Renderer
+## Stage 6 - RenderIR And Compose Renderer
 
 - Goal: render parsed snapshots incrementally at block granularity.
 - Deliverables: RenderIR, Compose mapping, keyed block rendering, preview surfaces in `markdown-compose`.
@@ -50,7 +58,7 @@ This roadmap defines the implementation order and stop points. The order is deli
 - Docs: renderer usage guide and sample integration notes.
 - Stop point: renderer is usable, but demo app and benchmarks may still be incomplete.
 
-## Stage 6 - Sample Chat Demo
+## Stage 7 - Sample Chat Demo
 
 - Goal: show the intended streaming user experience.
 - Deliverables: `sample-chat` app, append simulation, snapshot visualization, diagnostics panel for block deltas.
@@ -58,7 +66,7 @@ This roadmap defines the implementation order and stop points. The order is deli
 - Docs: demo usage instructions and known limitations.
 - Stop point: project is demonstrable end to end for the primary use case.
 
-## Stage 7 - Benchmarks And Compatibility Expansion
+## Stage 8 - Benchmarks And Compatibility Expansion
 
 - Goal: validate performance and carefully expand syntax support.
 - Deliverables: benchmark scenarios, regression thresholds, `CommonMarkCore` roadmap items, selected `GfmCompat` features.

@@ -4,6 +4,7 @@ import dev.markstream.core.model.BlockNode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SampleChatDefaultsTest {
@@ -12,8 +13,9 @@ class SampleChatDefaultsTest {
         val snapshot = SampleChatDefaults.placeholderSnapshot()
 
         assertTrue(snapshot.isFinal)
-        val block = assertIs<BlockNode.RawTextBlock>(snapshot.document.blocks.single())
-        assertEquals(SampleChatDefaults.initialMessage, block.literal)
-        assertTrue(block.literal.contains("Stage 2 placeholder checkpoint"))
+        val heading = assertIs<BlockNode.Heading>(snapshot.document.blocks.first())
+        assertEquals(1, heading.level)
+        assertNotNull(snapshot.toDebugText())
+        assertTrue(snapshot.toDebugText().contains("BlockQuote"))
     }
 }
