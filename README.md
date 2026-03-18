@@ -82,10 +82,10 @@ Each stage must define:
 
 ## Current Status
 
-This repository currently ships a Stage 3 checkpoint for the ChatFast block layer.
+This repository currently ships a Stage 5 checkpoint for the append-only ChatFast engine.
 
-- Current checkpoint: append-only `SourceBuffer` and `LineIndex`, line-based `BlockParser`, stable block IDs, open-block-stack-backed snapshot rebuilding, unfinished fenced block handling, and a sample-chat debug surface for block snapshots.
-- Not done yet: real inline parsing, incremental cache reuse beyond whole-document reparsing, production renderer behavior, or benchmark coverage.
+- Current checkpoint: append-only `SourceBuffer` and `LineIndex`, normalized newline handling, line-based `BlockParser`, inline parsing, stable prefix / mutable tail tracking, explicit dirty regions, block cache reuse, inline cache reuse, and a sample-chat incremental debug surface.
+- Not done yet: Compose UI main rendering, RenderIR, broader dialect compatibility, or benchmark coverage.
 
 ## Project Structure
 
@@ -120,5 +120,6 @@ Start with:
 - `docs/core-model.md`
 - `docs/dialect-matrix.md`
 - `docs/incremental-model.md`
+- `docs/incremental-engine.md`
 - `docs/roadmap.md`
 - `docs/adr/`

@@ -78,13 +78,14 @@ Examples include:
 For each `append(chunk)`:
 
 1. Append text to `SourceBuffer`.
-2. Extend `LineIndex` only for the new chunk.
-3. Identify the earliest reparse boundary inside the mutable tail.
-4. Reparse block structure only from that boundary onward.
-5. Reuse unaffected cached blocks before the boundary.
-6. Reparse inline content only for changed or invalidated blocks.
-7. Recompute stable prefix and mutable tail.
-8. Emit `ParseDelta` containing block-level changes.
+2. Normalize appended `\r` / `\r\n` input to `\n` before it reaches `SourceBuffer`, `LineIndex`, or the parser.
+3. Extend `LineIndex` only for the normalized chunk.
+4. Identify the earliest reparse boundary inside the mutable tail.
+5. Reparse block structure only from that boundary onward.
+6. Reuse unaffected cached blocks before the boundary.
+7. Reparse inline content only for changed or invalidated blocks.
+8. Recompute stable prefix and mutable tail.
+9. Emit `ParseDelta` containing block-level changes.
 
 ## Stable ID Rules
 
@@ -137,6 +138,13 @@ By reserving a dependency map now, later dialect expansion can remain incrementa
 - HTML DOM diffing,
 - global post-processing passes that always revisit the whole document.
 
-## Stage 0 Stop Point
+## Stage 5 Implementation Notes
 
-This document freezes the append-only incremental strategy. Implementation details may evolve, but the concepts of stable prefix, mutable tail, dirty region, separate caches, and future dependency tracking are now project invariants.
+The current engine now applies this model concretely:
+
+- ordinary append reparses only from the cached mutable-tail boundary, not from offset `0`,
+- incoming CR and CRLF text is normalized to `\n` before source indexing so line slicing and ranges stay consistent,
+- unchanged prefix blocks are reused from block cache records,
+- reparsed tail blocks reuse inline cache entries when block identity and text stay the same,
+- snapshots remain renderable after every append, including unfinished fences, lists, and quotes,
+- Stage 5 still pays O(n) bookkeeping for snapshot rebuild, top-level delta classification, and cache-table refresh even when reparsing stays localized.

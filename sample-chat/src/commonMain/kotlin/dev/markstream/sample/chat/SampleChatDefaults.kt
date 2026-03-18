@@ -7,10 +7,10 @@ object SampleChatDefaults {
     val initialMessage: String = """
         # Welcome to markstream
 
-        Stage 3 block parser debug snapshot:
-        - heading
-        - paragraph
-        - list item
+        Stage 5 incremental delta/stats debug surface:
+        - append text to inspect dirty region
+        - watch preserved vs reparsed blocks
+        - compare inline cache hits and delta output
 
         > quoted tail
     """.trimIndent()

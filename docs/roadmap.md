@@ -50,6 +50,8 @@ This roadmap defines the implementation order and stop points. The order is deli
 - Docs: expand incremental model with concrete invariants and examples.
 - Stop point: append-only streaming is efficient enough for parser-level usage, but UI layer may still be provisional.
 
+Status: implemented in the current repository checkpoint, including newline-normalized append parsing and sample diagnostics.
+
 ## Stage 6 - RenderIR And Compose Renderer
 
 - Goal: render parsed snapshots incrementally at block granularity.

@@ -18,6 +18,8 @@ class ParseDeltaTest {
         assertEquals(0, delta.dirtyRegion.start)
         assertEquals(delta.snapshot.document.sourceLength, delta.dirtyRegion.endExclusive)
         assertEquals(delta.snapshot.stablePrefixRange, delta.stablePrefixRange)
+        assertTrue(delta.insertedBlockIds.isEmpty())
+        assertTrue(delta.updatedBlockIds.isEmpty())
         assertTrue(delta.snapshot.isFinal)
         assertFalse(delta.isNoOp)
     }

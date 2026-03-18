@@ -3,6 +3,7 @@ package dev.markstream.sample.chat
 import dev.markstream.core.model.BlockNode
 import dev.markstream.core.model.InlineNode
 import dev.markstream.core.model.MarkdownSnapshot
+import dev.markstream.core.model.ParseDelta
 
 internal fun MarkdownSnapshot.toDebugText(): String = buildString {
     appendLine("version=$version final=$isFinal stablePrefixEnd=$stablePrefixEnd dirty=${dirtyRegion.start}..${dirtyRegion.endExclusive}")
@@ -14,6 +15,19 @@ internal fun MarkdownSnapshot.toDebugText(): String = buildString {
     document.blocks.forEach { block ->
         appendBlock(block = block, depth = 0)
     }
+}
+
+internal fun ParseDelta.toDebugText(): String = buildString {
+    appendLine("version=$version stateChange=$hasStateChange dirty=${dirtyRegion.start}..${dirtyRegion.endExclusive}")
+    appendLine(
+        "inserted=${insertedBlockIds.joinToString { it.raw.toString() }} updated=${updatedBlockIds.joinToString { it.raw.toString() }} removed=${removedBlockIds.joinToString { it.raw.toString() }}",
+    )
+    appendLine(
+        "preserved=${stats.preservedBlocks} reparsed=${stats.reparsedBlocks} lines=${stats.processedLines} appended=${stats.appendedChars}",
+    )
+    append(
+        "inlineParsed=${stats.inlineParsedBlockCount} inlineCacheHit=${stats.inlineCacheHitBlockCount} fallback=${stats.fallbackCount}:${stats.fallbackReason ?: "-"}",
+    )
 }
 
 private fun StringBuilder.appendBlock(block: BlockNode, depth: Int) {

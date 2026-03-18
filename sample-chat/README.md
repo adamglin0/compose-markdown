@@ -1,11 +1,11 @@
 # sample-chat
 
-Planned streaming demo application.
+Desktop-first Compose Multiplatform sample app for the current Stage 5 checkpoint.
 
-Stage 3 status: desktop-first Compose Multiplatform sample app exposes a plain-text block snapshot debugger driven by the ChatFast block parser.
+It is the incremental delta/stats debugging entry for the append-only ChatFast engine rather than a planned-only module.
 
-Planned responsibilities:
+Current responsibilities:
 
 - drive `MarkdownEngine.append()` with chat-like chunks,
-- visualize block-level updates,
-- provide a manual demo target for the primary use case.
+- visualize block-level updates plus delta/stats diagnostics,
+- provide a manual debugging surface for incremental parser behavior in the primary chat scenario.

@@ -32,14 +32,25 @@ fun MarkstreamSampleApp() {
             color = MaterialTheme.colorScheme.background,
         ) {
             var input by remember { mutableStateOf(SampleChatDefaults.initialMessage) }
+            var previousInput by remember { mutableStateOf("") }
+            var lastDeltaDebug by remember { mutableStateOf("(no delta yet)") }
             val markdownState = rememberMarkdownState()
 
             LaunchedEffect(input) {
-                markdownState.reset()
-                if (input.isNotEmpty()) {
-                    markdownState.append(input)
+                if (input.startsWith(previousInput)) {
+                    val chunk = input.removePrefix(previousInput)
+                    if (chunk.isNotEmpty()) {
+                        lastDeltaDebug = markdownState.append(chunk).toDebugText()
+                    }
+                } else {
+                    markdownState.reset()
+                    if (input.isNotEmpty()) {
+                        lastDeltaDebug = markdownState.append(input).toDebugText() + "\nmode=reset-full-append"
+                    } else {
+                        lastDeltaDebug = "(input cleared)"
+                    }
                 }
-                markdownState.finish()
+                previousInput = input
             }
 
             Column(
@@ -54,11 +65,11 @@ fun MarkstreamSampleApp() {
                     style = MaterialTheme.typography.headlineMedium,
                 )
 
-                    Text(
-                        text = "Stage 3 block parser debug surface. Edit the source text below to inspect the current block snapshot.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                Text(
+                    text = "Stage 5 incremental delta/stats debug surface. Append text below to inspect dirty regions, cache preservation, and the current snapshot.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
                 Column(
                     modifier = Modifier
@@ -95,6 +106,23 @@ fun MarkstreamSampleApp() {
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    Text(
+                        text = "Last delta",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+
+                    Text(
+                        text = lastDeltaDebug,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                shape = RoundedCornerShape(16.dp),
+                            )
+                            .padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+
                     Text(
                         text = "Block snapshot",
                         style = MaterialTheme.typography.titleMedium,

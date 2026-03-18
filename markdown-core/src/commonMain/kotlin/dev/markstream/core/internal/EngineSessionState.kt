@@ -1,6 +1,7 @@
 package dev.markstream.core.internal
 
 import dev.markstream.core.dialect.MarkdownDialect
+import dev.markstream.core.model.BlockNode
 import dev.markstream.core.model.InlineNode
 import dev.markstream.core.model.MarkdownSnapshot
 import dev.markstream.core.model.TextRange
@@ -17,8 +18,10 @@ internal class EngineSessionState(
     val cacheState: ParseCacheState = ParseCacheState()
     var version: Long = snapshot.version
     var stablePrefixEnd: Int = snapshot.stablePrefixEnd
+    var mutableTailStart: Int = snapshot.stablePrefixEnd
     var isFinal: Boolean = snapshot.isFinal
     var nextBlockId: Long = 1L
+    var suppressLeadingLineFeed: Boolean = false
 }
 
 internal data class OpenBlockFrame(
@@ -27,9 +30,15 @@ internal data class OpenBlockFrame(
 )
 
 internal class ParseCacheState {
+    val blockRecords: MutableList<CachedBlockRecord> = mutableListOf()
     val blockIdsByKey: MutableMap<BlockIdentityKey, MutableList<Long>> = linkedMapOf()
     val inlineByBlockId: MutableMap<Long, InlineCacheEntry> = linkedMapOf()
 }
+
+internal data class CachedBlockRecord(
+    val block: BlockNode,
+    val isStable: Boolean,
+)
 
 internal data class BlockIdentityKey(
     val kind: String,

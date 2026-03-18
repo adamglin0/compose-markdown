@@ -1,12 +1,14 @@
 package dev.markstream.core.api
 
 import dev.markstream.core.dialect.MarkdownDialect
+import dev.markstream.core.model.BlockId
 import dev.markstream.core.model.BlockNode
 import dev.markstream.core.model.InlineNode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.assertFailsWith
 
@@ -20,6 +22,8 @@ class MarkdownEngineTest {
         assertEquals(1L, delta.version)
         assertEquals(0, delta.stablePrefixEnd)
         assertEquals(1, delta.changedBlocks.size)
+        assertEquals(listOf(delta.snapshot.document.blocks.single().id), delta.insertedBlockIds)
+        assertTrue(delta.updatedBlockIds.isEmpty())
         assertEquals(MarkdownDialect.ChatFast, delta.snapshot.dialect)
 
         val block = assertIs<BlockNode.Paragraph>(delta.snapshot.document.blocks.single())
@@ -27,18 +31,21 @@ class MarkdownEngineTest {
         assertEquals(0, block.range.start)
         assertEquals(11, block.range.endExclusive)
         assertFalse(delta.snapshot.isFinal)
+        assertEquals(11, delta.stats.appendedChars)
     }
 
     @Test
-    fun finishMarksSnapshotFinal() {
+    fun finishMarksSnapshotFinalWithoutReparsingClosedPrefix() {
         val engine = MarkdownEngine()
 
-        engine.append("streaming text")
+        engine.append("# ok\n")
         val delta = engine.finish()
 
         assertTrue(delta.snapshot.isFinal)
-        assertEquals(14, delta.snapshot.stablePrefixEnd)
+        assertEquals(5, delta.snapshot.stablePrefixEnd)
         assertEquals(0, delta.changedBlocks.size)
+        assertEquals(0, delta.stats.reparsedBlocks)
+        assertEquals(0, delta.stats.processedLines)
         assertFalse(delta.isNoOp)
     }
 
@@ -75,14 +82,18 @@ class MarkdownEngineTest {
     }
 
     @Test
-    fun appendDirtyRegionCoversFullPlaceholderReparse() {
+    fun appendUsesMutableTailInsteadOfWholeDocumentReparse() {
         val engine = MarkdownEngine()
 
-        engine.append("hello")
-        val delta = engine.append(" world")
+        engine.append("stable\n\n")
+        val delta = engine.append("tail")
 
-        assertEquals(0, delta.dirtyRegion.start)
+        assertEquals(8, delta.dirtyRegion.start)
         assertEquals(delta.snapshot.document.sourceLength, delta.dirtyRegion.endExclusive)
+        assertEquals(1, delta.stats.preservedBlocks)
+        assertEquals(1, delta.stats.reparsedBlocks)
+        assertEquals(1, delta.stats.processedLines)
+        assertEquals(0, delta.stats.fallbackCount)
     }
 
     @Test
@@ -95,6 +106,8 @@ class MarkdownEngineTest {
         val firstBlock = assertIs<BlockNode.Paragraph>(first.snapshot.document.blocks.single())
         val secondBlock = assertIs<BlockNode.Paragraph>(second.snapshot.document.blocks.single())
         assertEquals(firstBlock.id, secondBlock.id)
+        assertTrue(second.insertedBlockIds.isEmpty())
+        assertEquals(listOf(firstBlock.id), second.updatedBlockIds)
     }
 
     @Test
@@ -105,28 +118,111 @@ class MarkdownEngineTest {
 
         assertEquals(5, delta.snapshot.stablePrefixEnd)
         assertEquals(0, delta.snapshot.stablePrefixRange.start)
+        assertEquals(0, delta.stats.preservedBlocks)
+        assertEquals(2, delta.stats.reparsedBlocks)
     }
 
     @Test
-    fun unchangedStablePrefixBlockUsesInlineCacheWhileTailIsReparsed() {
+    fun inlineCacheReusesUnchangedTailBlocksAcrossContainerGrowth() {
         val engine = MarkdownEngine()
 
-        engine.append("stable\n\nopen")
-        val delta = engine.append(" tail")
+        engine.append("- one\n- two")
+        val delta = engine.append("\n- three")
 
-        assertEquals(1, delta.stats.inlineCacheHitBlockCount)
+        assertEquals(2, delta.stats.inlineCacheHitBlockCount)
         assertEquals(1, delta.stats.inlineParsedBlockCount)
     }
 
     @Test
-    fun finalizedNewBlockAndDirtyTailBlockAreParsed() {
+    fun deltaTracksInsertedAndUpdatedBlocksSeparately() {
+        val engine = MarkdownEngine()
+
+        val first = engine.append("stable")
+        val second = engine.append("\n\nnew")
+
+        val updatedId = first.snapshot.document.blocks.single().id
+        val insertedId = second.snapshot.document.blocks.last().id
+
+        assertEquals(listOf(updatedId), second.updatedBlockIds)
+        assertEquals(listOf(insertedId), second.insertedBlockIds)
+        assertTrue(second.removedBlockIds.isEmpty())
+    }
+
+    @Test
+    fun appendNormalizesCarriageReturnAndCrLfChunksBeforeParsing() {
+        val incremental = MarkdownEngine()
+        val normalized = MarkdownEngine()
+
+        val deltas = listOf(
+            incremental.append("# title\r"),
+            incremental.append("\nplain\r\n> quote\r"),
+            incremental.append("tail"),
+        )
+        normalized.append("# title\nplain\n> quote\ntail")
+
+        val incrementalSnapshot = incremental.finish().snapshot
+        val normalizedSnapshot = normalized.finish().snapshot
+
+        assertEquals(0, deltas.sumOf { it.stats.fallbackCount })
+        assertTrue(deltas.all { it.stats.fallbackReason == null })
+        assertEquals(4, incrementalSnapshot.document.lineCount)
+        assertEquals(normalizedSnapshot.document.sourceLength, incrementalSnapshot.document.sourceLength)
+        assertEquals(normalizedSnapshot.document.blocks.debugShape(), incrementalSnapshot.document.blocks.debugShape())
+    }
+
+    @Test
+    fun splitCrLfAcrossChunkBoundaryDoesNotCreateExtraLine() {
+        val engine = MarkdownEngine()
+
+        val first = engine.append("\r")
+        val second = engine.append("\n")
+        val snapshot = engine.finish().snapshot
+
+        assertEquals(2, first.snapshot.document.lineCount)
+        assertFalse(first.isNoOp)
+        assertTrue(second.isNoOp)
+        assertEquals(1, snapshot.document.sourceLength)
+        assertEquals(2, snapshot.document.lineCount)
+        assertTrue(snapshot.document.blocks.isEmpty())
+    }
+
+    @Test
+    fun appendOnlySequencesNeverRemoveBlocksInCurrentDialectSubset() {
+        val engine = MarkdownEngine()
+
+        val chunks = listOf("# Title\n", "\n- one", "\n- two", "\n> quote")
+        var lastRemoved: List<BlockId> = emptyList()
+        chunks.forEach { chunk ->
+            lastRemoved = engine.append(chunk).removedBlockIds
+        }
+
+        assertTrue(lastRemoved.isEmpty())
+    }
+
+    @Test
+    fun statsExposeNullFallbackReasonWhenIncrementalPathSucceeds() {
         val engine = MarkdownEngine()
 
         engine.append("stable\n\n")
-        val delta = engine.append("new-finalized\n\nopen")
+        val delta = engine.append("tail")
 
-        assertEquals(1, delta.stats.inlineCacheHitBlockCount)
-        assertEquals(2, delta.stats.inlineParsedBlockCount)
+        assertNull(delta.stats.fallbackReason)
+        assertEquals(0, delta.stats.fallbackCount)
+    }
+}
+
+private fun List<BlockNode>.debugShape(): String = joinToString(separator = "\n") { block ->
+    when (block) {
+        is BlockNode.BlockQuote -> "quote(${block.children.debugShape()})"
+        is BlockNode.Document -> "document(${block.children.debugShape()})"
+        is BlockNode.FencedCodeBlock -> "fence(${block.literal.replace("\n", "\\n")},${block.isClosed})"
+        is BlockNode.Heading -> "heading(${block.level},${block.children.inlineLiteral()})"
+        is BlockNode.ListBlock -> "list(${block.style},${block.items.debugShape()})"
+        is BlockNode.ListItem -> "item(${block.marker},${block.children.debugShape()})"
+        is BlockNode.Paragraph -> "paragraph(${block.children.inlineLiteral()})"
+        is BlockNode.RawTextBlock -> "raw(${block.literal.replace("\n", "\\n")})"
+        is BlockNode.ThematicBreak -> "break(${block.marker})"
+        is BlockNode.UnsupportedBlock -> "unsupported(${block.literal.replace("\n", "\\n")})"
     }
 }
 

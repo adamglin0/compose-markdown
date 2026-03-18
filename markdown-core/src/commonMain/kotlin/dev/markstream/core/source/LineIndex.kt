@@ -46,15 +46,24 @@ internal class LineIndex {
         return LineRange(startLine = startLine, endLineExclusive = endLineExclusive)
     }
 
-    fun lines(source: String): List<IndexedLine> {
-        if (source.isEmpty()) {
+    fun lines(
+        source: String,
+        startOffset: Int = 0,
+        endExclusive: Int = source.length,
+    ): List<IndexedLine> {
+        if (source.isEmpty() || startOffset >= endExclusive) {
             return emptyList()
         }
 
         val result = mutableListOf<IndexedLine>()
-        var lineStart = 0
-        var lineNumber = 0
-        for (newlineOffset in _newlineOffsets) {
+        var lineStart = startOffset
+        var lineNumber = lineOf(offset = startOffset)
+        var newlineIndex = lowerBound(value = startOffset)
+        while (newlineIndex < _newlineOffsets.size) {
+            val newlineOffset = _newlineOffsets[newlineIndex]
+            if (newlineOffset >= endExclusive) {
+                break
+            }
             result += IndexedLine(
                 number = lineNumber,
                 range = TextRange(start = lineStart, endExclusive = newlineOffset + 1),
@@ -63,13 +72,14 @@ internal class LineIndex {
             )
             lineStart = newlineOffset + 1
             lineNumber += 1
+            newlineIndex += 1
         }
 
-        if (lineStart < source.length || source.endsWith('\n')) {
+        if (lineStart < endExclusive || (endExclusive == source.length && source.endsWith('\n') && lineStart == endExclusive)) {
             result += IndexedLine(
                 number = lineNumber,
-                range = TextRange(start = lineStart, endExclusive = source.length),
-                content = source.substring(lineStart, source.length),
+                range = TextRange(start = lineStart, endExclusive = endExclusive),
+                content = source.substring(lineStart, endExclusive),
                 hasTrailingNewline = false,
             )
         }
@@ -77,12 +87,14 @@ internal class LineIndex {
         return result
     }
 
-    private fun lineOf(offset: Int): Int {
+    fun lineOf(offset: Int): Int = lowerBound(value = offset)
+
+    private fun lowerBound(value: Int): Int {
         var low = 0
         var high = _newlineOffsets.size
         while (low < high) {
             val mid = (low + high) ushr 1
-            if (_newlineOffsets[mid] < offset) {
+            if (_newlineOffsets[mid] < value) {
                 low = mid + 1
             } else {
                 high = mid

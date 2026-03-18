@@ -16,13 +16,20 @@ internal class BlockParser(
     private val lineIndex: LineIndex,
     private val allocateBlockId: (kind: String, start: Int, discriminator: String) -> BlockId,
 ) {
-    fun parse(isFinal: Boolean): BlockParseResult {
+    fun parse(
+        isFinal: Boolean,
+        range: TextRange = TextRange(start = 0, endExclusive = sourceBuffer.length),
+    ): BlockParseResult {
         val source = sourceBuffer.snapshot()
-        if (source.isEmpty()) {
-            return BlockParseResult(blocks = emptyList(), openBlockStack = emptyList())
+        if (source.isEmpty() || range.isEmpty) {
+            return BlockParseResult(blocks = emptyList(), openBlockStack = emptyList(), processedLineCount = 0)
         }
 
-        val lines = lineIndex.lines(source = source).map { indexedLine ->
+        val lines = lineIndex.lines(
+            source = source,
+            startOffset = range.start,
+            endExclusive = range.endExclusive,
+        ).map { indexedLine ->
             ParserLine(
                 number = indexedLine.number,
                 range = indexedLine.range,
@@ -38,6 +45,7 @@ internal class BlockParser(
         return BlockParseResult(
             blocks = session.parseBlocks(lines = lines),
             openBlockStack = session.openFrames.toList(),
+            processedLineCount = lines.size,
         )
     }
 
@@ -481,6 +489,7 @@ internal class BlockParser(
 internal data class BlockParseResult(
     val blocks: List<BlockNode>,
     val openBlockStack: List<OpenBlockFrame>,
+    val processedLineCount: Int,
 )
 
 internal data class ParserLine(

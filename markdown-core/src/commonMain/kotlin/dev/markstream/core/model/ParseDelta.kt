@@ -3,6 +3,8 @@ package dev.markstream.core.model
 data class ParseDelta(
     val version: Long,
     val changedBlocks: List<BlockChange>,
+    val insertedBlockIds: List<BlockId>,
+    val updatedBlockIds: List<BlockId>,
     val removedBlockIds: List<BlockId>,
     val stablePrefixRange: TextRange,
     val dirtyRegion: TextRange,
@@ -27,6 +29,12 @@ data class ParseStats(
     val reusedBlockCount: Int,
     val inlineParsedBlockCount: Int,
     val inlineCacheHitBlockCount: Int,
+    val appendedChars: Int,
+    val processedLines: Int,
+    val reparsedBlocks: Int,
+    val preservedBlocks: Int,
+    val fallbackCount: Int,
+    val fallbackReason: String?,
 ) {
     init {
         require(parsedBlockCount >= 0) { "parsedBlockCount must be non-negative" }
@@ -34,6 +42,11 @@ data class ParseStats(
         require(reusedBlockCount >= 0) { "reusedBlockCount must be non-negative" }
         require(inlineParsedBlockCount >= 0) { "inlineParsedBlockCount must be non-negative" }
         require(inlineCacheHitBlockCount >= 0) { "inlineCacheHitBlockCount must be non-negative" }
+        require(appendedChars >= 0) { "appendedChars must be non-negative" }
+        require(processedLines >= 0) { "processedLines must be non-negative" }
+        require(reparsedBlocks >= 0) { "reparsedBlocks must be non-negative" }
+        require(preservedBlocks >= 0) { "preservedBlocks must be non-negative" }
+        require(fallbackCount >= 0) { "fallbackCount must be non-negative" }
     }
 
     companion object {
@@ -43,6 +56,12 @@ data class ParseStats(
             reusedBlockCount = 0,
             inlineParsedBlockCount = 0,
             inlineCacheHitBlockCount = 0,
+            appendedChars = 0,
+            processedLines = 0,
+            reparsedBlocks = 0,
+            preservedBlocks = 0,
+            fallbackCount = 0,
+            fallbackReason = null,
         )
     }
 }
