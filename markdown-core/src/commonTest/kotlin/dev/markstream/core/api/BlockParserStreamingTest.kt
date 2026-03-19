@@ -33,6 +33,7 @@ class BlockParserStreamingTest {
 
         val block = assertIs<BlockNode.FencedCodeBlock>(delta.snapshot.document.blocks.single())
         assertEquals("kotlin", block.infoString)
+        assertEquals("kotlin", block.languageHint)
         assertEquals("val x = 1", block.literal)
         assertFalse(block.isClosed)
 
@@ -59,7 +60,19 @@ class BlockParserStreamingTest {
         assertFalse(bodyBlock.isClosed)
         assertTrue(closingBlock.isClosed)
         assertEquals("kotlin", closingBlock.infoString)
+        assertEquals("kotlin", closingBlock.languageHint)
         assertEquals("val x = 1", closingBlock.literal)
+    }
+
+    @Test
+    fun fenceInfoStringNormalizesLanguageAliases() {
+        val engine = MarkdownEngine()
+
+        val snapshot = engine.append("```language-kotlin\tlinenums\nval x = 1\n```").snapshot
+
+        val block = assertIs<BlockNode.FencedCodeBlock>(snapshot.document.blocks.single())
+        assertEquals("language-kotlin\tlinenums", block.infoString)
+        assertEquals("kotlin", block.languageHint)
     }
 
     @Test

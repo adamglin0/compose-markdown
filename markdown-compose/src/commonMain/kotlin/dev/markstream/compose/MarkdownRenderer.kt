@@ -52,6 +52,7 @@ fun Markdown(
     snapshot: MarkdownSnapshot,
     modifier: Modifier = Modifier,
     state: MarkdownRendererState = rememberMarkdownRendererState(snapshot = snapshot),
+    codeHighlighter: CodeHighlighter? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     LaunchedEffect(snapshot) {
@@ -60,6 +61,7 @@ fun Markdown(
     Markdown(
         blocks = state.blocks,
         modifier = modifier,
+        codeHighlighter = codeHighlighter,
         onLinkClick = onLinkClick,
     )
 }
@@ -68,6 +70,7 @@ fun Markdown(
 fun Markdown(
     document: MarkdownDocument,
     modifier: Modifier = Modifier,
+    codeHighlighter: CodeHighlighter? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     val blocks = remember(document) {
@@ -76,6 +79,7 @@ fun Markdown(
     Markdown(
         blocks = blocks,
         modifier = modifier,
+        codeHighlighter = codeHighlighter,
         onLinkClick = onLinkClick,
     )
 }
@@ -84,11 +88,13 @@ fun Markdown(
 fun Markdown(
     state: MarkdownRendererState,
     modifier: Modifier = Modifier,
+    codeHighlighter: CodeHighlighter? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     Markdown(
         blocks = state.blocks,
         modifier = modifier,
+        codeHighlighter = codeHighlighter,
         onLinkClick = onLinkClick,
     )
 }
@@ -97,9 +103,15 @@ fun Markdown(
 private fun Markdown(
     blocks: List<RenderedMarkdownBlock>,
     modifier: Modifier,
+    codeHighlighter: CodeHighlighter?,
     onLinkClick: (String) -> Unit,
 ) {
     val styles = rememberMarkdownBlockStyles()
+    val defaultCodeHighlighter = if (codeHighlighter == null) {
+        rememberMarkdownCodeHighlighter()
+    } else {
+        null
+    }
     val currentOnLinkClick = rememberUpdatedState(onLinkClick)
 
     Surface(modifier = modifier) {
@@ -112,6 +124,7 @@ private fun Markdown(
                     MarkdownBlock(
                         block = renderedBlock.block,
                         styles = styles,
+                        codeHighlighter = codeHighlighter ?: defaultCodeHighlighter!!,
                         onLinkClick = { currentOnLinkClick.value(it) },
                     )
                 }
@@ -124,6 +137,7 @@ private fun Markdown(
 private fun MarkdownBlock(
     block: BlockNode,
     styles: MarkdownBlockStyles,
+    codeHighlighter: CodeHighlighter,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -131,6 +145,7 @@ private fun MarkdownBlock(
         is BlockNode.BlockQuote -> QuoteBlock(
             block = block,
             styles = styles,
+            codeHighlighter = codeHighlighter,
             onLinkClick = onLinkClick,
             modifier = modifier,
         )
@@ -143,6 +158,7 @@ private fun MarkdownBlock(
                 MarkdownBlock(
                     block = child,
                     styles = styles,
+                    codeHighlighter = codeHighlighter,
                     onLinkClick = onLinkClick,
                 )
             }
@@ -151,6 +167,7 @@ private fun MarkdownBlock(
         is BlockNode.FencedCodeBlock -> CodeBlock(
             block = block,
             styles = styles,
+            codeHighlighter = codeHighlighter,
             modifier = modifier,
         )
 
@@ -170,6 +187,7 @@ private fun MarkdownBlock(
         is BlockNode.ListBlock -> ListBlock(
             block = block,
             styles = styles,
+            codeHighlighter = codeHighlighter,
             onLinkClick = onLinkClick,
             modifier = modifier,
         )
@@ -177,6 +195,7 @@ private fun MarkdownBlock(
         is BlockNode.ListItem -> ListItemBlock(
             block = block,
             styles = styles,
+            codeHighlighter = codeHighlighter,
             onLinkClick = onLinkClick,
             modifier = modifier,
         )
@@ -184,6 +203,7 @@ private fun MarkdownBlock(
         is BlockNode.TableBlock -> TableBlock(
             block = block,
             styles = styles,
+            codeHighlighter = codeHighlighter,
             onLinkClick = onLinkClick,
             modifier = modifier,
         )
@@ -232,6 +252,7 @@ private fun MarkdownBlock(
 private fun QuoteBlock(
     block: BlockNode.BlockQuote,
     styles: MarkdownBlockStyles,
+    codeHighlighter: CodeHighlighter,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -263,6 +284,7 @@ private fun QuoteBlock(
                 MarkdownBlock(
                     block = child,
                     styles = styles,
+                    codeHighlighter = codeHighlighter,
                     onLinkClick = onLinkClick,
                 )
             }
@@ -274,8 +296,14 @@ private fun QuoteBlock(
 private fun CodeBlock(
     block: BlockNode.FencedCodeBlock,
     styles: MarkdownBlockStyles,
+    codeHighlighter: CodeHighlighter,
     modifier: Modifier = Modifier,
 ) {
+    val annotatedCode = rememberHighlightedCodeBlock(
+        block = block,
+        highlighter = codeHighlighter,
+    )
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -306,7 +334,7 @@ private fun CodeBlock(
 
         SelectionContainer {
             Text(
-                text = AnnotatedString(block.literal),
+                text = annotatedCode,
                 style = styles.codeBlockTextStyle,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -318,6 +346,7 @@ private fun CodeBlock(
 private fun ListBlock(
     block: BlockNode.ListBlock,
     styles: MarkdownBlockStyles,
+    codeHighlighter: CodeHighlighter,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -329,6 +358,7 @@ private fun ListBlock(
             ListItemBlock(
                 block = item,
                 styles = styles,
+                codeHighlighter = codeHighlighter,
                 onLinkClick = onLinkClick,
             )
         }
@@ -339,6 +369,7 @@ private fun ListBlock(
 private fun ListItemBlock(
     block: BlockNode.ListItem,
     styles: MarkdownBlockStyles,
+    codeHighlighter: CodeHighlighter,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -364,6 +395,7 @@ private fun ListItemBlock(
                 MarkdownBlock(
                     block = child,
                     styles = styles,
+                    codeHighlighter = codeHighlighter,
                     onLinkClick = onLinkClick,
                 )
             }
@@ -434,6 +466,7 @@ internal fun BlockNode.ListItem.leadingMarker(): ListItemLeadingMarker =
 private fun TableBlock(
     block: BlockNode.TableBlock,
     styles: MarkdownBlockStyles,
+    codeHighlighter: CodeHighlighter,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {

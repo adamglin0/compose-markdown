@@ -37,6 +37,7 @@ sealed interface BlockNode {
         override val range: TextRange,
         override val lineRange: LineRange,
         val infoString: String?,
+        val languageHint: String?,
         val literal: String,
         val isClosed: Boolean,
     ) : BlockNode

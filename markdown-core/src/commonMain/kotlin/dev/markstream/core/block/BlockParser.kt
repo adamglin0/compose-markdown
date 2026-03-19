@@ -206,13 +206,16 @@ internal class BlockParser(
             }
 
             val consumed = lines.subList(startIndex, index)
+            val infoString = opener.infoString.ifEmpty { null }
+            val literal = bodyLines.joinToString(separator = "\n") { it.content }
             return ParsedBlock(
                 block = BlockNode.FencedCodeBlock(
                     id = allocateBlockId("fenced-code", consumed.first().range.start, opener.infoString),
                     range = consumed.combinedRange(),
                     lineRange = consumed.combinedLineRange(),
-                    infoString = opener.infoString.ifEmpty { null },
-                    literal = bodyLines.joinToString(separator = "\n") { it.content },
+                    infoString = infoString,
+                    languageHint = normalizeFenceLanguageHint(infoString),
+                    literal = literal,
                     isClosed = isClosed,
                 ),
                 nextIndex = index,
@@ -901,6 +904,37 @@ private data class LiteralWithRange(
     val literal: String,
     val range: TextRange,
 )
+
+private fun normalizeFenceLanguageHint(infoString: String?): String? {
+    val raw = infoString
+        ?.trim()
+        ?.takeIf(String::isNotEmpty)
+        ?: return null
+    val separatorIndex = raw.indexOfFirst { it.isWhitespace() || it == '{' }
+    val firstToken = raw
+        .let { if (separatorIndex == -1) it else it.substring(0, separatorIndex) }
+        .removePrefix("language-")
+        .removePrefix("lang-")
+        .trim()
+        .lowercase()
+    if (firstToken.isEmpty()) {
+        return null
+    }
+    return when (firstToken) {
+        "kt", "kts" -> "kotlin"
+        "js", "mjs", "cjs" -> "javascript"
+        "ts" -> "typescript"
+        "py" -> "python"
+        "rb" -> "ruby"
+        "sh", "bash", "zsh" -> "shell"
+        "c++", "cc", "cxx" -> "cpp"
+        "cs", "c#" -> "csharp"
+        "rs" -> "rust"
+        "golang" -> "go"
+        "coffee" -> "coffeescript"
+        else -> firstToken
+    }
+}
 
 private fun List<ParserLine>.trimTrailingBlankLines(): List<ParserLine> {
     var endExclusive = size
