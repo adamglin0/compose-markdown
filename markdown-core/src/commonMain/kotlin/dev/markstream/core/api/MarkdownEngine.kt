@@ -1,6 +1,6 @@
 package dev.markstream.core.api
 
-import dev.markstream.core.engine.PlaceholderMarkdownEngine
+import dev.markstream.core.engine.IncrementalMarkdownEngine
 import dev.markstream.core.dialect.MarkdownDialect
 import dev.markstream.core.model.MarkdownSnapshot
 import dev.markstream.core.model.ParseDelta
@@ -26,4 +26,4 @@ interface MarkdownEngine {
 }
 
 fun MarkdownEngine(dialect: MarkdownDialect = MarkdownDialect.ChatFast): MarkdownEngine =
-    PlaceholderMarkdownEngine(dialect = dialect)
+    IncrementalMarkdownEngine(dialect = dialect)

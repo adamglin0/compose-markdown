@@ -1,61 +1,52 @@
 # Dialect Matrix
 
-This repository now ships three concrete presets on top of the same append-only, snapshot-based core engine.
+`markstream` currently ships three presets on top of the same append-only engine.
 
-## Preset Intent
+## Choosing a Preset
 
-### `ChatFast`
-
-- default preset for streaming chat output
-- favors low-latency append behavior and graceful fallback
-- raw HTML stays disabled
-- reference-style links are off by default
-
-### `CommonMarkCore`
-
-- tighter CommonMark-oriented preset without enabling GitHub-only block syntax
-- raw HTML still disabled in this repository checkpoint
-- reference-style links and definitions are enabled
-
-### `GfmCompat`
-
-- compatibility-oriented preset for common GitHub-flavored content
-- keeps the same append-only engine model
-- enables tables, task lists, and strikethrough
+- choose `ChatFast` for chat / LLM output and the default lowest-friction API;
+- choose `CommonMarkCore` when reference-style links matter more than GitHub block extras;
+- choose `GfmCompat` for README-like content with tables, task lists, and strikethrough.
 
 ## Feature Matrix
 
 | Feature | ChatFast | CommonMarkCore | GfmCompat | Notes |
 | --- | --- | --- | --- | --- |
 | Paragraphs | Yes | Yes | Yes | Baseline block support |
-| ATX headings | Yes | Yes | Yes | Shared core block parser |
-| Setext headings | Yes | Yes | Yes | Uses a one-block retroactive invalidation window |
-| Fenced code blocks | Yes | Yes | Yes | Streaming-safe open fence handling remains supported |
-| Block quotes | Yes | Yes | Yes | Quote/list boundaries stay localized to affected containers |
-| Ordered / unordered lists | Yes | Yes | Yes | List continuation and sibling boundaries are corrected conservatively |
-| Task list items | Yes | No | Yes | `ChatFast` keeps them because chat output uses them often |
-| Tables | Yes | No | Yes | `CommonMarkCore` leaves them disabled; `ChatFast`/`GfmCompat` use a minimal retroactive table window |
-| Thematic breaks | Yes | Yes | Yes | Parsed as dedicated block nodes |
+| ATX headings | Yes | Yes | Yes | Shared block parser |
+| Setext headings | Yes | Yes | Yes | Uses localized backward invalidation |
+| Fenced code blocks | Yes | Yes | Yes | Open fences remain renderable during streaming |
+| Block quotes | Yes | Yes | Yes | Continuation stays localized to affected containers |
+| Ordered / unordered lists | Yes | Yes | Yes | Shared list parser |
+| Task list items | Yes | No | Yes | Kept in `ChatFast` because chat output uses them often |
+| Tables | Yes | No | Yes | Lightweight pipe-table implementation |
+| Thematic breaks | Yes | Yes | Yes | Dedicated block nodes |
 | Inline code | Yes | Yes | Yes | Shared inline parser |
-| Emphasis / strong | Yes | Yes | Yes | Delimiter rules still target common cases first |
-| Strikethrough | Yes | No | Yes | CommonMark core preset keeps this off |
+| Emphasis / strong | Yes | Yes | Yes | Common cases first |
+| Strikethrough | Yes | No | Yes | GFM-oriented extension |
 | Inline links | Yes | Yes | Yes | `[text](url)` |
-| Reference-style links | No | Yes | Yes | Dependency index powers late-definition resolution |
-| Reference definitions | No | Yes | Yes | Definitions are non-rendering and update only dependent blocks |
-| Autolinks / bare URLs | Yes | Yes | Yes | Conservative URL heuristics stay in place |
-| Images | Yes | Yes | Yes | Parsed as inline nodes only; renderer currently falls back to alt text |
-| Raw HTML | No | No | No | Explicitly disabled, with plain-text fallback |
+| Reference-style links | No | Yes | Yes | Uses dependency index and late-definition reprocessing |
+| Reference definitions | No | Yes | Yes | One-line definitions only in current checkpoint |
+| Autolinks / bare URLs | Yes | Yes | Yes | Conservative heuristics |
+| Images | Yes | Yes | Yes | Parsed in core; rendering remains minimal |
+| Raw HTML | No | No | No | Explicitly disabled |
 
 ## Incremental Invalidation Rules
 
-- setext headings: when a delimiter line arrives, the engine backs up to the previous top-level paragraph block instead of reparsing the whole document
-- tables: when a delimiter row arrives, the engine backs up to the previous top-level paragraph block and reinterprets it as a table header
-- quote/list continuation: when a new sibling line can extend the previous quote or list, the engine backs up to that previous top-level container only
-- reference definitions: the engine keeps `label -> definition` plus `unresolved label -> dependent top-level block IDs`; a newly arrived definition reparses only the affected preserved blocks
+- setext headings: when the underline arrives, the engine backs up to the previous paragraph block;
+- tables: when the delimiter row arrives, the engine backs up to the candidate header paragraph only;
+- quote/list continuation: future lines can widen the reparse boundary to the surrounding top-level container;
+- reference definitions: new labels rehydrate only preserved blocks that previously reported unresolved references for that label.
+
+## Practical Guidance
+
+- use `ChatFast` unless you know you need reference links;
+- `CommonMarkCore` is the best fit for stricter markdown text without GitHub extras;
+- `GfmCompat` is the benchmark preset because it exercises the broadest Stage 8 block/inline surface.
 
 ## Deliberate Limits
 
-- raw HTML remains disabled for all presets; there is no partial HTML support path
-- table parsing currently targets common pipe-table syntax and lightweight rendering, not full layout fidelity
-- reference definitions are currently one-line definitions; unsupported variants degrade to plain text
-- image nodes are parsed, but Compose/sample rendering intentionally stays minimal for this stage
+- no raw HTML in any preset;
+- no full CommonMark delimiter algorithm yet;
+- no multi-line reference definitions;
+- no advanced table layout fidelity beyond common pipe-table syntax.

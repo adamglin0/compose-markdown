@@ -1,150 +1,95 @@
 # Append-Only Incremental Model
 
-This document defines the mental model for incremental parsing. The first-class scenario is a stream of appended text, not arbitrary edits.
+This document defines the mental model used by `MarkdownEngine`. The engine is optimized for appended text, not arbitrary edits.
 
 ## Core Terms
 
 ### Stable Prefix
 
-The longest prefix of the source buffer that is known not to change interpretation after the latest append under the current dialect and feature set.
+The longest prefix of the normalized source buffer whose interpretation is frozen for the current snapshot.
 
-Properties:
-
-- never reparsed during the current update,
-- safe to reuse from cached block results,
-- grows monotonically during normal append flow,
-- may stop before the physical end of the document when the tail is syntactically open.
+- never reparsed for the current update;
+- safe to reuse from the block cache;
+- grows when syntax closes cleanly;
+- may stop before the physical end when the tail is still syntactically open.
 
 ### Mutable Tail
 
-The suffix after the stable prefix. This is the only region eligible for reparsing after an append.
+The suffix after the stable prefix.
 
 Typical reasons a tail stays mutable:
 
-- an unclosed fenced code block,
-- an unfinished list continuation,
-- a block quote sequence still being extended,
-- a paragraph whose final inline interpretation may still change at the end.
+- an unfinished paragraph without a trailing newline;
+- an open fenced code block;
+- list or quote continuation that may still absorb future lines;
+- features with retroactive interpretation such as setext headings or pipe tables.
 
 ### Dirty Region
 
-The minimal source range inside the mutable tail that must be reparsed for the latest append.
+The smallest safe source range that must be reparsed for the latest append.
 
-The dirty region may start earlier than the new chunk if the append can retroactively change the interpretation of recent source.
-
-Examples:
-
-- adding closing backticks for an existing fence,
-- continuing a list item that was previously ambiguous,
-- appending link destination text inside an unfinished inline link.
+- ordinary appends start at the previous mutable-tail boundary;
+- quote/list/table/setext logic may widen the start backward to a safe block boundary;
+- late reference definitions can rehydrate preserved blocks without reparsing the entire document.
 
 ### Block Cache
 
-Cache of previously parsed block records keyed by stable block identity and source range.
+Cached top-level block records from the previous snapshot.
 
-Each cached record is expected to retain:
+Each record retains:
 
-- block ID,
-- block kind,
-- source range,
-- structural metadata needed for reparse alignment,
-- closed or provisional status.
+- block identity;
+- range and line range;
+- unresolved reference labels;
+- stable/provisional status.
 
 ### Inline Cache
 
-Cache of inline parse results attached to block content ranges and dialect flags.
+Per-block inline parse results keyed by:
 
-The inline cache is invalidated when:
-
-- the owning block text changes,
-- the owning block type changes,
-- a future dependency invalidates that block's inline interpretation.
-
-### Future Dependency Map
-
-A reserved dependency structure for features that may require later input to reinterpret earlier blocks.
-
-Examples include:
-
-- reference-style links,
-- setext headings,
-- tables with alignment rows,
-- footnote definitions.
-
-`ChatFast` v0 avoids these features so the dependency map can remain dormant at first, but the architecture reserves a place for it.
+- block ID;
+- text range;
+- literal hash;
+- reference-definition revision.
 
 ## Incremental Flow
 
-For each `append(chunk)`:
+For every `append(chunk)`:
 
-1. Append text to `SourceBuffer`.
-2. Normalize appended `\r` / `\r\n` input to `\n` before it reaches `SourceBuffer`, `LineIndex`, or the parser.
-3. Extend `LineIndex` only for the normalized chunk.
-4. Identify the earliest reparse boundary inside the mutable tail.
-5. Reparse block structure only from that boundary onward.
-6. Reuse unaffected cached blocks before the boundary.
-7. Reparse inline content only for changed or invalidated blocks.
-8. Recompute stable prefix and mutable tail.
-9. Emit `ParseDelta` containing block-level changes.
+1. normalize `\r` / `\r\n` into `\n` before storing or indexing;
+2. append the normalized chunk into `SourceBuffer` and `LineIndex`;
+3. derive the dirty start from the previous stable-prefix / mutable-tail state;
+4. preserve cached blocks before that boundary;
+5. reparse only the dirty range with `BlockParser(range = dirtyRegion)`;
+6. resolve inline content only for reparsed or dependency-invalidated blocks;
+7. compute a new stable prefix;
+8. emit a new immutable `MarkdownSnapshot` and `ParseDelta`.
 
 ## Stable ID Rules
 
-- unchanged blocks keep their block IDs,
-- blocks that move due to reparsing but preserve identity should keep the same ID when safe,
-- blocks that split or merge receive new IDs for the affected region only,
-- unchanged prefix blocks never receive new IDs during append-only updates.
+- unchanged blocks keep the same `BlockId`;
+- reparsed blocks try to reuse IDs through structural identity keys;
+- unaffected prefix blocks never receive fresh IDs during append-only updates;
+- split/merge scenarios allocate new IDs only inside the affected region.
 
-## Snapshot Rule
+## Dependency-Driven Reprocessing
 
-Every append must yield a displayable snapshot.
+Two feature groups can reinterpret earlier content:
 
-That means:
+- block-level retroactive cases: setext headings, tables, list/quote continuation;
+- reference-definition cases: a later definition can resolve earlier unresolved inline references.
 
-- unfinished syntax stays representable,
-- fenced code blocks may remain provisional before `finish()`,
-- incomplete inline delimiters may be shown as plain text until later input resolves them,
-- no append should require withholding the whole document from rendering.
+The current engine handles both explicitly and locally instead of falling back to whole-document reparsing.
 
-## Minimal Invalidation Principle
+## Stage 8 Notes
 
-The engine should invalidate the smallest known safe window, not the full document.
+- benchmark reporting now aggregates `ParseStats.reparsedBlocks` and `ParseStats.preservedBlocks` to track reuse quality;
+- source-tail inspection no longer requires extra whole-buffer `snapshot()` copies for newline checks;
+- block-tree flattening was rewritten to avoid repeated recursive list creation during delta classification and cache refresh.
 
-Practical guardrails:
+## Non-Goals
 
-- reparse from a safe block boundary rather than an arbitrary character offset,
-- widen backward only when syntax can affect prior interpretation,
-- keep feature-specific invalidation logic explicit,
-- avoid hidden global rescans.
-
-## Why Block Cache And Inline Cache Are Separate
-
-Block structure and inline structure change at different rates.
-
-- block parsing depends heavily on line layout and container structure,
-- inline parsing depends on block-local text,
-- caching them separately lets the engine reuse a paragraph block even when only its trailing inline span changed,
-- later features can widen inline invalidation without forcing full block invalidation.
-
-## Why Future Dependency Map Exists Early
-
-The project does not implement reference links, setext headings, or tables in `ChatFast` v0, but these features are known to introduce backward or cross-block dependencies.
-
-By reserving a dependency map now, later dialect expansion can remain incremental instead of forcing a redesign.
-
-## Non-Goals Of The Incremental Model
-
-- arbitrary insertion or deletion in the middle of the source,
-- editor-grade incremental tokenization,
-- HTML DOM diffing,
-- global post-processing passes that always revisit the whole document.
-
-## Stage 5 Implementation Notes
-
-The current engine now applies this model concretely:
-
-- ordinary append reparses only from the cached mutable-tail boundary, not from offset `0`,
-- incoming CR and CRLF text is normalized to `\n` before source indexing so line slicing and ranges stay consistent,
-- unchanged prefix blocks are reused from block cache records,
-- reparsed tail blocks reuse inline cache entries when block identity and text stay the same,
-- snapshots remain renderable after every append, including unfinished fences, lists, and quotes,
-- Stage 5 still pays O(n) bookkeeping for snapshot rebuild, top-level delta classification, and cache-table refresh even when reparsing stays localized.
+- arbitrary insertion or deletion inside the source;
+- editor-grade token streaming for every character;
+- HTML DOM diffing;
+- hidden full rescans as a default recovery path.

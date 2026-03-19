@@ -19,3 +19,4 @@ rootProject.name = "markstream"
 include(":markdown-core")
 include(":markdown-compose")
 include(":sample-chat")
+include(":benchmarks")

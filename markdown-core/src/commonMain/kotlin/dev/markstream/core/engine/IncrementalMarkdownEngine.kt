@@ -7,6 +7,7 @@ import dev.markstream.core.dialect.MarkdownDialect
 import dev.markstream.core.inline.InlineParseResult
 import dev.markstream.core.inline.InlineParser
 import dev.markstream.core.internal.BlockIdentityKey
+import dev.markstream.core.internal.BlockIdentity
 import dev.markstream.core.internal.CachedBlockRecord
 import dev.markstream.core.internal.EngineSessionState
 import dev.markstream.core.internal.InlineCacheEntry
@@ -22,7 +23,7 @@ import dev.markstream.core.model.ParseDelta
 import dev.markstream.core.model.ParseStats
 import dev.markstream.core.model.TextRange
 
-internal class PlaceholderMarkdownEngine(
+internal class IncrementalMarkdownEngine(
     override val dialect: MarkdownDialect,
 ) : MarkdownEngine {
     private val state = EngineSessionState(
@@ -83,7 +84,8 @@ internal class PlaceholderMarkdownEngine(
         val previousBlocks = previousSnapshot.document.blocks
         val previousRecords = state.cacheState.blockRecords.toList()
         val previousIndexes = previousBlocks.mapIndexed { index, block -> block.id to index }.toMap()
-        val previousIds = previousBlocks.flatMap(::flattenBlocks).map { it.id }.toSet()
+        val previousFlatBlocks = flattenBlocks(previousBlocks)
+        val previousIds = previousFlatBlocks.mapTo(linkedSetOf()) { it.id }
         val previousDefinitions = state.dependencyIndex.definitionsByLabel.toMap()
         val previousUnresolvedByLabel = state.dependencyIndex.unresolvedBlocksByLabel.mapValues { it.value.toSet() }
         val reparsePlan = createReparsePlan(
@@ -92,11 +94,9 @@ internal class PlaceholderMarkdownEngine(
         )
         val preservedRecords = previousRecords
             .takeWhile { it.block.range.endExclusive <= reparsePlan.dirtyStart }
-        val blockIdLookup = previousBlocks
-            .flatMap(::flattenBlocks)
+        val blockIdLookup = previousFlatBlocks
             .filter { it.range.endExclusive > reparsePlan.dirtyStart }
-            .groupBy(::identityKey)
-            .mapValues { (_, blocks) -> blocks.map { it.id.raw }.toMutableList() }
+            .let(BlockIdentity::blockIdLookup)
         val parser = BlockParser(
             sourceBuffer = state.source,
             lineIndex = state.lineIndex,
@@ -173,9 +173,11 @@ internal class PlaceholderMarkdownEngine(
 
         val hydratedBlocks = rehydratedPreservedBlocks + reparsedTopLevelBlocks
         val blocks = hydratedBlocks.map { it.block }
-        val currentIds = blocks.flatMap(::flattenBlocks).map { it.id }.toSet()
+        val currentFlatBlocks = flattenBlocks(blocks)
+        val currentIds = currentFlatBlocks.mapTo(linkedSetOf()) { it.id }
+        val currentRawIds = currentIds.mapTo(linkedSetOf()) { it.raw }
         val removedBlockIds = previousIds.subtract(currentIds).toList()
-        state.cacheState.inlineByBlockId.keys.retainAll(currentIds.map { it.raw }.toSet())
+        state.cacheState.inlineByBlockId.keys.retainAll(currentRawIds)
         val changedBlocks = blocks.mapIndexedNotNull { index, block ->
             val oldIndex = previousIndexes[block.id]
             val oldBlock = oldIndex?.let(previousBlocks::get)
@@ -218,9 +220,7 @@ internal class PlaceholderMarkdownEngine(
             )
         }
         state.cacheState.blockIdsByKey.clear()
-        blocks.flatMap(::flattenBlocks).forEach { block ->
-            state.cacheState.blockIdsByKey.getOrPut(identityKey(block)) { mutableListOf() } += block.id.raw
-        }
+        state.cacheState.blockIdsByKey.putAll(BlockIdentity.blockIdLookup(currentFlatBlocks))
         state.dependencyIndex.reset()
         effectiveDefinitions.forEach { (label, definition) ->
             state.dependencyIndex.definitionsByLabel[label] = definition
@@ -297,11 +297,10 @@ internal class PlaceholderMarkdownEngine(
         if (previousLength <= 0) {
             return false
         }
-        val source = state.source.snapshot()
-        if (previousLength > source.length || source[previousLength - 1] != '\n') {
+        if (previousLength > state.source.length || state.source[previousLength - 1] != '\n') {
             return false
         }
-        return previousLength == 1 || source[previousLength - 2] != '\n'
+        return previousLength == 1 || state.source[previousLength - 2] != '\n'
     }
 
     private fun normalizeChunk(chunk: String): String {
@@ -315,18 +314,24 @@ internal class PlaceholderMarkdownEngine(
             return ""
         }
 
-        val slice = chunk.substring(startIndex)
-        if (!slice.contains('\r')) {
-            return slice
+        var containsCarriageReturn = false
+        for (index in startIndex until chunk.length) {
+            if (chunk[index] == '\r') {
+                containsCarriageReturn = true
+                break
+            }
+        }
+        if (!containsCarriageReturn) {
+            return if (startIndex == 0) chunk else chunk.substring(startIndex)
         }
 
-        return buildString(slice.length) {
-            var index = 0
-            while (index < slice.length) {
-                val char = slice[index]
+        return buildString(chunk.length - startIndex) {
+            var index = startIndex
+            while (index < chunk.length) {
+                val char = chunk[index]
                 if (char == '\r') {
                     append('\n')
-                    if (index + 1 < slice.length && slice[index + 1] == '\n') {
+                    if (index + 1 < chunk.length && chunk[index + 1] == '\n') {
                         index += 1
                     }
                 } else {
@@ -337,18 +342,26 @@ internal class PlaceholderMarkdownEngine(
         }
     }
 
+    private fun flattenBlocks(blocks: List<BlockNode>): List<BlockNode> = buildList {
+        blocks.forEach { block -> collectFlattenedBlocks(block, this) }
+    }
+
     private fun flattenBlocks(block: BlockNode): List<BlockNode> = buildList {
-        add(block)
+        collectFlattenedBlocks(block, this)
+    }
+
+    private fun collectFlattenedBlocks(block: BlockNode, destination: MutableList<BlockNode>) {
+        destination += block
         when (block) {
-            is BlockNode.BlockQuote -> block.children.forEach { addAll(flattenBlocks(it)) }
-            is BlockNode.Document -> block.children.forEach { addAll(flattenBlocks(it)) }
-            is BlockNode.ListBlock -> block.items.forEach { addAll(flattenBlocks(it)) }
-            is BlockNode.ListItem -> block.children.forEach { addAll(flattenBlocks(it)) }
+            is BlockNode.BlockQuote -> block.children.forEach { child -> collectFlattenedBlocks(child, destination) }
+            is BlockNode.Document -> block.children.forEach { child -> collectFlattenedBlocks(child, destination) }
+            is BlockNode.ListBlock -> block.items.forEach { item -> collectFlattenedBlocks(item, destination) }
+            is BlockNode.ListItem -> block.children.forEach { child -> collectFlattenedBlocks(child, destination) }
             is BlockNode.TableBlock -> {
-                addAll(flattenBlocks(block.header))
-                block.rows.forEach { addAll(flattenBlocks(it)) }
+                collectFlattenedBlocks(block.header, destination)
+                block.rows.forEach { row -> collectFlattenedBlocks(row, destination) }
             }
-            is BlockNode.TableRow -> block.cells.forEach { addAll(flattenBlocks(it)) }
+            is BlockNode.TableRow -> block.cells.forEach { cell -> collectFlattenedBlocks(cell, destination) }
             is BlockNode.TableCell,
             is BlockNode.FencedCodeBlock,
             is BlockNode.Heading,
@@ -393,8 +406,7 @@ internal class PlaceholderMarkdownEngine(
         blockIdLookup: Map<BlockIdentityKey, MutableList<Long>>,
     ): HydratedTopLevelBlock {
         val preservedBlockIdLookup = flattenBlocks(block)
-            .groupBy(::identityKey)
-            .mapValues { (_, blocks) -> blocks.map { it.id.raw }.toMutableList() }
+            .let(BlockIdentity::blockIdLookup)
         val parser = BlockParser(
             sourceBuffer = state.source,
             lineIndex = state.lineIndex,
@@ -607,22 +619,6 @@ internal class PlaceholderMarkdownEngine(
         return blockRange.intersects(mutableTail)
     }
 
-    private fun identityKey(block: BlockNode): BlockIdentityKey = when (block) {
-        is BlockNode.BlockQuote -> BlockIdentityKey(kind = "blockquote", start = block.range.start, discriminator = "container")
-        is BlockNode.Document -> BlockIdentityKey(kind = "document", start = block.range.start, discriminator = "root")
-        is BlockNode.FencedCodeBlock -> BlockIdentityKey(kind = "fenced-code", start = block.range.start, discriminator = block.infoString.orEmpty())
-        is BlockNode.Heading -> BlockIdentityKey(kind = "heading", start = block.range.start, discriminator = "${block.style}:${block.level}")
-        is BlockNode.ListBlock -> BlockIdentityKey(kind = "list-block", start = block.range.start, discriminator = block.style.name)
-        is BlockNode.ListItem -> BlockIdentityKey(kind = "list-item", start = block.range.start, discriminator = block.marker)
-        is BlockNode.Paragraph -> BlockIdentityKey(kind = "paragraph", start = block.range.start, discriminator = "paragraph")
-        is BlockNode.RawTextBlock -> BlockIdentityKey(kind = "raw-text", start = block.range.start, discriminator = block.literal.take(16))
-        is BlockNode.TableBlock -> BlockIdentityKey(kind = "table", start = block.range.start, discriminator = block.alignments.joinToString(separator = ","))
-        is BlockNode.TableCell -> BlockIdentityKey(kind = "table-cell", start = block.range.start, discriminator = block.range.endExclusive.toString())
-        is BlockNode.TableRow -> BlockIdentityKey(kind = "table-row", start = block.range.start, discriminator = block.isHeader.toString())
-        is BlockNode.ThematicBreak -> BlockIdentityKey(kind = "thematic-break", start = block.range.start, discriminator = block.marker.filterNot(Char::isWhitespace))
-        is BlockNode.UnsupportedBlock -> BlockIdentityKey(kind = "unsupported", start = block.range.start, discriminator = block.reason.orEmpty())
-    }
-
     private fun allocateBlockId(
         kind: String,
         start: Int,
@@ -669,11 +665,10 @@ internal class PlaceholderMarkdownEngine(
             return earliestOpenOffset
         }
 
-        val source = state.source.snapshot()
-        if (source.isEmpty() || source.endsWith('\n')) {
-            return source.length
+        if (state.source.isEmpty() || state.source[state.source.length - 1] == '\n') {
+            return state.source.length
         }
-        val lastNewline = source.lastIndexOf('\n')
+        val lastNewline = state.source.lastIndexOf('\n')
         return if (lastNewline >= 0) lastNewline + 1 else 0
     }
 

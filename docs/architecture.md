@@ -2,208 +2,123 @@
 
 ## Goals
 
-`markstream` is designed for a narrow first target with room to grow:
+`markstream` is designed around a narrow but practical target:
 
-- parse Markdown in Kotlin Multiplatform,
-- render it in Compose Multiplatform,
-- optimize for append-only streaming text,
-- keep the public model stable and immutable,
-- and evolve toward broader compatibility without rewriting the core.
+- parse Markdown in Kotlin Multiplatform;
+- keep every append renderable;
+- reuse as much previous work as possible on append-heavy streams;
+- preserve a stable public API centered on immutable snapshots;
+- keep the toolchain light enough for library and sample development.
 
-The first optimization target is LLM chat output, not a fully general Markdown editor.
+The first optimization target remains LLM/chat-style output, not a full rich-text editor.
 
 ## Module Graph
 
-```
+```text
 markstream
 |- markdown-core
 |  |- SourceBuffer / LineIndex
 |  |- BlockParser
 |  |- InlineParser
-|  |- IncrementalEngine
-|  |- MarkdownDocument / Snapshot / ParseDelta
-|  `- RenderIR
+|  |- IncrementalMarkdownEngine
+|  `- Snapshot / ParseDelta / Stats
 |
 |- markdown-compose
-|  |- Compose renderer
-|  |- block-level composables
-|  `- RenderIR -> UI mapping
+|  |- Markdown composables
+|  `- snapshot -> UI mapping
 |
 |- sample-chat
-|  |- streaming demo
-|  |- append() driver
-|  `- visual verification surface
+|  |- chunk driver
+|  `- visual/debug verification
 |
-`- benchmarks (planned)
-   |- append-heavy parser benchmarks
-   |- block reuse benchmarks
-   `- rendering churn benchmarks
+|- benchmarks
+|  |- corpus generators
+|  |- JVM benchmark runner
+|  `- benchmark smoke task
+|
+`- docs
+   |- architecture / incremental model / dialect matrix
+   |- known limitations / performance notes
+   `- release planning / ADRs
 ```
 
 Dependency direction:
 
-```
+```text
 markdown-core <- markdown-compose <- sample-chat
 markdown-core <- benchmarks
 ```
 
-`markdown-core` must not depend on Compose.
+`markdown-core` stays UI-free and benchmark code never changes public API semantics.
 
-## Layered Pipeline
+## Parsing Pipeline
 
-The parsing pipeline is explicitly layered and each layer owns a narrow responsibility.
+### 1. `SourceBuffer` and `LineIndex`
 
-### 1. SourceBuffer / LineIndex
+- `SourceBuffer` stores normalized append-only text;
+- `LineIndex` tracks newline offsets so block parsing can rescan only the requested range;
+- Stage 8 adds cached snapshots plus direct tail inspection helpers to avoid redundant whole-buffer copies.
 
-- Stores the append-only source text.
-- Tracks line starts and line ranges without repeated full rescans.
-- Exposes offsets and ranges used by later stages.
-- Avoids eager substring creation.
+### 2. `BlockParser`
 
-### 2. BlockParser
+- parses line-oriented blocks: paragraphs, headings, lists, quotes, fenced code blocks, tables, thematic breaks;
+- assigns stable block IDs through an engine-supplied allocator;
+- keeps parsing range-based and leaves inline resolution for a later phase.
 
-- Scans line-oriented block structure.
-- Produces block nodes with source ranges and stable IDs.
-- Handles paragraph formation, headings, fenced code blocks, block quotes, and lists.
-- Does not resolve inline syntax.
+### 3. `InlineParser`
 
-### 3. InlineParser
+- resolves inline syntax inside block-local text ranges;
+- supports links, emphasis, strong, strikethrough, code spans, images, autolinks, and line breaks;
+- caches inline results per block ID + literal hash so preserved blocks do not reparse inline payloads.
 
-- Parses text spans inside block payload ranges.
-- Produces inline nodes with ranges back into the source buffer.
-- Runs per block and can be cached per block.
+### 4. Incremental Engine
 
-### 4. IncrementalEngine
+- appends normalized text into the source buffer;
+- computes the earliest safe dirty start from the previous mutable tail;
+- preserves prefix block records and reparses only the dirty region;
+- rehydrates inline content only where needed;
+- rebuilds immutable `MarkdownSnapshot` / `ParseDelta` for consumers.
 
-- Accepts append-only updates.
-- Determines the smallest dirty region that must be reparsed.
-- Reuses stable prefix blocks and cached inline results when valid.
-- Emits `ParseDelta` describing block-level changes.
+### 5. Compose Renderer
 
-### 5. RenderIR / Presentation Model
+- renders block lists with stable IDs;
+- updates at block granularity;
+- keeps Compose concerns outside parser internals.
 
-- Converts parsed document nodes into a renderer-friendly model.
-- Keeps styling and UI concerns out of parser internals.
-- Preserves stable block identity so UI can update only changed blocks.
+## Incremental State Model
 
-### 6. Compose Renderer
+- `stable prefix`: source range known to keep its interpretation;
+- `mutable tail`: suffix that may still change meaning after more input;
+- `dirty region`: the actual range reparsed for the latest append;
+- `block cache`: preserved top-level blocks plus unresolved reference metadata;
+- `inline cache`: per-block inline parse results.
 
-- Maps block-level `RenderIR` to composables.
-- Uses stable IDs for keyed recomposition.
-- Never depends on internal parser state machines.
+See `docs/incremental-model.md` for the detailed rules.
 
-## Module Responsibilities
+## Stage 8 Engineering Notes
 
-### `markdown-core`
-
-Owns:
-
-- source storage,
-- ranges and IDs,
-- dialect definitions,
-- block parsing,
-- inline parsing,
-- incremental invalidation,
-- document snapshots,
-- parse deltas,
-- RenderIR generation.
-
-Does not own:
-
-- Compose UI,
-- HTML rendering,
-- rich editor behaviors,
-- arbitrary in-place document editing.
-
-### `markdown-compose`
-
-Owns:
-
-- `@Composable` rendering entry points,
-- theming hooks,
-- block-level UI mapping,
-- efficient UI updates using block IDs.
-
-Does not own:
-
-- source mutation,
-- parser caches,
-- dialect parsing rules,
-- core document storage.
-
-### `sample-chat`
-
-Owns:
-
-- a concrete streaming demo,
-- developer-visible append scenarios,
-- manual visual verification.
-
-It is not the source of truth for architecture decisions.
-
-### `benchmarks`
-
-Planned later. It will measure:
-
-- throughput per append,
-- reparsed source length per append,
-- block reuse ratio,
-- render update churn.
-
-## Package Planning
-
-Initial package layout target:
-
-```
-dev.markstream.core.source
-dev.markstream.core.range
-dev.markstream.core.model
-dev.markstream.core.block
-dev.markstream.core.inline
-dev.markstream.core.incremental
-dev.markstream.core.dialect
-dev.markstream.core.render
-
-dev.markstream.compose
-dev.markstream.compose.renderer
-dev.markstream.compose.theme
-
-dev.markstream.sample.chat
-```
-
-Files should stay small and single-purpose. Parser state machines must not leak into public API packages.
+- benchmarks now live in a real Gradle module instead of a placeholder directory;
+- CI stays lightweight and only runs build, test, benchmark smoke, and sample dry-run;
+- shared normalization code moved into `dev.markstream.core.internal` to reduce duplicate logic and regex churn;
+- block-tree flattening now uses an accumulator instead of recursive `buildList { addAll(...) }` chains.
 
 ## Public API Boundary
 
-Public API centers on an engine plus immutable snapshots:
+Public API remains centered on:
 
 - `MarkdownEngine`
-- `ParseDelta`
-- `MarkdownDocument`
 - `MarkdownSnapshot`
-- range types and stable block IDs
+- `MarkdownDocument`
+- `ParseDelta`
+- `ParseStats`
+- `BlockNode` / `InlineNode` / `TextRange`
 
-The engine hides mutable internals. Consumers observe immutable results and block-level deltas.
-
-Details live in `docs/api-draft.md`.
+Internal caches, ID allocation, and parser bookkeeping remain hidden.
 
 ## Non-Goals
 
-- No arbitrary mid-document editing in v0.
-- No HTML-first output pipeline.
-- No promise of full CommonMark or GFM compliance from day one.
-- No parser generator or grammar tooling.
-- No whole-document `AnnotatedString` replacement strategy.
-
-## Testing Strategy by Layer
-
-- `SourceBuffer / LineIndex`: offset and line-boundary tests.
-- `BlockParser`: block fixture tests and range invariants.
-- `InlineParser`: inline fixture tests and delimiter edge cases.
-- `IncrementalEngine`: append-sequence tests, dirty-region tests, stable-ID reuse tests.
-- `RenderIR`: mapping tests from document nodes to presentation model.
-- `markdown-compose`: renderer tests focused on block-level updates, not parser correctness.
-
-## Stage 0 Stop Point
-
-Stage 0 stops after architecture, API, dialect, and incremental boundaries are documented and directory/module layout is frozen at a planning level.
+- arbitrary middle-of-document editing;
+- raw HTML rendering;
+- parser-generator-based implementation;
+- benchmark-driven API changes;
+- heavy release or CI infrastructure before the core model stabilizes.

@@ -1,133 +1,143 @@
 # markstream
 
-`markstream` is a Kotlin Multiplatform Markdown parsing and rendering project for Compose Multiplatform, optimized first for append-only LLM streaming output.
+`markstream` is a Kotlin Multiplatform Markdown parser and Compose renderer built for append-only streaming output first.
 
-The project goal is not a generic HTML-first Markdown toolchain. The primary target is a chat-style rendering engine that can accept partial text, keep producing a displayable snapshot, and reuse as much previous parse work as possible after every `append()`.
+The project keeps the public API small: callers append text through `MarkdownEngine`, observe immutable `MarkdownSnapshot` / `ParseDelta`, and render blocks through `markdown-compose`. Stage 8 adds a real JVM benchmark runner, performance notes, lightweight CI, and release planning.
 
-## Project Direction
+## Project Goals
 
-- Hand-written parser only. No parser generator, no ANTLR, no tree-sitter, no PEG generator, no third-party Markdown parser.
-- `commonMain`-first core. Platform-specific code is a last resort.
-- Public API stays small and mostly immutable. Internal parser state may be mutable.
-- Core models are range-based and stable-ID-based to avoid repeated substring allocation and whole-document replacement.
-- Rendering updates happen at block granularity, not by rebuilding one giant `AnnotatedString` for the whole document.
-- Default dialect progression is `ChatFast` -> `CommonMarkCore` -> `GfmCompat`.
-- Raw HTML is disabled by default. Unsupported syntax degrades to plain text instead of throwing.
+- parse Markdown in `commonMain` and keep platform-specific code minimal;
+- preserve stable block identity so Compose can update by block instead of repainting the whole document;
+- optimize for append-only chat / LLM output rather than arbitrary in-place editing;
+- support multiple dialect presets without changing the engine API;
+- measure before tuning and document the trade-offs.
 
-## Planned Modules
+## Modules
 
-- `markdown-core`: source model, parsers, incremental engine, document model, RenderIR.
-- `markdown-compose`: Compose Multiplatform rendering layer built on top of `markdown-core`.
-- `sample-chat`: demo app for streaming chat rendering.
-- `benchmarks`: planned benchmark suite for append-heavy and steady-state parsing workloads.
+- `markdown-core`: source buffer, line index, block parser, inline parser, incremental engine, immutable document model;
+- `markdown-compose`: Compose Multiplatform renderer driven by block snapshots and stable IDs;
+- `sample-chat`: desktop sample that streams chunks into the engine and shows snapshot/debug output;
+- `benchmarks`: JVM benchmark runner for one-shot parse and append-heavy scenarios;
+- `docs`: architecture, incremental model, dialect matrix, limits, performance notes, ADRs, release planning.
 
-## Architecture Snapshot
+## Quick Start
 
-```
-append(chunk)
-    |
-    v
-SourceBuffer + LineIndex
-    |
-    v
-BlockParser
-    |
-    v
-InlineParser
-    |
-    v
-IncrementalEngine
-    |
-    v
-MarkdownDocument + ParseDelta + Snapshot
-    |
-    v
-RenderIR
-    |
-    v
-Compose renderer
+Build everything:
+
+```bash
+./gradlew build
 ```
 
-Core parsing and incremental decisions stay inside `markdown-core`. Compose-specific presentation stays outside the core module.
+Run tests:
 
-## Dialect Strategy
-
-- `ChatFast`: fast, predictable subset optimized for chat and streaming.
-- `CommonMarkCore`: stricter compatibility for broadly expected CommonMark behavior.
-- `GfmCompat`: targeted extensions that matter for GitHub-style content.
-
-`ChatFast` v0 is the first delivery target. It supports the subset most common in LLM chat output and intentionally leaves harder cross-block dependency features for later phases.
-
-## Phase Roadmap
-
-The roadmap below describes the intended end-state for each stage. The current repository is still earlier than most of those targets.
-
-- Stage 0: architecture, ADRs, dialect boundaries, incremental model, public API draft.
-- Stage 1: `SourceBuffer`, `LineIndex`, text ranges, stable block IDs, immutable document skeleton.
-- Stage 2: core API, AST, range, stable IDs, snapshot model, dialect boundary, placeholder engine, tests, docs.
-- Stage 3: `BlockParser` for `ChatFast` v0 blocks.
-- Stage 4: `InlineParser` for `ChatFast` v0 inline syntax.
-- Stage 5: append-only `IncrementalEngine`, dirty-region tracking, parse deltas, cache reuse.
-- Stage 6: `markdown-compose` block-level rendering and snapshot/delta-driven renderer state.
-- Stage 7: `ChatFast` polish plus first `CommonMarkCore` / `GfmCompat` preset expansion.
-- Stage 8: benchmarks, compatibility hardening, and broader dialect coverage.
-
-Each stage must define:
-
-- a clear goal,
-- concrete deliverables,
-- tests,
-- documentation updates,
-- and a stop point before the next stage starts.
-
-## Current Status
-
-This repository currently ships a Stage 7 checkpoint for the append-only engine, Compose renderer wiring, and the first dialect preset expansion.
-
-- Current checkpoint: append-only `SourceBuffer` and `LineIndex`, normalized newline handling, line-based `BlockParser`, inline parsing, stable prefix / mutable tail tracking, explicit dirty regions, block cache reuse, inline cache reuse, block-keyed Compose rendering, dialect presets (`ChatFast`, `CommonMarkCore`, `GfmCompat`), setext headings, tables, task lists, reference-style links/definitions, and localized dependency-driven invalidation for late definitions.
-- Not done yet: raw HTML support, full CommonMark delimiter edge cases, full table alignment/render fidelity, dedicated RenderIR, or benchmark coverage.
-
-## Dialect Snapshot
-
-- `ChatFast`: default preset for streaming chat; keeps raw HTML off, enables setext/task-list/tables, and leaves reference-style links off by default to avoid cross-block work unless the caller opts into a richer preset.
-- `CommonMarkCore`: enables reference-style links and definitions, setext headings, and stricter core compatibility while still keeping raw HTML disabled in this repository checkpoint.
-- `GfmCompat`: adds task lists, tables, strikethrough, and reference links on top of the same append-only engine model.
-
-See `docs/dialect-matrix.md`, `docs/dialect-presets.md`, and `docs/reference-links.md` for the support matrix and invalidation rules.
-
-## Project Structure
-
-```
-.
-|- markdown-core
-|  |- src/commonMain/kotlin/dev/markstream/core/...
-|  |- src/commonTest/kotlin/dev/markstream/core/...
-|  |- src/jvmMain/kotlin/dev/markstream/core/...
-|  `- src/jvmTest/kotlin/dev/markstream/core/...
-|
-|- markdown-compose
-|  `- src/commonMain/kotlin/dev/markstream/compose/...
-|
-|- sample-chat
-|  |- src/commonMain/kotlin/dev/markstream/sample/chat/...
-|  `- src/desktopMain/kotlin/dev/markstream/sample/chat/...
-|
-`- docs
-   `- adr/
+```bash
+./gradlew test
 ```
 
-- `markdown-core`: Kotlin Multiplatform block-layer engine, immutable document model, and tests.
-- `markdown-compose`: snapshot/delta-driven Compose renderer built on top of `markdown-core`, with keyed block updates and per-block inline text mapping.
-- `sample-chat`: desktop-first sample app that simulates chunked chat streaming into the renderer and exposes delta/snapshot diagnostics.
-- `docs`: Stage 0 architecture, ADRs, and API drafts preserved as the source of truth for later stages.
+Run the sample app:
 
-Start with:
+```bash
+./gradlew :sample-chat:run
+```
+
+Run the benchmark suite:
+
+```bash
+./gradlew :benchmarks:run
+```
+
+Run a lightweight benchmark smoke pass:
+
+```bash
+./gradlew benchmarkSmoke
+```
+
+## Core API
+
+```kotlin
+import dev.markstream.core.api.MarkdownEngine
+import dev.markstream.core.dialect.MarkdownDialect
+
+val engine = MarkdownEngine(dialect = MarkdownDialect.ChatFast)
+val delta = engine.append("Hello **streaming** markdown")
+val snapshot = delta.snapshot
+engine.finish()
+```
+
+`append()` and `finish()` always return a renderable snapshot. The public API does not expose mutable parser internals.
+
+## Compose Example
+
+```kotlin
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import dev.markstream.compose.Markdown
+import dev.markstream.core.api.MarkdownEngine
+
+@Composable
+fun Message(content: String) {
+    val engine = remember { MarkdownEngine() }
+    engine.reset()
+    val snapshot = engine.append(content).snapshot
+    Markdown(snapshot = snapshot)
+}
+```
+
+## Streaming Example
+
+```kotlin
+import dev.markstream.core.api.MarkdownEngine
+
+val engine = MarkdownEngine()
+for (chunk in listOf("# Hel", "lo\n\n", "- item", " one\n")) {
+    val delta = engine.append(chunk)
+    println("changed=${delta.changedBlocks.size} preserved=${delta.stats.preservedBlocks}")
+}
+engine.finish()
+```
+
+The engine keeps a stable prefix, reparses only the mutable tail, and reports preserved vs reparsed work through `ParseStats`.
+
+## Dialects
+
+- `ChatFast`: default preset for streaming chat; tables, task lists, setext headings, and common inline syntax enabled; reference links stay off by default;
+- `CommonMarkCore`: narrower compatibility preset with reference links/definitions enabled and GitHub-specific blocks disabled;
+- `GfmCompat`: compatibility-oriented preset with tables, task lists, and strikethrough enabled.
+
+See `docs/dialect-matrix.md` for the full matrix and invalidation rules.
+
+## Performance Workflow
+
+Stage 8 performance work follows a strict loop:
+
+1. measure with `:benchmarks:run`;
+2. inspect `ParseStats` plus JVM allocation counters;
+3. optimize obvious hot paths only;
+4. record baseline vs optimized results in `docs/performance-notes.md`.
+
+## Current Limits
+
+- append-only editing only; arbitrary middle-of-document edits are out of scope for this checkpoint;
+- raw HTML is disabled for all presets;
+- delimiter handling targets common chat / documentation cases first, not full CommonMark parity;
+- tables support common pipe-table syntax only;
+- image parsing exists, but Compose rendering stays intentionally lightweight.
+
+See `docs/known-limitations.md` for the fuller list.
+
+## Release Planning
+
+- Gradle `group`: `dev.markstream`
+- planned artifacts: `markstream-core`, `markstream-compose`, `markstream-benchmarks` is internal-only
+- current versioning scheme: `0.y.z` while parser semantics and renderer surface are still evolving
+
+Publishing notes and TODOs live in `docs/release-plan.md`.
+
+## Key Docs
 
 - `docs/architecture.md`
-- `docs/api-draft.md`
-- `docs/core-model.md`
-- `docs/dialect-matrix.md`
 - `docs/incremental-model.md`
-- `docs/incremental-engine.md`
-- `docs/roadmap.md`
-- `docs/adr/`
+- `docs/dialect-matrix.md`
+- `docs/known-limitations.md`
+- `docs/performance-notes.md`
+- `docs/release-plan.md`

@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.compose.multiplatform) apply false
     alias(libs.plugins.kotlin.compose) apply false
 }
@@ -7,6 +8,12 @@ plugins {
 allprojects {
     group = "dev.markstream"
     version = "0.1.0-SNAPSHOT"
+}
+
+tasks.register("benchmarkSmoke") {
+    group = "verification"
+    description = "Runs the lightweight JVM benchmark smoke suite."
+    dependsOn(":benchmarks:benchmarkSmoke")
 }
 
 tasks.register("test") {

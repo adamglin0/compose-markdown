@@ -2,6 +2,7 @@ package dev.markstream.core.inline
 
 import dev.markstream.core.dialect.MarkdownDialect
 import dev.markstream.core.internal.LinkReferenceDefinition
+import dev.markstream.core.internal.normalizeReferenceLabel
 import dev.markstream.core.model.InlineId
 import dev.markstream.core.model.InlineNode
 import dev.markstream.core.model.TextRange
@@ -42,9 +43,10 @@ internal class InlineParser(
                     return
                 }
                 val literal = text.substring(textStart, end)
+                val range = toRange(textStart, end)
                 nodes += InlineNode.Text(
-                    id = inlineId(kind = "text", range = toRange(textStart, end), salt = literal.hashCode().toLong()),
-                    range = toRange(textStart, end),
+                    id = inlineId(kind = "text", range = range, salt = literal.hashCode().toLong()),
+                    range = range,
                     literal = literal,
                 )
             }
@@ -704,18 +706,6 @@ internal class InlineParser(
         return merged
     }
 
-    private fun normalizeReferenceLabel(raw: String): String? {
-        val trimmed = raw.trim()
-        if (trimmed.isEmpty()) {
-            return null
-        }
-        return trimmed
-            .split(REFERENCE_WHITESPACE)
-            .filter { it.isNotEmpty() }
-            .joinToString(separator = " ")
-            .lowercase()
-    }
-
     private enum class DelimitedKind {
         Emphasis,
         Strong,
@@ -745,7 +735,6 @@ internal class InlineParser(
         )
         val BARE_AUTOLINK_STOP_CHARS: Set<Char> = setOf('<', '>', '"', '\'', ')', ']')
         val BARE_AUTOLINK_TRAILING_PUNCTUATION: Set<Char> = setOf('.', ',', ':', ';', '!', '?')
-        val REFERENCE_WHITESPACE: Regex = Regex("\\s+")
     }
 }
 

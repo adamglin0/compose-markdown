@@ -3,6 +3,8 @@ package dev.markstream.core.block
 import dev.markstream.core.dialect.MarkdownDialect
 import dev.markstream.core.internal.LinkReferenceDefinition
 import dev.markstream.core.internal.OpenBlockFrame
+import dev.markstream.core.internal.BlockIdentity
+import dev.markstream.core.internal.normalizeReferenceLabel
 import dev.markstream.core.model.BlockId
 import dev.markstream.core.model.BlockNode
 import dev.markstream.core.model.HeadingStyle
@@ -115,7 +117,11 @@ internal class BlockParser(
                 val heading = matchAtxHeading(content = trimmed)
                 if (heading != null) {
                     blocks += BlockNode.Heading(
-                        id = allocateBlockId("heading", line.range.start, "atx-${heading.level}"),
+                        id = allocateBlockId(
+                            "heading",
+                            line.range.start,
+                            BlockIdentity.headingDiscriminator(style = HeadingStyle.Atx, level = heading.level),
+                        ),
                         range = line.range,
                         lineRange = line.lineRange,
                         level = heading.level,
@@ -396,7 +402,11 @@ internal class BlockParser(
             val consumed = lines.subList(startIndex, index)
             return ParsedBlock(
                 block = BlockNode.TableBlock(
-                    id = allocateBlockId("table", headerLine.range.start, normalizedColumnCount.toString()),
+                    id = allocateBlockId(
+                        "table",
+                        headerLine.range.start,
+                        BlockIdentity.tableDiscriminator(alignments = alignments.padTo(normalizedColumnCount, TableAlignment.Default)),
+                    ),
                     range = consumed.combinedRange(),
                     lineRange = consumed.combinedLineRange(),
                     header = createTableRow(
@@ -445,7 +455,11 @@ internal class BlockParser(
                     val consumed = lines.subList(startIndex, index + 2)
                     return ParsedBlock(
                         block = BlockNode.Heading(
-                            id = allocateBlockId("heading", contentLines.first().range.start, "setext-${underline.level}"),
+                            id = allocateBlockId(
+                                "heading",
+                                contentLines.first().range.start,
+                                BlockIdentity.headingDiscriminator(style = HeadingStyle.Setext, level = underline.level),
+                            ),
                             range = consumed.combinedRange(),
                             lineRange = consumed.combinedLineRange(),
                             level = underline.level,
@@ -508,12 +522,20 @@ internal class BlockParser(
 
         private fun createTableRow(line: ParserLine, cells: List<TableCellDraft>, isHeader: Boolean): BlockNode.TableRow {
             return BlockNode.TableRow(
-                id = allocateBlockId("table-row", line.range.start, if (isHeader) "header" else "row"),
+                id = allocateBlockId(
+                    "table-row",
+                    line.range.start,
+                    BlockIdentity.tableRowDiscriminator(isHeader = isHeader),
+                ),
                 range = line.range,
                 lineRange = line.lineRange,
                 cells = cells.mapIndexed { index, cell ->
                     BlockNode.TableCell(
-                        id = allocateBlockId("table-cell", cell.range.start, "${line.range.start}:$index"),
+                        id = allocateBlockId(
+                            "table-cell",
+                            cell.range.start,
+                            BlockIdentity.tableCellDiscriminator(rowStart = line.range.start, index = index),
+                        ),
                         range = cell.range,
                         lineRange = line.lineRange,
                         children = inlineTextNodes(cell.literal, cell.range),
@@ -524,33 +546,44 @@ internal class BlockParser(
         }
 
         private fun splitTableCells(line: ParserLine): List<TableCellDraft> {
-            val contentStart = line.content.indexOfFirst { !it.isWhitespace() }
+            val content = line.content
+            val contentStart = content.indexOfFirst { !it.isWhitespace() }
             if (contentStart == -1) {
                 return emptyList()
             }
-            val contentEndExclusive = line.content.indexOfLast { !it.isWhitespace() } + 1
-            val compact = line.content.substring(contentStart, contentEndExclusive)
-            if (!compact.contains('|')) {
+            val contentEndExclusive = content.indexOfLast { !it.isWhitespace() } + 1
+            if (content.indexOf('|', startIndex = contentStart) !in contentStart until contentEndExclusive) {
                 return emptyList()
             }
-            val rawStart = contentStart + if (compact.startsWith("|")) 1 else 0
-            val rawEndExclusive = contentEndExclusive - if (compact.endsWith("|")) 1 else 0
-            val raw = line.content.substring(rawStart, rawEndExclusive)
-            val parts = raw.split('|')
-            var cursor = line.contentRange.start + rawStart
-            return parts.map { part ->
-                val leadingTrim = part.indexOfFirst { !it.isWhitespace() }.let { if (it == -1) part.length else it }
-                val trailingTrimExclusive = part.indexOfLast { !it.isWhitespace() }
-                    .let { if (it == -1) leadingTrim else it + 1 }
-                val start = (cursor + leadingTrim).coerceAtMost(line.contentRange.endExclusive)
-                val end = (cursor + trailingTrimExclusive).coerceIn(start, line.contentRange.endExclusive)
-                val cell = TableCellDraft(
-                    literal = part.substring(leadingTrim, trailingTrimExclusive),
-                    range = TextRange(start = start, endExclusive = end),
-                )
-                cursor += part.length + 1
-                cell
+            val rawStart = contentStart + if (content[contentStart] == '|') 1 else 0
+            val rawEndExclusive = contentEndExclusive - if (content[contentEndExclusive - 1] == '|') 1 else 0
+            if (rawEndExclusive < rawStart) {
+                return emptyList()
             }
+            val cells = mutableListOf<TableCellDraft>()
+            var cellStart = rawStart
+            var cursor = rawStart
+            while (cursor <= rawEndExclusive) {
+                if (cursor == rawEndExclusive || content[cursor] == '|') {
+                    var literalStart = cellStart
+                    while (literalStart < cursor && content[literalStart].isWhitespace()) {
+                        literalStart += 1
+                    }
+                    var literalEndExclusive = cursor
+                    while (literalEndExclusive > literalStart && content[literalEndExclusive - 1].isWhitespace()) {
+                        literalEndExclusive -= 1
+                    }
+                    val start = (line.contentRange.start + literalStart).coerceAtMost(line.contentRange.endExclusive)
+                    val end = (line.contentRange.start + literalEndExclusive).coerceIn(start, line.contentRange.endExclusive)
+                    cells += TableCellDraft(
+                        literal = if (literalStart >= literalEndExclusive) "" else content.substring(literalStart, literalEndExclusive),
+                        range = TextRange(start = start, endExclusive = end),
+                    )
+                    cellStart = cursor + 1
+                }
+                cursor += 1
+            }
+            return cells
         }
 
         private fun looksLikeTableRow(content: String): Boolean = content.contains('|') && !content.trim().startsWith('>')
@@ -786,13 +819,6 @@ internal class BlockParser(
         return compact.all { it == compact.first() } && compact.first() in charArrayOf('-', '*', '_')
     }
 
-    private fun normalizeReferenceLabel(raw: String): String? {
-        val trimmed = raw.trim()
-        if (trimmed.isEmpty()) {
-            return null
-        }
-        return trimmed.split(REFERENCE_WHITESPACE).filter { it.isNotEmpty() }.joinToString(" ").lowercase()
-    }
 }
 
 internal data class BlockParseResult(
@@ -938,5 +964,3 @@ private fun <T> List<T>.padTo(size: Int, element: T): List<T> {
     }
     return this + List(size - this.size) { element }
 }
-
-private val REFERENCE_WHITESPACE: Regex = Regex("\\s+")

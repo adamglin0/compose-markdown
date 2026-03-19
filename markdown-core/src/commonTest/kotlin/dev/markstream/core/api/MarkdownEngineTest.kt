@@ -111,6 +111,40 @@ class MarkdownEngineTest {
     }
 
     @Test
+    fun headingKeepsBlockIdStableAcrossIncrementalReparse() {
+        val engine = MarkdownEngine()
+
+        val first = engine.append("## Title")
+        val second = engine.append(" more")
+
+        val firstHeading = assertIs<BlockNode.Heading>(first.snapshot.document.blocks.single())
+        val secondHeading = assertIs<BlockNode.Heading>(second.snapshot.document.blocks.single())
+
+        assertEquals(firstHeading.id, secondHeading.id)
+        assertEquals(listOf(firstHeading.id), second.updatedBlockIds)
+        assertTrue(second.insertedBlockIds.isEmpty())
+    }
+
+    @Test
+    fun tableAndNestedBlocksKeepIdsStableAcrossIncrementalReparse() {
+        val engine = MarkdownEngine(dialect = MarkdownDialect.GfmCompat)
+
+        val first = engine.append("Name | Score\n--- | ---\nAda | 10")
+        val second = engine.append("\nBob | 20")
+
+        val firstTable = assertIs<BlockNode.TableBlock>(first.snapshot.document.blocks.single())
+        val secondTable = assertIs<BlockNode.TableBlock>(second.snapshot.document.blocks.single())
+        val firstRow = firstTable.rows.single()
+        val secondRow = secondTable.rows.first()
+
+        assertEquals(firstTable.id, secondTable.id)
+        assertEquals(firstTable.header.id, secondTable.header.id)
+        assertEquals(firstTable.header.cells.map(BlockNode.TableCell::id), secondTable.header.cells.map(BlockNode.TableCell::id))
+        assertEquals(firstRow.id, secondRow.id)
+        assertEquals(firstRow.cells.map(BlockNode.TableCell::id), secondRow.cells.map(BlockNode.TableCell::id))
+    }
+
+    @Test
     fun stablePrefixAdvancesPastClosedPrefixWhenTailRemainsOpen() {
         val engine = MarkdownEngine()
 
