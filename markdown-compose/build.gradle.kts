@@ -1,61 +1,67 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.multiplatform.android.library)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
 }
 
-@OptIn(ExperimentalWasmDsl::class)
 kotlin {
-    androidTarget()
+    jvmToolchain(17)
+
+    @Suppress("UnstableApiUsage")
+    androidLibrary {
+        namespace = "dev.markstream.compose"
+        compileSdk = 35
+        minSdk = 23
+    }
+
     jvm()
     iosX64()
     iosArm64()
     iosSimulatorArm64()
-    js(IR) {
+
+    js(compiler = IR) {
         browser()
     }
+
     wasmJs {
         browser()
     }
-    jvmToolchain(17)
 
     sourceSets {
-        val iosMain by creating {
-            dependsOn(commonMain.get())
-        }
-        val webMain by creating {
-            dependsOn(commonMain.get())
-        }
-        val highlightedMain by creating {
-            dependsOn(commonMain.get())
+        val iosMain = create("iosMain")
+        val webMain = create("webMain")
+        val highlightedMain = create("highlightedMain")
 
-            dependencies {
-                implementation(libs.highlights)
-            }
-        }
-        val jvmMain by getting {
+        iosMain.dependsOn(commonMain.get())
+        webMain.dependsOn(commonMain.get())
+        highlightedMain.dependsOn(commonMain.get())
+
+        jvmMain.configure {
             dependsOn(highlightedMain)
         }
-        val iosX64Main by getting {
-            dependsOn(highlightedMain)
-            dependsOn(iosMain)
-        }
-        val iosArm64Main by getting {
+        iosX64Main.configure {
             dependsOn(highlightedMain)
             dependsOn(iosMain)
         }
-        val iosSimulatorArm64Main by getting {
+        iosArm64Main.configure {
             dependsOn(highlightedMain)
             dependsOn(iosMain)
         }
-        val jsMain by getting {
+        iosSimulatorArm64Main.configure {
+            dependsOn(highlightedMain)
+            dependsOn(iosMain)
+        }
+        jsMain.configure {
             dependsOn(highlightedMain)
             dependsOn(webMain)
         }
-        val wasmJsMain by getting {
+        wasmJsMain.configure {
             dependsOn(highlightedMain)
             dependsOn(webMain)
         }
@@ -67,22 +73,11 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
         }
+        highlightedMain.dependencies {
+            implementation(libs.highlights)
+        }
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
-    }
-}
-
-android {
-    namespace = "dev.markstream.compose"
-    compileSdk = 35
-
-    defaultConfig {
-        minSdk = 21
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }

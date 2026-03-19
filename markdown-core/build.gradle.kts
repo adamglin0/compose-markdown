@@ -1,24 +1,35 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.multiplatform.android.library)
 }
 
-@OptIn(ExperimentalWasmDsl::class)
 kotlin {
-    androidTarget()
+    jvmToolchain(17)
+
+    @Suppress("UnstableApiUsage")
+    androidLibrary {
+        namespace = "dev.markstream.core"
+        compileSdk = 35
+        minSdk = 23
+    }
+
     jvm()
     iosX64()
     iosArm64()
     iosSimulatorArm64()
-    js(IR) {
+
+    js(compiler = IR) {
         browser()
     }
+
     wasmJs {
         browser()
     }
-    jvmToolchain(17)
 
     sourceSets {
         commonMain.dependencies {
@@ -26,19 +37,5 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
-    }
-}
-
-android {
-    namespace = "dev.markstream.core"
-    compileSdk = 35
-
-    defaultConfig {
-        minSdk = 21
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }
