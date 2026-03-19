@@ -1,9 +1,11 @@
 package dev.markstream.sample.chat
 
 import dev.markstream.core.model.BlockNode
+import dev.markstream.core.model.InlineNode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SampleChatDefaultsTest {
@@ -59,5 +61,18 @@ class SampleChatDefaultsTest {
         assertTrue(chunks.size > 3)
         assertEquals(message, chunks.joinToString(separator = ""))
         assertTrue(chunks.any { it.contains("```") })
+    }
+
+    @Test
+    fun finalSnapshotResolvesReferenceLinksWithSampleDialect() {
+        val snapshot = SampleChatDefaults.finalSnapshot(
+            message = "See [guide][docs]\n\n[docs]: https://example.com/guide",
+        )
+
+        assertEquals(1, snapshot.document.blocks.size)
+        val paragraph = assertIs<BlockNode.Paragraph>(snapshot.document.blocks.single())
+        val link = paragraph.children.filterIsInstance<InlineNode.Link>().single()
+        assertEquals("https://example.com/guide", link.destination)
+        assertFalse(snapshot.toDebugText().contains("[docs]: https://example.com/guide"))
     }
 }

@@ -161,6 +161,26 @@ class DialectExtensionTest {
     }
 
     @Test
+    fun streamingReferenceDefinitionCanExtendDestinationAcrossChunks() {
+        val engine = MarkdownEngine(dialect = MarkdownDialect.CommonMarkCore)
+
+        val first = engine.append("See [guide][docs]\n")
+        val firstBlockId = first.snapshot.document.blocks.single().id
+        engine.append("\n[docs]: ")
+        engine.append("https://example.")
+        val delta = engine.append("com/guide")
+
+        val paragraph = assertIs<BlockNode.Paragraph>(delta.snapshot.document.blocks.single())
+        val link = paragraph.children.filterIsInstance<InlineNode.Link>().single()
+        assertEquals("https://example.com/guide", link.destination)
+        assertTrue(delta.updatedBlockIds.contains(firstBlockId))
+
+        val finalParagraph = assertIs<BlockNode.Paragraph>(engine.finish().snapshot.document.blocks.single())
+        val finalLink = finalParagraph.children.filterIsInstance<InlineNode.Link>().single()
+        assertEquals("https://example.com/guide", finalLink.destination)
+    }
+
+    @Test
     fun dialectPresetsExposeExpectedReferenceAndTableDifferences() {
         val referenceMarkdown = "See [guide][docs]\n\n[docs]: https://example.com/guide"
         val tableMarkdown = "A | B\n--- | ---\n1 | 2"

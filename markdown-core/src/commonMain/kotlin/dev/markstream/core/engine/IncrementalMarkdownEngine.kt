@@ -87,6 +87,7 @@ internal class IncrementalMarkdownEngine(
         val previousFlatBlocks = flattenBlocks(previousBlocks)
         val previousIds = previousFlatBlocks.mapTo(linkedSetOf()) { it.id }
         val previousDefinitions = state.dependencyIndex.definitionsByLabel.toMap()
+        val previousDependentByLabel = state.dependencyIndex.dependentBlocksByLabel.mapValues { it.value.toSet() }
         val previousUnresolvedByLabel = state.dependencyIndex.unresolvedBlocksByLabel.mapValues { it.value.toSet() }
         val reparsePlan = createReparsePlan(
             previousSnapshot = previousSnapshot,
@@ -126,8 +127,11 @@ internal class IncrementalMarkdownEngine(
         }
         val stablePrefixEnd = stablePrefixEnd(parseResult = parseResult)
         val effectiveDefinitions = linkedMapOf<String, LinkReferenceDefinition>().apply {
-            putAll(previousDefinitions)
-            parseResult.parsedDefinitions.forEach { (label, definition) -> putIfAbsent(label, definition) }
+            previousDefinitions
+                .values
+                .filter { it.range.endExclusive <= reparsePlan.dirtyStart }
+                .forEach { definition -> put(definition.label, definition) }
+            putAll(parseResult.parsedDefinitions)
         }
         val inlineParser = InlineParser(
             dialect = dialect,
@@ -145,9 +149,17 @@ internal class IncrementalMarkdownEngine(
                 inlineStats = inlineStats,
             )
         }
-        val newDefinitionLabels = parseResult.parsedDefinitions.keys.filterNot(previousDefinitions::containsKey).toSet()
-        val affectedPreservedBlockIds = newDefinitionLabels
-            .flatMap { label -> previousUnresolvedByLabel[label].orEmpty() }
+        val changedDefinitionLabels = (previousDefinitions.keys + effectiveDefinitions.keys)
+            .filter { label ->
+                val previous = previousDefinitions[label]
+                val current = effectiveDefinitions[label]
+                previous?.destination != current?.destination ||
+                    previous?.title != current?.title ||
+                    (previous == null) != (current == null)
+            }
+            .toSet()
+        val affectedPreservedBlockIds = changedDefinitionLabels
+            .flatMap { label -> previousDependentByLabel[label].orEmpty() + previousUnresolvedByLabel[label].orEmpty() }
             .toSet()
         val rehydratedPreservedBlocks = preservedRecords.map { record ->
             if (record.block.id.raw in affectedPreservedBlockIds) {
@@ -163,6 +175,7 @@ internal class IncrementalMarkdownEngine(
             } else {
                 HydratedTopLevelBlock(
                     block = record.block,
+                    referenceLabels = record.referenceLabels,
                     unresolvedReferenceLabels = record.unresolvedReferenceLabels,
                 )
             }
@@ -216,6 +229,7 @@ internal class IncrementalMarkdownEngine(
             CachedBlockRecord(
                 block = hydrated.block,
                 isStable = hydrated.block.range.endExclusive <= stablePrefixEnd,
+                referenceLabels = hydrated.referenceLabels,
                 unresolvedReferenceLabels = hydrated.unresolvedReferenceLabels,
             )
         }
@@ -226,6 +240,12 @@ internal class IncrementalMarkdownEngine(
             state.dependencyIndex.definitionsByLabel[label] = definition
         }
         hydratedBlocks.forEach { hydrated ->
+            if (hydrated.referenceLabels.isNotEmpty()) {
+                state.dependencyIndex.referenceLabelsByBlockId[hydrated.block.id.raw] = hydrated.referenceLabels
+                hydrated.referenceLabels.forEach { label ->
+                    state.dependencyIndex.dependentBlocksByLabel.getOrPut(label) { linkedSetOf() } += hydrated.block.id.raw
+                }
+            }
             if (hydrated.unresolvedReferenceLabels.isNotEmpty()) {
                 state.dependencyIndex.unresolvedLabelsByBlockId[hydrated.block.id.raw] = hydrated.unresolvedReferenceLabels
                 hydrated.unresolvedReferenceLabels.forEach { label ->
@@ -392,6 +412,7 @@ internal class IncrementalMarkdownEngine(
         )
         return HydratedTopLevelBlock(
             block = hydration.block,
+            referenceLabels = hydration.referenceLabels,
             unresolvedReferenceLabels = hydration.unresolvedReferenceLabels,
         )
     }
@@ -457,6 +478,7 @@ internal class IncrementalMarkdownEngine(
         ).let { resolved ->
             InlineHydration(
                 block = block.copy(children = resolved.nodes),
+                referenceLabels = resolved.referenceLabels,
                 unresolvedReferenceLabels = resolved.unresolvedReferenceLabels,
             )
         }
@@ -474,6 +496,7 @@ internal class IncrementalMarkdownEngine(
         ).let { resolved ->
             InlineHydration(
                 block = block.copy(children = resolved.nodes),
+                referenceLabels = resolved.referenceLabels,
                 unresolvedReferenceLabels = resolved.unresolvedReferenceLabels,
             )
         }
@@ -491,6 +514,7 @@ internal class IncrementalMarkdownEngine(
         ).let { resolved ->
             InlineHydration(
                 block = block.copy(children = resolved.nodes),
+                referenceLabels = resolved.referenceLabels,
                 unresolvedReferenceLabels = resolved.unresolvedReferenceLabels,
             )
         }
@@ -501,6 +525,7 @@ internal class IncrementalMarkdownEngine(
             }
             InlineHydration(
                 block = block.copy(children = children.map { it.block }),
+                referenceLabels = children.flatMapTo(linkedSetOf()) { it.referenceLabels },
                 unresolvedReferenceLabels = children.flatMapTo(linkedSetOf()) { it.unresolvedReferenceLabels },
             )
         }
@@ -511,6 +536,7 @@ internal class IncrementalMarkdownEngine(
             }
             InlineHydration(
                 block = block.copy(items = items.map { it.block as BlockNode.ListItem }),
+                referenceLabels = items.flatMapTo(linkedSetOf()) { it.referenceLabels },
                 unresolvedReferenceLabels = items.flatMapTo(linkedSetOf()) { it.unresolvedReferenceLabels },
             )
         }
@@ -521,6 +547,7 @@ internal class IncrementalMarkdownEngine(
             }
             InlineHydration(
                 block = block.copy(children = children.map { it.block }),
+                referenceLabels = children.flatMapTo(linkedSetOf()) { it.referenceLabels },
                 unresolvedReferenceLabels = children.flatMapTo(linkedSetOf()) { it.unresolvedReferenceLabels },
             )
         }
@@ -535,6 +562,10 @@ internal class IncrementalMarkdownEngine(
                     header = header.block as BlockNode.TableRow,
                     rows = rows.map { it.block as BlockNode.TableRow },
                 ),
+                referenceLabels = buildSet {
+                    addAll(header.referenceLabels)
+                    rows.forEach { addAll(it.referenceLabels) }
+                },
                 unresolvedReferenceLabels = buildSet {
                     addAll(header.unresolvedReferenceLabels)
                     rows.forEach { addAll(it.unresolvedReferenceLabels) }
@@ -548,6 +579,7 @@ internal class IncrementalMarkdownEngine(
             }
             InlineHydration(
                 block = block.copy(cells = cells.map { it.block as BlockNode.TableCell }),
+                referenceLabels = cells.flatMapTo(linkedSetOf()) { it.referenceLabels },
                 unresolvedReferenceLabels = cells.flatMapTo(linkedSetOf()) { it.unresolvedReferenceLabels },
             )
         }
@@ -557,7 +589,11 @@ internal class IncrementalMarkdownEngine(
         is BlockNode.RawTextBlock,
         is BlockNode.ThematicBreak,
         is BlockNode.UnsupportedBlock,
-        -> InlineHydration(block = block, unresolvedReferenceLabels = emptySet())
+        -> InlineHydration(
+            block = block,
+            referenceLabels = emptySet(),
+            unresolvedReferenceLabels = emptySet(),
+        )
     }
 
     private fun resolveInlineChildren(
@@ -571,14 +607,22 @@ internal class IncrementalMarkdownEngine(
         sourceLength: Int,
         inlineStats: InlineResolutionStats,
     ): ResolvedInline {
-        val sourceText = children.singleOrNull() as? InlineNode.Text ?: return ResolvedInline(children, emptySet())
+        val sourceText = children.singleOrNull() as? InlineNode.Text ?: return ResolvedInline(
+            nodes = children,
+            referenceLabels = emptySet(),
+            unresolvedReferenceLabels = emptySet(),
+        )
         val shouldParseNow = shouldParseInline(
             blockRange = blockRange,
             stablePrefixEnd = stablePrefixEnd,
             sourceLength = sourceLength,
         )
         if (!shouldParseNow) {
-            return ResolvedInline(children, emptySet())
+            return ResolvedInline(
+                nodes = children,
+                referenceLabels = emptySet(),
+                unresolvedReferenceLabels = emptySet(),
+            )
         }
 
         val cacheKey = InlineCacheKey(
@@ -589,7 +633,11 @@ internal class IncrementalMarkdownEngine(
         val cached = state.cacheState.inlineByBlockId[blockId.raw]
         if (cached?.key == cacheKey) {
             inlineStats.cacheHitBlockCount += 1
-            return ResolvedInline(cached.nodes, cached.unresolvedReferenceLabels)
+            return ResolvedInline(
+                nodes = cached.nodes,
+                referenceLabels = cached.referenceLabels,
+                unresolvedReferenceLabels = cached.unresolvedReferenceLabels,
+            )
         }
 
         val parsed = inlineParser.parse(
@@ -600,10 +648,12 @@ internal class IncrementalMarkdownEngine(
         state.cacheState.inlineByBlockId[blockId.raw] = InlineCacheEntry(
             key = cacheKey,
             nodes = parsed.nodes,
+            referenceLabels = parsed.referenceLabels,
             unresolvedReferenceLabels = parsed.unresolvedReferenceLabels,
         )
         return ResolvedInline(
             nodes = parsed.nodes,
+            referenceLabels = parsed.referenceLabels,
             unresolvedReferenceLabels = parsed.unresolvedReferenceLabels,
         )
     }
@@ -696,16 +746,19 @@ internal class IncrementalMarkdownEngine(
 
     private data class ResolvedInline(
         val nodes: List<InlineNode>,
+        val referenceLabels: Set<String>,
         val unresolvedReferenceLabels: Set<String>,
     )
 
     private data class InlineHydration(
         val block: BlockNode,
+        val referenceLabels: Set<String>,
         val unresolvedReferenceLabels: Set<String>,
     )
 
     private data class HydratedTopLevelBlock(
         val block: BlockNode,
+        val referenceLabels: Set<String>,
         val unresolvedReferenceLabels: Set<String>,
     )
 }

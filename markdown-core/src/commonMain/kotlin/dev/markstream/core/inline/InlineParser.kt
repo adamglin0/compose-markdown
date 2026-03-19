@@ -13,20 +13,29 @@ internal class InlineParser(
 ) {
     fun parse(literal: String, range: TextRange): InlineParseResult {
         if (literal.isEmpty()) {
-            return InlineParseResult(nodes = emptyList(), unresolvedReferenceLabels = emptySet())
+            return InlineParseResult(
+                nodes = emptyList(),
+                referenceLabels = emptySet(),
+                unresolvedReferenceLabels = emptySet(),
+            )
         }
         val scanner = InlineScanner(
             text = literal,
             baseOffset = range.start,
         )
         val nodes = scanner.parseSegment(start = 0, endExclusive = literal.length)
-        return InlineParseResult(nodes = nodes, unresolvedReferenceLabels = scanner.unresolvedReferenceLabels)
+        return InlineParseResult(
+            nodes = nodes,
+            referenceLabels = scanner.referenceLabels,
+            unresolvedReferenceLabels = scanner.unresolvedReferenceLabels,
+        )
     }
 
     private inner class InlineScanner(
         private val text: String,
         private val baseOffset: Int,
     ) {
+        val referenceLabels: MutableSet<String> = linkedSetOf()
         val unresolvedReferenceLabels: MutableSet<String> = linkedSetOf()
 
         fun parseSegment(start: Int, endExclusive: Int): List<InlineNode> {
@@ -322,6 +331,7 @@ internal class InlineParser(
 
         private fun parseReferenceLink(index: Int, endExclusive: Int): ParsedInlineNode? {
             val linkCandidate = parseReferenceCandidate(index = index, endExclusive = endExclusive, isImage = false) ?: return null
+            referenceLabels += linkCandidate.label
             val definition = referenceDefinitions[linkCandidate.label]
             if (definition == null) {
                 unresolvedReferenceLabels += linkCandidate.label
@@ -369,6 +379,7 @@ internal class InlineParser(
                 return null
             }
             val candidate = parseReferenceCandidate(index = index + 1, endExclusive = endExclusive, isImage = true) ?: return null
+            referenceLabels += candidate.label
             val definition = referenceDefinitions[candidate.label]
             if (definition == null) {
                 unresolvedReferenceLabels += candidate.label
@@ -740,5 +751,6 @@ internal class InlineParser(
 
 internal data class InlineParseResult(
     val nodes: List<InlineNode>,
+    val referenceLabels: Set<String>,
     val unresolvedReferenceLabels: Set<String>,
 )

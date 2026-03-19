@@ -1,6 +1,7 @@
 package dev.markstream.sample.chat
 
 import dev.markstream.core.api.MarkdownEngine
+import dev.markstream.core.dialect.MarkdownDialect
 import dev.markstream.core.model.MarkdownSnapshot
 
 object SampleChatDefaults {
@@ -91,9 +92,13 @@ object SampleChatDefaults {
         return chunks
     }
 
+    fun createMarkdownEngine(): MarkdownEngine = MarkdownEngine(
+        dialect = MarkdownDialect.GfmCompat,
+    )
+
     fun finalSnapshot(
         message: String,
-        engineFactory: () -> MarkdownEngine = { MarkdownEngine() },
+        engineFactory: () -> MarkdownEngine = { createMarkdownEngine() },
     ): MarkdownSnapshot {
         val engine = engineFactory()
         createStreamingChunks(message).forEach(engine::append)

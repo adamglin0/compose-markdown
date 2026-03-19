@@ -70,7 +70,9 @@ fun MarkstreamSampleApp(
         ) {
             val uriHandler = LocalUriHandler.current
             val scope = rememberCoroutineScope()
-            val markdownState = rememberMarkdownState()
+            val markdownState = rememberMarkdownState(
+                engineFactory = SampleChatDefaults::createMarkdownEngine,
+            )
             val rendererState = rememberMarkdownRendererState()
 
             var selectedScriptIndex by remember { mutableIntStateOf(0) }

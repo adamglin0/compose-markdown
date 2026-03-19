@@ -38,11 +38,15 @@ internal class ParseCacheState {
 
 internal class DependencyIndex {
     val definitionsByLabel: MutableMap<String, LinkReferenceDefinition> = linkedMapOf()
+    val dependentBlocksByLabel: MutableMap<String, MutableSet<Long>> = linkedMapOf()
+    val referenceLabelsByBlockId: MutableMap<Long, Set<String>> = linkedMapOf()
     val unresolvedBlocksByLabel: MutableMap<String, MutableSet<Long>> = linkedMapOf()
     val unresolvedLabelsByBlockId: MutableMap<Long, Set<String>> = linkedMapOf()
 
     fun reset() {
         definitionsByLabel.clear()
+        dependentBlocksByLabel.clear()
+        referenceLabelsByBlockId.clear()
         unresolvedBlocksByLabel.clear()
         unresolvedLabelsByBlockId.clear()
     }
@@ -58,6 +62,7 @@ internal data class LinkReferenceDefinition(
 internal data class CachedBlockRecord(
     val block: BlockNode,
     val isStable: Boolean,
+    val referenceLabels: Set<String>,
     val unresolvedReferenceLabels: Set<String>,
 )
 
@@ -76,5 +81,6 @@ internal data class InlineCacheKey(
 internal data class InlineCacheEntry(
     val key: InlineCacheKey,
     val nodes: List<InlineNode>,
+    val referenceLabels: Set<String>,
     val unresolvedReferenceLabels: Set<String>,
 )
