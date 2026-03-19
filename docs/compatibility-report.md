@@ -96,7 +96,7 @@ This repository targets predictable append-only rendering first, not full spec p
 - delimiter handling is simplified; nested emphasis precedence does not aim for full CommonMark edge-case parity
 - reference definitions are single-line only, so valid multi-line spec examples intentionally degrade to plain text
 - tables cover common pipe-table syntax only; GitHub-specific layout quirks and richer table edge cases are out of scope
-- task list rendering is textual (`[x]` / `[ ]`) rather than interactive checkbox UI
+- task list rendering uses read-only checkbox UI rather than plain textual markers
 - image rendering currently emits alt text only; no built-in image fetching or sizing pipeline exists
 
 ## Regression Suite

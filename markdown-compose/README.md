@@ -12,7 +12,7 @@ Current responsibilities:
 Intentional limits:
 
 - no HTML rendering or export
-- no interactive task toggles
+- task lists render as read-only checkboxes; interactive toggles are still out of scope
 - no built-in image loading pipeline
 
 See `../docs/compatibility-report.md` for the final renderer audit.

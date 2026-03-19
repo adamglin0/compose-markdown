@@ -9,6 +9,7 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/benchmarks" />
             <option value="$PROJECT_DIR$/markdown-compose" />
             <option value="$PROJECT_DIR$/markdown-core" />
             <option value="$PROJECT_DIR$/sample-chat" />

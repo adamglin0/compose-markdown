@@ -23,7 +23,7 @@
 
 - Compose rendering is block-oriented and intentionally lightweight
 - images currently render as alt text only; this repository does not include an image loading pipeline
-- task list markers are readable but non-interactive
+- task list checkboxes render as read-only UI; toggle interactions are not implemented
 - table rendering favors simple readability over GitHub-faithful table layout
 
 ## Tooling And Distribution

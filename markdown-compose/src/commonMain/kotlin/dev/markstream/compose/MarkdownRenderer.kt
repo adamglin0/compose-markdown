@@ -1,13 +1,16 @@
 package dev.markstream.compose
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -23,6 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -39,6 +45,7 @@ import dev.markstream.core.model.BlockNode
 import dev.markstream.core.model.InlineNode
 import dev.markstream.core.model.MarkdownDocument
 import dev.markstream.core.model.MarkdownSnapshot
+import dev.markstream.core.model.TaskState
 
 @Composable
 fun Markdown(
@@ -340,17 +347,15 @@ private fun ListItemBlock(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Text(
-            text = buildString {
-                if (block.taskState != null) {
-                    append(if (block.taskState == dev.markstream.core.model.TaskState.Checked) "[x]" else "[ ]")
-                } else {
-                    append(block.marker)
-                }
-            },
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-            modifier = Modifier.padding(top = 1.dp),
-        )
+        when (val leadingMarker = block.leadingMarker()) {
+            is ListItemLeadingMarker.Literal -> Text(
+                text = leadingMarker.value,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                modifier = Modifier.padding(top = 1.dp),
+            )
+
+            is ListItemLeadingMarker.Task -> TaskListMarker(taskState = leadingMarker.taskState)
+        }
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -365,6 +370,65 @@ private fun ListItemBlock(
         }
     }
 }
+
+@Composable
+private fun TaskListMarker(
+    taskState: TaskState,
+    modifier: Modifier = Modifier,
+) {
+    val isChecked = taskState == TaskState.Checked
+    val borderColor = if (isChecked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    val fillColor = if (isChecked) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent
+
+    Box(
+        modifier = modifier
+            .padding(top = 3.dp)
+            .size(18.dp)
+            .border(
+                width = 1.5.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(4.dp),
+            )
+            .background(
+                color = fillColor,
+                shape = RoundedCornerShape(4.dp),
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (isChecked) {
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(4.dp),
+            ) {
+                val strokeWidth = size.minDimension * 0.18f
+                drawLine(
+                    color = borderColor,
+                    start = Offset(x = size.width * 0.14f, y = size.height * 0.54f),
+                    end = Offset(x = size.width * 0.4f, y = size.height * 0.8f),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
+                )
+                drawLine(
+                    color = borderColor,
+                    start = Offset(x = size.width * 0.4f, y = size.height * 0.8f),
+                    end = Offset(x = size.width * 0.86f, y = size.height * 0.2f),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
+                )
+            }
+        }
+    }
+}
+
+internal sealed interface ListItemLeadingMarker {
+    data class Literal(val value: String) : ListItemLeadingMarker
+
+    data class Task(val taskState: TaskState) : ListItemLeadingMarker
+}
+
+internal fun BlockNode.ListItem.leadingMarker(): ListItemLeadingMarker =
+    taskState?.let(ListItemLeadingMarker::Task) ?: ListItemLeadingMarker.Literal(marker)
 
 @Composable
 private fun TableBlock(
