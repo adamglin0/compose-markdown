@@ -58,7 +58,7 @@ fun MarkstreamSampleApp(
         secondary = androidx.compose.ui.graphics.Color(0xFF607D94),
         background = androidx.compose.ui.graphics.Color(0xFFF3F5F8),
         surface = androidx.compose.ui.graphics.Color(0xFFFBFCFE),
-        surfaceVariant = androidx.compose.ui.graphics.Color(0xFFE8EDF3),very large tables need virtualization.
+        surfaceVariant = androidx.compose.ui.graphics.Color(0xFFE8EDF3),
         outline = androidx.compose.ui.graphics.Color(0xFFBBC6D2),
         outlineVariant = androidx.compose.ui.graphics.Color(0xFFD4DBE3),
     )
