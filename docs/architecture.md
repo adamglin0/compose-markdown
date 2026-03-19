@@ -2,7 +2,7 @@
 
 ## Goals
 
-`markstream` is designed around a narrow but practical target:
+`compose-markdown` is designed around a narrow but practical target:
 
 - parse Markdown in Kotlin Multiplatform;
 - keep every append renderable;
@@ -15,7 +15,7 @@ The first optimization target remains LLM/chat-style output, not a full rich-tex
 ## Module Graph
 
 ```text
-markstream
+compose-markdown
 |- markdown-core
 |  |- SourceBuffer / LineIndex
 |  |- BlockParser
@@ -99,7 +99,7 @@ See `docs/incremental-model.md` for the detailed rules.
 
 - benchmarks now live in a real Gradle module instead of a placeholder directory;
 - CI stays lightweight and only runs build, test, benchmark smoke, and sample dry-run;
-- shared normalization code moved into `dev.markstream.core.internal` to reduce duplicate logic and regex churn;
+- shared normalization code moved into `com.adamglin.compose.markdown.core.internal` to reduce duplicate logic and regex churn;
 - block-tree flattening now uses an accumulator instead of recursive `buildList { addAll(...) }` chains.
 
 ## Public API Boundary

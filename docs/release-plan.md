@@ -2,12 +2,12 @@
 
 ## Coordinates
 
-- Gradle group: `dev.markstream`
+- Gradle group: `com.adamglin.compose.markdown`
 - planned artifact IDs:
-  - `markstream-core`
-  - `markstream-compose`
-  - `markstream-sample-chat` is sample-only and should not be published by default
-  - `markstream-benchmarks` stays internal-only
+  - `markdown-core`
+  - `markdown-compose`
+  - `sample-chat` is sample-only and should not be published by default
+  - `benchmarks` stays internal-only
 
 ## Versioning
 

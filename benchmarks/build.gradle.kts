@@ -12,7 +12,7 @@ dependencies {
 }
 
 application {
-    mainClass = "dev.markstream.benchmarks.MarkdownBenchmarkRunnerKt"
+    mainClass = "com.adamglin.compose.markdown.benchmarks.MarkdownBenchmarkRunnerKt"
 }
 
 tasks.register<JavaExec>("benchmarkSmoke") {

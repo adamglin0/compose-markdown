@@ -76,11 +76,11 @@ kotlin {
 }
 
 android {
-    namespace = "dev.markstream.sample.chat"
+    namespace = "com.adamglin.compose.markdown.sample.chat"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.markstream.sample.chat"
+        applicationId = "com.adamglin.compose.markdown.sample.chat"
         minSdk = 23
         targetSdk = 35
         versionCode = 1
@@ -105,6 +105,6 @@ android {
 
 compose.desktop {
     application {
-        mainClass = "dev.markstream.sample.chat.MainKt"
+        mainClass = "com.adamglin.compose.markdown.sample.chat.MainKt"
     }
 }

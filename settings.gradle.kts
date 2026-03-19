@@ -14,7 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "markstream"
+rootProject.name = "compose-markdown"
 
 include(":markdown-core")
 include(":markdown-compose")

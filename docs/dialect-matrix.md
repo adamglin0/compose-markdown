@@ -1,6 +1,6 @@
 # Dialect Matrix
 
-`markstream` currently ships three presets on top of the same append-only engine.
+`compose-markdown` currently ships three presets on top of the same append-only engine.
 
 ## Choosing a Preset
 

@@ -1,6 +1,6 @@
-# markstream
+# compose-markdown
 
-`markstream` is a Kotlin Multiplatform Markdown parser plus Compose renderer built for append-only streaming output first.
+`compose-markdown` is a Kotlin Multiplatform Markdown parser plus Compose renderer built for append-only streaming output first.
 
 The repository is organized around a small public surface:
 
@@ -32,22 +32,22 @@ The repository is organized around a small public surface:
 |  |- performance-notes.md
 |  `- ...
 |- markdown-core/
-|  |- src/commonMain/kotlin/dev/markstream/core/
+|  |- src/commonMain/kotlin/com/adamglin/compose/markdown/core/
 |  |  |- api/
 |  |  |- block/
 |  |  |- dialect/
 |  |  |- engine/
 |  |  |- inline/
 |  |  `- model/
-|  `- src/commonTest/kotlin/dev/markstream/core/
+|  `- src/commonTest/kotlin/com/adamglin/compose/markdown/core/
 |- markdown-compose/
-|  |- src/commonMain/kotlin/dev/markstream/compose/
-|  `- src/commonTest/kotlin/dev/markstream/compose/
+|  |- src/commonMain/kotlin/com/adamglin/compose/markdown/compose/
+|  `- src/commonTest/kotlin/com/adamglin/compose/markdown/compose/
 |- sample-chat/
-|  |- src/commonMain/kotlin/dev/markstream/sample/chat/
-|  `- src/desktopMain/kotlin/dev/markstream/sample/chat/
+|  |- src/commonMain/kotlin/com/adamglin/compose/markdown/sample/chat/
+|  `- src/desktopMain/kotlin/com/adamglin/compose/markdown/sample/chat/
 `- benchmarks/
-   `- src/main/kotlin/dev/markstream/benchmarks/
+   `- src/main/kotlin/com/adamglin/compose/markdown/benchmarks/
 ```
 
 ## Build, Test, Run
@@ -91,8 +91,8 @@ Run the lightweight benchmark smoke pass:
 ## Core API
 
 ```kotlin
-import dev.markstream.core.api.MarkdownEngine
-import dev.markstream.core.dialect.MarkdownDialect
+import com.adamglin.compose.markdown.core.api.MarkdownEngine
+import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
 
 val engine = MarkdownEngine(dialect = MarkdownDialect.ChatFast)
 val delta = engine.append("Hello **streaming** markdown")
@@ -107,8 +107,8 @@ engine.finish()
 ```kotlin
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import dev.markstream.compose.Markdown
-import dev.markstream.core.api.MarkdownEngine
+import com.adamglin.compose.markdown.compose.Markdown
+import com.adamglin.compose.markdown.core.api.MarkdownEngine
 
 @Composable
 fun Message(content: String) {
@@ -122,7 +122,7 @@ fun Message(content: String) {
 ## Streaming Model
 
 ```kotlin
-import dev.markstream.core.api.MarkdownEngine
+import com.adamglin.compose.markdown.core.api.MarkdownEngine
 
 val engine = MarkdownEngine()
 for (chunk in listOf("# Hel", "lo\n\n", "- item", " one\n")) {
@@ -190,7 +190,7 @@ Not a fit:
 ## Regression Coverage
 
 - unit tests cover model invariants, block parsing, inline parsing, dialect differences, incremental stats, renderer state updates, and JVM platform wiring;
-- `markdown-core/src/commonTest/kotlin/dev/markstream/core/api/CompatibilityRegressionTest.kt` runs curated CommonMark 0.31.2 and GFM 0.29-gfm representative cases;
+- `markdown-core/src/commonTest/kotlin/com/adamglin/compose/markdown/core/api/CompatibilityRegressionTest.kt` runs curated CommonMark 0.31.2 and GFM 0.29-gfm representative cases;
 - the same regression suite includes streaming-specific chunk splits for plain text, quote, list, fenced code, table, and reference-link paths.
 
 ## Key Docs

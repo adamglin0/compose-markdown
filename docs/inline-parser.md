@@ -39,13 +39,13 @@ For the current repository-wide support boundary, use `docs/compatibility-report
 ## Requirement -> Tests
 
 - Stable prefix cache reuse + dirty tail reparse:
-  - `markdown-core/src/commonTest/kotlin/dev/markstream/core/api/MarkdownEngineTest.kt` (`unchangedStablePrefixBlockUsesInlineCacheWhileTailIsReparsed`)
+  - `markdown-core/src/commonTest/kotlin/com/adamglin/compose/markdown/core/api/MarkdownEngineTest.kt` (`unchangedStablePrefixBlockUsesInlineCacheWhileTailIsReparsed`)
 - Finalized new block + dirty tail block must parse:
-  - `markdown-core/src/commonTest/kotlin/dev/markstream/core/api/MarkdownEngineTest.kt` (`finalizedNewBlockAndDirtyTailBlockAreParsed`)
+  - `markdown-core/src/commonTest/kotlin/com/adamglin/compose/markdown/core/api/MarkdownEngineTest.kt` (`finalizedNewBlockAndDirtyTailBlockAreParsed`)
 - Inline node ranges (Emphasis/Strong/CodeSpan/Link/Strikethrough):
-  - `markdown-core/src/commonTest/kotlin/dev/markstream/core/api/InlineParserMvpTest.kt` (`inlineNodeRangesAreCorrectForCommonMarkers`)
+  - `markdown-core/src/commonTest/kotlin/com/adamglin/compose/markdown/core/api/InlineParserMvpTest.kt` (`inlineNodeRangesAreCorrectForCommonMarkers`)
 - SoftBreak and HardBreak ranges:
-  - `markdown-core/src/commonTest/kotlin/dev/markstream/core/api/InlineParserMvpTest.kt` (`inlineBreakRangesTrackOriginalSourceOffsets`)
+  - `markdown-core/src/commonTest/kotlin/com/adamglin/compose/markdown/core/api/InlineParserMvpTest.kt` (`inlineBreakRangesTrackOriginalSourceOffsets`)
 
 ## Known Limitations
 

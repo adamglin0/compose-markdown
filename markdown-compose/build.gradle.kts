@@ -15,7 +15,7 @@ kotlin {
 
     @Suppress("UnstableApiUsage")
     androidLibrary {
-        namespace = "dev.markstream.compose"
+        namespace = "com.adamglin.compose.markdown.compose"
         compileSdk = 36
         minSdk = 23
     }

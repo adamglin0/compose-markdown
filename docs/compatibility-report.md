@@ -101,7 +101,7 @@ This repository targets predictable append-only rendering first, not full spec p
 
 ## Regression Suite
 
-`markdown-core/src/commonTest/kotlin/dev/markstream/core/api/CompatibilityRegressionTest.kt` is the canonical lightweight compatibility regression suite.
+`markdown-core/src/commonTest/kotlin/com/adamglin/compose/markdown/core/api/CompatibilityRegressionTest.kt` is the canonical lightweight compatibility regression suite.
 
 Coverage policy:
 

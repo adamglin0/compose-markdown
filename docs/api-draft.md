@@ -13,7 +13,7 @@ This document now reflects the Stage 5 append-only incremental checkpoint. Names
 ## Draft API
 
 ```kotlin
-package dev.markstream.core.api
+package com.adamglin.compose.markdown.core.api
 
 interface MarkdownEngine {
     val dialect: MarkdownDialect
