@@ -1,26 +1,56 @@
 # markstream
 
-`markstream` is a Kotlin Multiplatform Markdown parser and Compose renderer built for append-only streaming output first.
+`markstream` is a Kotlin Multiplatform Markdown parser plus Compose renderer built for append-only streaming output first.
 
-The project keeps the public API small: callers append text through `MarkdownEngine`, observe immutable `MarkdownSnapshot` / `ParseDelta`, and render blocks through `markdown-compose`. Stage 8 adds a real JVM benchmark runner, performance notes, lightweight CI, and release planning.
+The repository is organized around a small public surface:
 
-## Project Goals
+- `MarkdownEngine` accepts chunked appends and produces immutable `MarkdownSnapshot` / `ParseDelta` values;
+- `markdown-core` owns block parsing, inline parsing, dialect presets, stable IDs, and incremental bookkeeping;
+- `markdown-compose` renders snapshots by stable block identity instead of redrawing the whole document;
+- `sample-chat` exercises the streaming path with a desktop sample;
+- `benchmarks` provides JVM-only parse and append benchmark coverage.
 
-- parse Markdown in `commonMain` and keep platform-specific code minimal;
-- preserve stable block identity so Compose can update by block instead of repainting the whole document;
-- optimize for append-only chat / LLM output rather than arbitrary in-place editing;
-- support multiple dialect presets without changing the engine API;
-- measure before tuning and document the trade-offs.
+## Final Status
 
-## Modules
+- append-only streaming parsing is implemented and tested;
+- three presets ship today: `ChatFast`, `CommonMarkCore`, and `GfmCompat`;
+- compatibility and limitation notes are documented in `docs/compatibility-report.md` and `docs/known-limitations.md`;
+- a lightweight curated regression suite covers representative CommonMark/GFM cases plus streaming-specific chunk splits;
+- raw HTML, arbitrary in-place editing, and full CommonMark parity remain out of scope for this checkpoint.
 
-- `markdown-core`: source buffer, line index, block parser, inline parser, incremental engine, immutable document model;
-- `markdown-compose`: Compose Multiplatform renderer driven by block snapshots and stable IDs;
-- `sample-chat`: desktop sample that streams chunks into the engine and shows snapshot/debug output;
-- `benchmarks`: JVM benchmark runner for one-shot parse and append-heavy scenarios;
-- `docs`: architecture, incremental model, dialect matrix, limits, performance notes, ADRs, release planning.
+## Project Tree
 
-## Quick Start
+```text
+.
+|- README.md
+|- docs/
+|  |- architecture.md
+|  |- compatibility-report.md
+|  |- dialect-matrix.md
+|  |- known-limitations.md
+|  |- next-steps.md
+|  |- performance-notes.md
+|  `- ...
+|- markdown-core/
+|  |- src/commonMain/kotlin/dev/markstream/core/
+|  |  |- api/
+|  |  |- block/
+|  |  |- dialect/
+|  |  |- engine/
+|  |  |- inline/
+|  |  `- model/
+|  `- src/commonTest/kotlin/dev/markstream/core/
+|- markdown-compose/
+|  |- src/commonMain/kotlin/dev/markstream/compose/
+|  `- src/commonTest/kotlin/dev/markstream/compose/
+|- sample-chat/
+|  |- src/commonMain/kotlin/dev/markstream/sample/chat/
+|  `- src/desktopMain/kotlin/dev/markstream/sample/chat/
+`- benchmarks/
+   `- src/main/kotlin/dev/markstream/benchmarks/
+```
+
+## Build, Test, Run
 
 Build everything:
 
@@ -40,13 +70,19 @@ Run the sample app:
 ./gradlew :sample-chat:run
 ```
 
+Run the sample task graph without launching UI:
+
+```bash
+./gradlew :sample-chat:run --dry-run
+```
+
 Run the benchmark suite:
 
 ```bash
 ./gradlew :benchmarks:run
 ```
 
-Run a lightweight benchmark smoke pass:
+Run the lightweight benchmark smoke pass:
 
 ```bash
 ./gradlew benchmarkSmoke
@@ -64,7 +100,7 @@ val snapshot = delta.snapshot
 engine.finish()
 ```
 
-`append()` and `finish()` always return a renderable snapshot. The public API does not expose mutable parser internals.
+`append()` and `finish()` always return a renderable snapshot. Mutable parser internals stay inside `markdown-core`.
 
 ## Compose Example
 
@@ -83,7 +119,7 @@ fun Message(content: String) {
 }
 ```
 
-## Streaming Example
+## Streaming Model
 
 ```kotlin
 import dev.markstream.core.api.MarkdownEngine
@@ -98,46 +134,71 @@ engine.finish()
 
 The engine keeps a stable prefix, reparses only the mutable tail, and reports preserved vs reparsed work through `ParseStats`.
 
-## Dialects
+## Presets
 
-- `ChatFast`: default preset for streaming chat; tables, task lists, setext headings, and common inline syntax enabled; reference links stay off by default;
-- `CommonMarkCore`: narrower compatibility preset with reference links/definitions enabled and GitHub-specific blocks disabled;
-- `GfmCompat`: compatibility-oriented preset with tables, task lists, and strikethrough enabled.
+| Preset | Best fit | Highlights | Main trade-offs |
+| --- | --- | --- | --- |
+| `ChatFast` | chat / LLM output | tables, task lists, strikethrough, append-first defaults | reference links are intentionally off |
+| `CommonMarkCore` | compatibility-oriented plain Markdown | reference links and definitions enabled, GitHub block extras off | no tables or task lists |
+| `GfmCompat` | README-like documents | tables, task lists, strikethrough, reference links | still a pragmatic subset, not full GitHub parity |
 
-See `docs/dialect-matrix.md` for the full matrix and invalidation rules.
+See `docs/dialect-matrix.md` for the preset switch table and `docs/compatibility-report.md` for the final support audit.
 
-## Performance Workflow
+## Support Snapshot
 
-Stage 8 performance work follows a strict loop:
+### ChatFast
 
-1. measure with `:benchmarks:run`;
-2. inspect `ParseStats` plus JVM allocation counters;
-3. optimize obvious hot paths only;
-4. record baseline vs optimized results in `docs/performance-notes.md`.
+| Area | Status | Notes |
+| --- | --- | --- |
+| Core blocks | Supported | paragraphs, headings, quotes, lists, fences, thematic breaks, tables |
+| Common inline syntax | Supported | emphasis, strong, code, links, autolinks, strikethrough, images |
+| Reference links | Not supported | left disabled by preset design |
+| Streaming path | Supported | curated regression covers text, quote, list, fence, table |
 
-## Current Limits
+### CommonMarkCore
 
-- append-only editing only; arbitrary middle-of-document edits are out of scope for this checkpoint;
-- raw HTML is disabled for all presets;
-- delimiter handling targets common chat / documentation cases first, not full CommonMark parity;
-- tables support common pipe-table syntax only;
-- image parsing exists, but Compose rendering stays intentionally lightweight.
+| Area | Status | Notes |
+| --- | --- | --- |
+| Core CommonMark-style blocks | Supported | paragraphs, headings, quotes, lists, fences, thematic breaks |
+| Reference links / definitions | Supported | one-line definitions only in this checkpoint |
+| GFM extras | Not supported | tables, task lists, strikethrough stay off |
+| Streaming path | Supported | curated regression covers text, quote, list, fence, reference links |
 
-See `docs/known-limitations.md` for the fuller list.
+### GfmCompat
 
-## Release Planning
+| Area | Status | Notes |
+| --- | --- | --- |
+| Core blocks + GFM extras | Supported | CommonMark-style blocks plus tables and task lists |
+| Inline extras | Supported | strikethrough and reference links enabled |
+| Renderer fidelity | Partial | readable fallback table/task rendering, not pixel-parity with GitHub |
+| Streaming path | Supported | curated regression covers text, quote, list, fence, table, reference links |
 
-- Gradle `group`: `dev.markstream`
-- planned artifacts: `markstream-core`, `markstream-compose`, `markstream-benchmarks` is internal-only
-- current versioning scheme: `0.y.z` while parser semantics and renderer surface are still evolving
+## Fit And Non-goals
 
-Publishing notes and TODOs live in `docs/release-plan.md`.
+Good fit:
+
+- append-only chat and assistant output;
+- streaming previews that benefit from stable block IDs;
+- Compose apps that want a small parser surface plus readable Markdown rendering.
+
+Not a fit:
+
+- arbitrary in-place Markdown editing;
+- raw HTML rendering or HTML export;
+- full CommonMark/GFM conformance work where every edge case must match spec output exactly.
+
+## Regression Coverage
+
+- unit tests cover model invariants, block parsing, inline parsing, dialect differences, incremental stats, renderer state updates, and JVM platform wiring;
+- `markdown-core/src/commonTest/kotlin/dev/markstream/core/api/CompatibilityRegressionTest.kt` runs curated CommonMark 0.31.2 and GFM 0.29-gfm representative cases;
+- the same regression suite includes streaming-specific chunk splits for plain text, quote, list, fenced code, table, and reference-link paths.
 
 ## Key Docs
 
 - `docs/architecture.md`
-- `docs/incremental-model.md`
-- `docs/dialect-matrix.md`
+- `docs/compatibility-report.md`
 - `docs/known-limitations.md`
+- `docs/next-steps.md`
+- `docs/dialect-matrix.md`
 - `docs/performance-notes.md`
 - `docs/release-plan.md`

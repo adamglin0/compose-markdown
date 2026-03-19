@@ -1,6 +1,8 @@
 # Block Parser MVP
 
-Stage 3 introduces the first real ChatFast block layer in `markdown-core`.
+This document records the original Stage 3 checkpoint for the block parser.
+
+For the current repository-wide support boundary, use `docs/compatibility-report.md` as the canonical reference.
 
 ## Scope
 

@@ -1,6 +1,8 @@
 # Inline Parser MVP
 
-Stage 4 adds the ChatFast inline layer in `markdown-core`.
+This document records the original Stage 4 checkpoint for the inline parser.
+
+For the current repository-wide support boundary, use `docs/compatibility-report.md` as the canonical reference.
 
 ## Scope
 

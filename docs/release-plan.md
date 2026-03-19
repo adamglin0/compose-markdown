@@ -17,7 +17,7 @@
   - bump `y` when snapshot/delta semantics or renderer-facing behavior change materially
   - bump `z` for compatible fixes, docs, and performance-only releases
 
-## Publishing TODO
+## Publishing Plan
 
 - add `maven-publish` only when artifact metadata and API docs are ready;
 - publish `markdown-core` and `markdown-compose` first;

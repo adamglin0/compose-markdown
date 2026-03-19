@@ -1,6 +1,6 @@
 # benchmarks
 
-This module contains the Stage 8 JVM benchmark runner.
+This module contains the JVM benchmark runner used for local parse and append-path measurement.
 
 ## Commands
 
@@ -11,9 +11,9 @@ This module contains the Stage 8 JVM benchmark runner.
 
 The runner covers:
 
-- one-shot large document parsing,
-- 120/240 small append streaming runs,
-- mixed block content with paragraphs, lists, quotes, fenced code blocks, and tables.
+- one-shot large-document parsing
+- 120/240 small-append streaming runs
+- mixed block content with paragraphs, lists, quotes, fenced code blocks, and tables
 
 Results are printed as a Markdown table and can also be written to a file with:
 
@@ -21,4 +21,4 @@ Results are printed as a Markdown table and can also be written to a file with:
 ./gradlew :benchmarks:run --args="--output=benchmarks/results/latest.md"
 ```
 
-Canonical Stage 8 notes live in `docs/performance-notes.md`.
+Canonical notes live in `../docs/performance-notes.md`.

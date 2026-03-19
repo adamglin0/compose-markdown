@@ -1,14 +1,17 @@
 # markdown-core
 
-Planned home of the Kotlin Multiplatform core parser and incremental engine.
+`markdown-core` contains the append-only parser, immutable document model, dialect presets, and incremental engine.
 
-Stage 4 status: immutable core API, ranges, stable IDs, ChatFast block parser, ChatFast inline parser MVP, append-only engine session control, inline cache wiring, and model-focused tests are in place.
+Current responsibilities:
 
-Planned responsibilities:
+- append-only source buffering and newline normalization
+- block parsing for paragraphs, headings, quotes, lists, fences, thematic breaks, and preset-dependent extensions
+- inline parsing for common emphasis, links, autolinks, breaks, images, and preset-dependent extras
+- immutable `MarkdownSnapshot` / `ParseDelta` publication with stable block IDs
+- localized reparsing of the mutable tail plus inline-cache reuse
 
-- append-only source model,
-- block parser,
-- inline parser,
-- incremental engine,
-- immutable document and delta model,
-- RenderIR generation.
+Primary docs:
+
+- `../docs/compatibility-report.md`
+- `../docs/incremental-engine.md`
+- `../docs/dialect-matrix.md`
