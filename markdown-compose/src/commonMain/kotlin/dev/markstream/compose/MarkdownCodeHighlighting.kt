@@ -15,12 +15,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import dev.markstream.core.model.BlockNode
-import dev.snipme.highlights.Highlights
-import dev.snipme.highlights.model.BoldHighlight
-import dev.snipme.highlights.model.CodeHighlight
-import dev.snipme.highlights.model.ColorHighlight
-import dev.snipme.highlights.model.SyntaxLanguage
-import dev.snipme.highlights.model.SyntaxTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
@@ -58,17 +52,23 @@ data class HighlightToken(
 interface HighlightSnapshot
 
 @Stable
-internal data class MarkdownCodeHighlightTheme(
+internal data class MarkdownCodeHighlightPalette(
     val version: Int,
-    val syntaxTheme: SyntaxTheme,
+    val code: Int,
+    val keyword: Int,
+    val string: Int,
+    val literal: Int,
+    val comment: Int,
+    val metadata: Int,
+    val multilineComment: Int,
+    val punctuation: Int,
+    val mark: Int,
 )
 
 @Composable
 internal fun rememberMarkdownCodeHighlighter(): CodeHighlighter {
-    val theme = rememberMarkdownCodeHighlightTheme()
-    return remember(theme.version) {
-        HighlightsCodeHighlighter(theme = theme.syntaxTheme)
-    }
+    val palette = rememberMarkdownCodeHighlightPalette()
+    return rememberPlatformMarkdownCodeHighlighter(palette)
 }
 
 @Composable
@@ -116,25 +116,22 @@ internal fun rememberHighlightedCodeBlock(
 }
 
 @Composable
-private fun rememberMarkdownCodeHighlightTheme(): MarkdownCodeHighlightTheme {
+private fun rememberMarkdownCodeHighlightPalette(): MarkdownCodeHighlightPalette {
     val colorScheme = MaterialTheme.colorScheme
     val isDark = colorScheme.surface.luminance() < 0.5f
 
     return remember(colorScheme, isDark) {
-        MarkdownCodeHighlightTheme(
+        MarkdownCodeHighlightPalette(
             version = colorScheme.hashCode(),
-            syntaxTheme = SyntaxTheme(
-                key = if (isDark) "markstream-dark" else "markstream-light",
-                code = colorScheme.onSurface.toRgbInt(),
-                keyword = colorScheme.primary.toRgbInt(),
-                string = colorScheme.tertiary.toRgbInt(),
-                literal = colorScheme.secondary.toRgbInt(),
-                comment = colorScheme.onSurfaceVariant.copy(alpha = 0.85f).toRgbInt(),
-                metadata = colorScheme.primary.copy(alpha = 0.82f).toRgbInt(),
-                multilineComment = colorScheme.onSurfaceVariant.copy(alpha = 0.8f).toRgbInt(),
-                punctuation = colorScheme.primary.copy(alpha = 0.9f).toRgbInt(),
-                mark = colorScheme.onSurface.toRgbInt(),
-            ),
+            code = colorScheme.onSurface.toRgbInt(),
+            keyword = colorScheme.primary.toRgbInt(),
+            string = colorScheme.tertiary.toRgbInt(),
+            literal = colorScheme.secondary.toRgbInt(),
+            comment = colorScheme.onSurfaceVariant.copy(alpha = 0.85f).toRgbInt(),
+            metadata = colorScheme.primary.copy(alpha = 0.82f).toRgbInt(),
+            multilineComment = colorScheme.onSurfaceVariant.copy(alpha = 0.8f).toRgbInt(),
+            punctuation = colorScheme.primary.copy(alpha = 0.9f).toRgbInt(),
+            mark = colorScheme.onSurface.toRgbInt(),
         )
     }
 }
@@ -159,67 +156,23 @@ internal fun buildHighlightedAnnotatedString(
     }
 }
 
-private class HighlightsCodeHighlighter(
-    private val theme: SyntaxTheme,
-) : CodeHighlighter {
-    override val engineId: String = "highlights"
+internal object PlainCodeHighlighter : CodeHighlighter {
+    override val engineId: String = "plain"
 
-    override fun supports(language: String): Boolean = resolveSyntaxLanguage(language) != null
+    override fun supports(language: String): Boolean = false
 
     override suspend fun highlight(
         language: String?,
         code: CharSequence,
         previous: HighlightSnapshot?,
         mode: HighlightMode,
-    ): HighlightResult {
-        val syntaxLanguage = resolveSyntaxLanguage(language) ?: return HighlightResult(tokens = emptyList())
-        val highlights = Highlights.Builder()
-            .language(syntaxLanguage)
-            .theme(theme)
-            .build()
-        return runCatching {
-            highlights.setCode(code.toString())
-            HighlightResult(tokens = highlights.getHighlights().mapNotNull(::toHighlightToken))
-        }.getOrElse {
-            HighlightResult(tokens = emptyList())
-        }
-    }
+    ): HighlightResult = HighlightResult(tokens = emptyList())
 }
 
-internal fun resolveSyntaxLanguage(language: String?): SyntaxLanguage? = when (language?.lowercase()) {
-    "c" -> SyntaxLanguage.C
-    "cpp" -> SyntaxLanguage.CPP
-    "csharp" -> SyntaxLanguage.CSHARP
-    "coffeescript" -> SyntaxLanguage.COFFEESCRIPT
-    "dart" -> SyntaxLanguage.DART
-    "go" -> SyntaxLanguage.GO
-    "java" -> SyntaxLanguage.JAVA
-    "javascript" -> SyntaxLanguage.JAVASCRIPT
-    "kotlin" -> SyntaxLanguage.KOTLIN
-    "perl" -> SyntaxLanguage.PERL
-    "php" -> SyntaxLanguage.PHP
-    "python" -> SyntaxLanguage.PYTHON
-    "ruby" -> SyntaxLanguage.RUBY
-    "rust" -> SyntaxLanguage.RUST
-    "shell" -> SyntaxLanguage.SHELL
-    "swift" -> SyntaxLanguage.SWIFT
-    "typescript" -> SyntaxLanguage.TYPESCRIPT
-    else -> null
-}
-
-private fun toHighlightToken(highlight: CodeHighlight): HighlightToken? = when (highlight) {
-    is BoldHighlight -> HighlightToken(
-        start = highlight.location.start,
-        endExclusive = highlight.location.end,
-        isBold = true,
-    )
-
-    is ColorHighlight -> HighlightToken(
-        start = highlight.location.start,
-        endExclusive = highlight.location.end,
-        foregroundColor = highlight.rgb,
-    )
-}
+@Composable
+internal expect fun rememberPlatformMarkdownCodeHighlighter(
+    palette: MarkdownCodeHighlightPalette,
+): CodeHighlighter
 
 private fun Int.toComposeColor(): Color = Color(
     red = ((this shr 16) and 0xFF) / 255f,

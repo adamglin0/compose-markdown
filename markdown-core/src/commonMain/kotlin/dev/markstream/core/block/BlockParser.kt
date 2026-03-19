@@ -137,7 +137,9 @@ internal class BlockParser(
 
                 val definition = parseReferenceDefinition(line)
                 if (definition != null) {
-                    parsedDefinitions.putIfAbsent(definition.label, definition)
+                    if (definition.label !in parsedDefinitions) {
+                        parsedDefinitions[definition.label] = definition
+                    }
                     index += 1
                     continue
                 }

@@ -1,7 +1,5 @@
 package dev.markstream.sample.chat
 
-import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -16,9 +14,6 @@ fun main() = application {
             height = 960.dp,
         ),
     ) {
-        val scripts = remember { loadDesktopSampleScripts() }
-        SelectionContainer {
-            MarkstreamSampleApp(scripts = scripts)
-        }
+        MarkstreamSampleScreen()
     }
 }

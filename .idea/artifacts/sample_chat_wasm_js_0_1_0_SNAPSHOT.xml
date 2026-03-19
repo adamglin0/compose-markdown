@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="sample-chat-wasm-js-0.1.0-SNAPSHOT">
+    <output-path>$PROJECT_DIR$/sample-chat/build/libs</output-path>
+    <root id="archive" name="sample-chat-wasm-js-0.1.0-SNAPSHOT.jar">
+      <element id="module-output" name="markstream.sample-chat.wasmJsMain" />
+    </root>
+  </artifact>
+</component>

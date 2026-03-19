@@ -1,6 +1,6 @@
 package dev.markstream.sample.chat
 
-internal fun loadDesktopSampleScripts(): List<SampleScript> = SampleChatDefaults.createScripts(::readDesktopResource)
+internal actual fun loadPlatformSampleScripts(): List<SampleScript> = SampleChatDefaults.createScripts(::readDesktopResource)
 
 private fun readDesktopResource(path: String): String {
     val stream = Thread.currentThread().contextClassLoader.getResourceAsStream(path)

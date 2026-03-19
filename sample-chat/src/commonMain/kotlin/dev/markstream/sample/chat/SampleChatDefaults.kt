@@ -61,6 +61,8 @@ object SampleChatDefaults {
         )
     }
 
+    fun createBundledScripts(): List<SampleScript> = createScripts(::readBundledExample)
+
     fun createStreamingChunks(
         message: String,
         targetChunkSize: Int = 18,
@@ -119,3 +121,89 @@ private data class SampleScriptDefinition(
     val summary: String,
     val resourcePath: String,
 )
+
+private fun readBundledExample(path: String): String = when (path) {
+    "markdown-examples/full-markdown.md" ->
+        """
+        # Full Markdown
+
+        Markstream keeps a stable prefix while new text streams in.
+
+        - headings
+        - emphasis
+        - links
+
+        > Streaming markdown should stay readable while the message is still incomplete.
+        """.trimIndent()
+
+    "markdown-examples/chat-streaming.md" ->
+        """
+        # Chat Streaming
+
+        Hello! Here is an incremental response:
+
+        1. Parse the appended chunk.
+        2. Reuse stable blocks.
+        3. Render only the dirty tail.
+        """.trimIndent()
+
+    "markdown-examples/quotes-and-lists.md" ->
+        """
+        # Quotes and Lists
+
+        > Nested structure should preserve identity.
+        > Even when the next chunk lands late.
+
+        - first item
+        - second item
+          - nested item
+        """.trimIndent()
+
+    "markdown-examples/tables-and-tasks.md" ->
+        """
+        # Tables and Tasks
+
+        | Area | Status |
+        | --- | --- |
+        | Parser | ready |
+        | Renderer | ready |
+
+        - [x] table rendering
+        - [ ] export pipeline
+        """.trimIndent()
+
+    "markdown-examples/reference-links.md" ->
+        """
+        # Reference Links
+
+        Review the [guide][docs] after the stream finishes.
+
+        [docs]: https://example.com/guide
+        """.trimIndent()
+
+    "markdown-examples/engineering-deep-dive.md" ->
+        """
+        # Engineering Deep Dive
+
+        ## Incremental model
+
+        The engine reparses only the mutable tail and reports preserved work.
+
+        ```kotlin
+        val delta = engine.append("hello")
+        ```
+        """.trimIndent()
+
+    "markdown-examples/progressive-code-fence.md" ->
+        """
+        # Progressive Code Fence
+
+        ```kotlin
+        fun greet(name: String) {
+            println("Hello, ${'$'}name")
+        }
+        ```
+        """.trimIndent()
+
+    else -> error("unexpected path: $path")
+}

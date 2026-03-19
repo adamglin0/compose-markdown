@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="markdown-core-js-0.1.0-SNAPSHOT">
+    <output-path>$PROJECT_DIR$/markdown-core/build/libs</output-path>
+    <root id="archive" name="markdown-core-js-0.1.0-SNAPSHOT.jar">
+      <element id="module-output" name="markstream.markdown-core.jsMain" />
+    </root>
+  </artifact>
+</component>

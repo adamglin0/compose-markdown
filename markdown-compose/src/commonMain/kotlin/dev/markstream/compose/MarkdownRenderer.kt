@@ -32,9 +32,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
@@ -115,18 +117,20 @@ private fun Markdown(
     val currentOnLinkClick = rememberUpdatedState(onLinkClick)
 
     Surface(modifier = modifier) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            blocks.forEach { renderedBlock ->
-                key(renderedBlock.id.raw) {
-                    MarkdownBlock(
-                        block = renderedBlock.block,
-                        styles = styles,
-                        codeHighlighter = codeHighlighter ?: defaultCodeHighlighter!!,
-                        onLinkClick = { currentOnLinkClick.value(it) },
-                    )
+        SelectionContainer {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                blocks.forEach { renderedBlock ->
+                    key(renderedBlock.id.raw) {
+                        MarkdownBlock(
+                            block = renderedBlock.block,
+                            styles = styles,
+                            codeHighlighter = codeHighlighter ?: defaultCodeHighlighter!!,
+                            onLinkClick = { currentOnLinkClick.value(it) },
+                        )
+                    }
                 }
             }
         }
@@ -171,7 +175,7 @@ private fun MarkdownBlock(
             modifier = modifier,
         )
 
-        is BlockNode.Heading -> SelectableAnnotatedText(
+        is BlockNode.Heading -> MarkdownText(
             text = block.children.toAnnotatedString(styles.inline, onLinkClick),
             style = when (block.level) {
                 1 -> MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
@@ -208,7 +212,7 @@ private fun MarkdownBlock(
             modifier = modifier,
         )
 
-        is BlockNode.TableRow -> SelectableAnnotatedText(
+        is BlockNode.TableRow -> MarkdownText(
             text = block.cells.joinToString(separator = " | ") { cell ->
                 cell.children.toAnnotatedString(styles.inline, onLinkClick).text
             }.let(::AnnotatedString),
@@ -216,19 +220,19 @@ private fun MarkdownBlock(
             modifier = modifier,
         )
 
-        is BlockNode.TableCell -> SelectableAnnotatedText(
+        is BlockNode.TableCell -> MarkdownText(
             text = block.children.toAnnotatedString(styles.inline, onLinkClick),
             style = MaterialTheme.typography.bodyMedium,
             modifier = modifier,
         )
 
-        is BlockNode.Paragraph -> SelectableAnnotatedText(
+        is BlockNode.Paragraph -> MarkdownText(
             text = block.children.toAnnotatedString(styles.inline, onLinkClick),
             style = MaterialTheme.typography.bodyLarge,
             modifier = modifier,
         )
 
-        is BlockNode.RawTextBlock -> SelectableAnnotatedText(
+        is BlockNode.RawTextBlock -> MarkdownText(
             text = AnnotatedString(block.literal),
             style = MaterialTheme.typography.bodyLarge,
             modifier = modifier,
@@ -240,7 +244,7 @@ private fun MarkdownBlock(
             thickness = 1.dp,
         )
 
-        is BlockNode.UnsupportedBlock -> SelectableAnnotatedText(
+        is BlockNode.UnsupportedBlock -> MarkdownText(
             text = AnnotatedString(block.literal),
             style = MaterialTheme.typography.bodyLarge,
             modifier = modifier,
@@ -332,13 +336,11 @@ private fun CodeBlock(
             )
         }
 
-        SelectionContainer {
-            Text(
-                text = annotatedCode,
-                style = styles.codeBlockTextStyle,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        Text(
+            text = annotatedCode,
+            style = styles.codeBlockTextStyle,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -502,7 +504,7 @@ private fun TableRowBlock(
     ) {
         row.cells.forEach { cell ->
             Box(modifier = Modifier.weight(1f)) {
-                SelectableAnnotatedText(
+                MarkdownText(
                     text = cell.children.toAnnotatedString(styles.inline, onLinkClick),
                     style = if (isHeader) {
                         MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
@@ -516,24 +518,22 @@ private fun TableRowBlock(
 }
 
 @Composable
-private fun SelectableAnnotatedText(
+private fun MarkdownText(
     text: AnnotatedString,
-    style: androidx.compose.ui.text.TextStyle,
+    style: TextStyle,
     modifier: Modifier = Modifier,
 ) {
-    SelectionContainer {
-        Text(
-            text = text,
-            style = style,
-            modifier = modifier.fillMaxWidth(),
-        )
-    }
+    Text(
+        text = text,
+        style = style,
+        modifier = modifier.fillMaxWidth(),
+    )
 }
 
 @Stable
 internal data class MarkdownBlockStyles(
     val inline: MarkdownInlineStyles,
-    val codeBlockTextStyle: androidx.compose.ui.text.TextStyle,
+    val codeBlockTextStyle: TextStyle,
 )
 
 @Stable
@@ -553,7 +553,7 @@ internal fun rememberMarkdownBlockStyles(): MarkdownBlockStyles {
     return remember(colorScheme, typography) {
         MarkdownBlockStyles(
             inline = MarkdownInlineStyles(
-                emphasis = SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
+                emphasis = SpanStyle(fontStyle = FontStyle.Italic),
                 strong = SpanStyle(fontWeight = FontWeight.Bold),
                 strike = SpanStyle(textDecoration = TextDecoration.LineThrough),
                 code = SpanStyle(
@@ -578,7 +578,7 @@ internal fun rememberMarkdownBlockStyles(): MarkdownBlockStyles {
 
 internal fun List<InlineNode>.toAnnotatedString(
     styles: MarkdownInlineStyles = MarkdownInlineStyles(
-        emphasis = SpanStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
+        emphasis = SpanStyle(fontStyle = FontStyle.Italic),
         strong = SpanStyle(fontWeight = FontWeight.Bold),
         strike = SpanStyle(textDecoration = TextDecoration.LineThrough),
         code = SpanStyle(fontFamily = FontFamily.Monospace),

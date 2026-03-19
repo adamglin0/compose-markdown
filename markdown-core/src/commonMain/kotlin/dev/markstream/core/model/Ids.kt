@@ -1,5 +1,7 @@
 package dev.markstream.core.model
 
+import kotlin.jvm.JvmInline
+
 @JvmInline
 value class BlockId(val raw: Long) {
     init {
