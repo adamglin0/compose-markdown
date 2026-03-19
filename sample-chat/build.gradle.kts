@@ -10,7 +10,7 @@ plugins {
 @OptIn(ExperimentalWasmDsl::class)
 kotlin {
     androidTarget()
-    jvm("desktop")
+    jvm()
     val iosX64 = iosX64()
     val iosArm64 = iosArm64()
     val iosSimulatorArm64 = iosSimulatorArm64()
@@ -32,36 +32,11 @@ kotlin {
     }
 
     sourceSets {
-        val desktopMain by getting
-        val androidMain by getting
-        val iosMain by creating {
-            dependsOn(commonMain.get())
-        }
-        val webMain by creating {
-            dependsOn(commonMain.get())
-        }
-        val iosX64Main by getting {
-            dependsOn(iosMain)
-        }
-        val iosArm64Main by getting {
-            dependsOn(iosMain)
-        }
-        val iosSimulatorArm64Main by getting {
-            dependsOn(iosMain)
-        }
-        val jsMain by getting {
-            dependsOn(webMain)
-        }
-        val wasmJsMain by getting {
-            dependsOn(webMain)
-        }
-
         commonMain.dependencies {
             implementation(project(":markdown-compose"))
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.ui)
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.ui)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
@@ -69,7 +44,10 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
         }
-        desktopMain.dependencies {
+        jsMain.dependencies {
+            implementation(libs.kotlinx.browser)
+        }
+        jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
         }
     }
@@ -77,12 +55,11 @@ kotlin {
 
 android {
     namespace = "com.adamglin.compose.markdown.sample.chat"
-    compileSdk = 35
+    compileSdk = libs.versions.androidCompileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "com.adamglin.compose.markdown.sample.chat"
-        minSdk = 23
-        targetSdk = 35
+        minSdk = libs.versions.androidMinSdk.get().toInt()
         versionCode = 1
         versionName = "0.1.0"
     }

@@ -1,13 +1,21 @@
 [versions]
 kotlin = "2.3.20"
 compose-multiplatform = "1.10.2"
+compose-material3 = "1.9.0"
 highlights = "1.1.0"
 android-gradle = "8.13.2"
 androidx-activity-compose = "1.13.0"
+kotlinx-browser = "0.5.0"
+androidCompileSdk = "36"
+androidMinSdk = "23"
 
 [libraries]
 highlights = { module = "dev.snipme:highlights", version.ref = "highlights" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
+kotlinx-browser = { module = "org.jetbrains.kotlinx:kotlinx-browser", version.ref = "kotlinx-browser" }
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose-multiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-multiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-multiplatform" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

@@ -14,11 +14,12 @@ kotlin {
     @Suppress("UnstableApiUsage")
     androidLibrary {
         namespace = "com.adamglin.compose.markdown.core"
-        compileSdk = 36
-        minSdk = 23
+        compileSdk = libs.versions.androidCompileSdk.get().toInt()
+        minSdk = libs.versions.androidMinSdk.get().toInt()
     }
 
     jvm()
+
     iosX64()
     iosArm64()
     iosSimulatorArm64()
@@ -32,8 +33,8 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies {
-        }
+        commonMain.dependencies {}
+
         commonTest.dependencies {
             implementation(kotlin("test"))
         }

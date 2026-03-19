@@ -16,8 +16,8 @@ kotlin {
     @Suppress("UnstableApiUsage")
     androidLibrary {
         namespace = "com.adamglin.compose.markdown.compose"
-        compileSdk = 36
-        minSdk = 23
+        compileSdk = libs.versions.androidCompileSdk.get().toInt()
+        minSdk = libs.versions.androidMinSdk.get().toInt()
     }
 
     jvm()
@@ -34,46 +34,11 @@ kotlin {
     }
 
     sourceSets {
-        val iosMain = create("iosMain")
-        val webMain = create("webMain")
-        val highlightedMain = create("highlightedMain")
-
-        iosMain.dependsOn(commonMain.get())
-        webMain.dependsOn(commonMain.get())
-        highlightedMain.dependsOn(commonMain.get())
-
-        jvmMain.configure {
-            dependsOn(highlightedMain)
-        }
-        iosX64Main.configure {
-            dependsOn(highlightedMain)
-            dependsOn(iosMain)
-        }
-        iosArm64Main.configure {
-            dependsOn(highlightedMain)
-            dependsOn(iosMain)
-        }
-        iosSimulatorArm64Main.configure {
-            dependsOn(highlightedMain)
-            dependsOn(iosMain)
-        }
-        jsMain.configure {
-            dependsOn(highlightedMain)
-            dependsOn(webMain)
-        }
-        wasmJsMain.configure {
-            dependsOn(highlightedMain)
-            dependsOn(webMain)
-        }
-
         commonMain.dependencies {
             api(project(":markdown-core"))
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.ui)
-        }
-        highlightedMain.dependencies {
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.ui)
             implementation(libs.highlights)
         }
         commonTest.dependencies {
