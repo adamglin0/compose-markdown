@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="markdown-compose-jvm-0.1.0-SNAPSHOT">
-    <output-path>$PROJECT_DIR$/markdown-compose/build/libs</output-path>
-    <root id="archive" name="markdown-compose-jvm-0.1.0-SNAPSHOT.jar">
-      <element id="module-output" name="markstream.markdown-compose.jvmMain" />
-    </root>
-  </artifact>
-</component>
