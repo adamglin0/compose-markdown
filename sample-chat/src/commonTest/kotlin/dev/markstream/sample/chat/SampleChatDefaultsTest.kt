@@ -8,8 +8,30 @@ import kotlin.test.assertTrue
 
 class SampleChatDefaultsTest {
     @Test
-    fun finalSnapshotProvidesDefaultContent() {
-        val snapshot = SampleChatDefaults.finalSnapshot()
+    fun createScriptsBuildsBundledExamples() {
+        val scripts = SampleChatDefaults.createScripts { path ->
+            when (path) {
+                "markdown-examples/full-markdown.md" -> "# Full Markdown\n\nA bundled document."
+                "markdown-examples/chat-streaming.md" -> "# Chat\n\nHello stream."
+                "markdown-examples/quotes-and-lists.md" -> "# Quotes\n\n> Quote"
+                "markdown-examples/tables-and-tasks.md" -> "# Tables\n\n- [x] Done"
+                "markdown-examples/reference-links.md" -> "# Refs\n\n[doc][1]\n\n[1]: https://example.com"
+                "markdown-examples/engineering-deep-dive.md" -> "# Engineering Deep Dive\n\nA realistic long-form article."
+                "markdown-examples/progressive-code-fence.md" -> "# Fence\n\n```kotlin\nprintln(1)\n```"
+                else -> error("unexpected path: $path")
+            }
+        }
+
+        assertEquals(7, scripts.size)
+        assertEquals("full-markdown", scripts.first().id)
+        assertTrue(scripts.all { it.message.isNotBlank() })
+    }
+
+    @Test
+    fun finalSnapshotProvidesExpectedBlocks() {
+        val snapshot = SampleChatDefaults.finalSnapshot(
+            message = "# Sample\n\n```kotlin\nprintln(1)\n```",
+        )
 
         assertTrue(snapshot.isFinal)
         val heading = assertIs<BlockNode.Heading>(snapshot.document.blocks.first())
@@ -19,14 +41,23 @@ class SampleChatDefaultsTest {
 
     @Test
     fun createStreamingChunksSplitsMessageIntoMultiplePieces() {
-        val script = SampleChatDefaults.scripts.first { it.id == "open-code-fence" }
+        val message = """
+            # Progressive code fence
+
+            ```text
+            chunk 1
+            chunk 2
+            chunk 3
+            ```
+        """.trimIndent()
+
         val chunks = SampleChatDefaults.createStreamingChunks(
-            message = script.message,
+            message = message,
             targetChunkSize = 14,
         )
 
         assertTrue(chunks.size > 3)
-        assertEquals(script.message, chunks.joinToString(separator = ""))
+        assertEquals(message, chunks.joinToString(separator = ""))
         assertTrue(chunks.any { it.contains("```") })
     }
 }
