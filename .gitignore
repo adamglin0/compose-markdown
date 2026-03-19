@@ -3,3 +3,4 @@ build/
 **/build/
 .kotlin/
 .DS_Store
+.idea/
