@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,11 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -108,18 +106,18 @@ private fun Markdown(
     codeHighlighter: CodeHighlighter?,
     onLinkClick: (String) -> Unit,
 ) {
-    val styles = rememberMarkdownBlockStyles()
-    val defaultCodeHighlighter = if (codeHighlighter == null) {
-        rememberMarkdownCodeHighlighter()
-    } else {
-        null
-    }
     val currentOnLinkClick = rememberUpdatedState(onLinkClick)
 
-    Surface(modifier = modifier) {
+    ProvideMarkdownTheme {
+        val styles = rememberMarkdownBlockStyles()
+        val defaultCodeHighlighter = if (codeHighlighter == null) {
+            rememberMarkdownCodeHighlighter()
+        } else {
+            null
+        }
         SelectionContainer {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 blocks.forEach { renderedBlock ->
@@ -178,12 +176,12 @@ private fun MarkdownBlock(
         is BlockNode.Heading -> MarkdownText(
             text = block.children.toAnnotatedString(styles.inline, onLinkClick),
             style = when (block.level) {
-                1 -> MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
-                2 -> MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-                3 -> MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold)
-                4 -> MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
-                5 -> MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                else -> MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                1 -> MarkdownTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
+                2 -> MarkdownTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
+                3 -> MarkdownTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold)
+                4 -> MarkdownTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
+                5 -> MarkdownTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                else -> MarkdownTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
             },
             modifier = modifier,
         )
@@ -216,37 +214,37 @@ private fun MarkdownBlock(
             text = block.cells.joinToString(separator = " | ") { cell ->
                 cell.children.toAnnotatedString(styles.inline, onLinkClick).text
             }.let(::AnnotatedString),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MarkdownTheme.typography.bodyMedium,
             modifier = modifier,
         )
 
         is BlockNode.TableCell -> MarkdownText(
             text = block.children.toAnnotatedString(styles.inline, onLinkClick),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MarkdownTheme.typography.bodyMedium,
             modifier = modifier,
         )
 
         is BlockNode.Paragraph -> MarkdownText(
             text = block.children.toAnnotatedString(styles.inline, onLinkClick),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MarkdownTheme.typography.bodyLarge,
             modifier = modifier,
         )
 
         is BlockNode.RawTextBlock -> MarkdownText(
             text = AnnotatedString(block.literal),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MarkdownTheme.typography.bodyLarge,
             modifier = modifier,
         )
 
-        is BlockNode.ThematicBreak -> HorizontalDivider(
+        is BlockNode.ThematicBreak -> MarkdownDivider(
             modifier = modifier.padding(vertical = 4.dp),
-            color = MaterialTheme.colorScheme.outlineVariant,
+            color = MarkdownTheme.colors.borderMuted,
             thickness = 1.dp,
         )
 
         is BlockNode.UnsupportedBlock -> MarkdownText(
             text = AnnotatedString(block.literal),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MarkdownTheme.typography.bodyLarge,
             modifier = modifier,
         )
     }
@@ -264,7 +262,7 @@ private fun QuoteBlock(
         modifier = modifier
             .fillMaxWidth()
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                color = MarkdownTheme.colors.surfaceMuted.copy(alpha = 0.45f),
                 shape = RoundedCornerShape(12.dp),
             )
             .padding(12.dp),
@@ -274,7 +272,7 @@ private fun QuoteBlock(
             modifier = Modifier
                 .width(4.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
+                    color = MarkdownTheme.colors.accent.copy(alpha = 0.55f),
                     shape = RoundedCornerShape(999.dp),
                 )
                 .align(Alignment.Top)
@@ -312,31 +310,32 @@ private fun CodeBlock(
         modifier = modifier
             .fillMaxWidth()
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                color = MarkdownTheme.colors.surfaceMuted.copy(alpha = 0.55f),
                 shape = RoundedCornerShape(14.dp),
             )
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
+                color = MarkdownTheme.colors.borderMuted.copy(alpha = 0.75f),
                 shape = RoundedCornerShape(14.dp),
             )
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (!block.infoString.isNullOrBlank() || !block.isClosed) {
-            Text(
+            MarkdownText(
                 text = buildString {
                     append(block.infoString ?: "code")
                     if (!block.isClosed) {
                         append("  streaming...")
                     }
                 },
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MarkdownTheme.typography.labelMedium.copy(
+                    color = MarkdownTheme.colors.textSecondary,
+                ),
             )
         }
 
-        Text(
+        MarkdownText(
             text = annotatedCode,
             style = styles.codeBlockTextStyle,
             modifier = Modifier.fillMaxWidth(),
@@ -381,9 +380,9 @@ private fun ListItemBlock(
         verticalAlignment = Alignment.Top,
     ) {
         when (val leadingMarker = block.leadingMarker()) {
-            is ListItemLeadingMarker.Literal -> Text(
+            is ListItemLeadingMarker.Literal -> MarkdownText(
                 text = leadingMarker.value,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                style = MarkdownTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                 modifier = Modifier.padding(top = 1.dp),
             )
 
@@ -411,8 +410,8 @@ private fun TaskListMarker(
     modifier: Modifier = Modifier,
 ) {
     val isChecked = taskState == TaskState.Checked
-    val borderColor = if (isChecked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-    val fillColor = if (isChecked) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent
+    val borderColor = if (isChecked) MarkdownTheme.colors.accent else MarkdownTheme.colors.border
+    val fillColor = if (isChecked) MarkdownTheme.colors.accent.copy(alpha = 0.14f) else Color.Transparent
 
     Box(
         modifier = modifier
@@ -477,14 +476,14 @@ private fun TableBlock(
             .fillMaxWidth()
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
+                color = MarkdownTheme.colors.borderMuted.copy(alpha = 0.75f),
                 shape = RoundedCornerShape(10.dp),
             )
             .padding(10.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         TableRowBlock(block.header, styles, onLinkClick, isHeader = true)
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        MarkdownDivider(color = MarkdownTheme.colors.borderMuted)
         block.rows.forEach { row ->
             TableRowBlock(row, styles, onLinkClick, isHeader = false)
         }
@@ -507,9 +506,9 @@ private fun TableRowBlock(
                 MarkdownText(
                     text = cell.children.toAnnotatedString(styles.inline, onLinkClick),
                     style = if (isHeader) {
-                        MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                        MarkdownTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                     } else {
-                        MaterialTheme.typography.bodyMedium
+                        MarkdownTheme.typography.bodyMedium
                     },
                 )
             }
@@ -523,10 +522,37 @@ private fun MarkdownText(
     style: TextStyle,
     modifier: Modifier = Modifier,
 ) {
-    Text(
+    BasicText(
         text = text,
         style = style,
         modifier = modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun MarkdownText(
+    text: String,
+    style: TextStyle,
+    modifier: Modifier = Modifier,
+) {
+    BasicText(
+        text = text,
+        style = style,
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun MarkdownDivider(
+    color: Color,
+    modifier: Modifier = Modifier,
+    thickness: androidx.compose.ui.unit.Dp = 1.dp,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(thickness)
+            .background(color = color),
     )
 }
 
@@ -547,10 +573,10 @@ internal data class MarkdownInlineStyles(
 
 @Composable
 internal fun rememberMarkdownBlockStyles(): MarkdownBlockStyles {
-    val colorScheme = MaterialTheme.colorScheme
-    val typography = MaterialTheme.typography
+    val colors = MarkdownTheme.colors
+    val typography = MarkdownTheme.typography
 
-    return remember(colorScheme, typography) {
+    return remember(colors, typography) {
         MarkdownBlockStyles(
             inline = MarkdownInlineStyles(
                 emphasis = SpanStyle(fontStyle = FontStyle.Italic),
@@ -558,12 +584,12 @@ internal fun rememberMarkdownBlockStyles(): MarkdownBlockStyles {
                 strike = SpanStyle(textDecoration = TextDecoration.LineThrough),
                 code = SpanStyle(
                     fontFamily = FontFamily.Monospace,
-                    background = colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                    background = colors.surfaceMuted.copy(alpha = 0.75f),
                     fontSize = typography.bodyLarge.fontSize,
                 ),
                 link = TextLinkStyles(
                     style = SpanStyle(
-                        color = colorScheme.primary,
+                        color = colors.accent,
                         textDecoration = TextDecoration.Underline,
                     ),
                 ),
