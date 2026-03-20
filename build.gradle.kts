@@ -10,7 +10,7 @@ plugins {
 
 allprojects {
     group = "com.adamglin.compose.markdown"
-    version = "0.1.0-SNAPSHOT"
+    version = "0.1.0"
 }
 
 tasks.register("benchmarkSmoke") {

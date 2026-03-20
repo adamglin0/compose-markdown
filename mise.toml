@@ -1,0 +1,11 @@
+[tools]
+java = "17"
+
+[tasks.publish-maven-local]
+description = "Run tests and publish artifacts to local Maven."
+run = "./gradlew test :markdown-core:publishToMavenLocal :markdown-compose:publishToMavenLocal"
+
+[tasks.publish-maven-central]
+description = "Verify locally, then publish artifacts to Maven Central."
+depends = ["publish-maven-local"]
+run = "./gradlew :markdown-core:publishToMavenCentral :markdown-compose:publishToMavenCentral --no-configuration-cache"
