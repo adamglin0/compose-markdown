@@ -1,5 +1,7 @@
 package com.adamglin.compose.markdown.core.model
 
+import androidx.compose.runtime.Immutable
+
 sealed interface BlockNode {
     val id: BlockId
     val range: TextRange
@@ -32,6 +34,7 @@ sealed interface BlockNode {
         }
     }
 
+    @Immutable
     data class FencedCodeBlock(
         override val id: BlockId,
         override val range: TextRange,
@@ -91,6 +94,7 @@ sealed interface BlockNode {
         val children: List<InlineNode>,
     ) : BlockNode
 
+    @Immutable
     data class ThematicBreak(
         override val id: BlockId,
         override val range: TextRange,
@@ -98,6 +102,7 @@ sealed interface BlockNode {
         val marker: String,
     ) : BlockNode
 
+    @Immutable
     data class UnsupportedBlock(
         override val id: BlockId,
         override val range: TextRange,
@@ -106,6 +111,7 @@ sealed interface BlockNode {
         val reason: String? = null,
     ) : BlockNode
 
+    @Immutable
     data class RawTextBlock(
         override val id: BlockId,
         override val range: TextRange,

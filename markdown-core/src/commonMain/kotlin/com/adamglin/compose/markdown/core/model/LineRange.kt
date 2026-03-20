@@ -1,5 +1,8 @@
 package com.adamglin.compose.markdown.core.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class LineRange(
     val startLine: Int,
     val endLineExclusive: Int,

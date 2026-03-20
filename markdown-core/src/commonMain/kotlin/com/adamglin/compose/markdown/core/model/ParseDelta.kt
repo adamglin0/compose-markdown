@@ -1,5 +1,7 @@
 package com.adamglin.compose.markdown.core.model
 
+import androidx.compose.runtime.Immutable
+
 data class ParseDelta(
     val version: Long,
     val changedBlocks: List<BlockChange>,
@@ -23,6 +25,7 @@ data class ParseDelta(
         get() = !hasStateChange && changedBlocks.isEmpty() && removedBlockIds.isEmpty() && dirtyRegion.isEmpty
 }
 
+@Immutable
 data class ParseStats(
     val parsedBlockCount: Int,
     val changedBlockCount: Int,

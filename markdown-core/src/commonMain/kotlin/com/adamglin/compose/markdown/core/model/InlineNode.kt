@@ -1,9 +1,12 @@
 package com.adamglin.compose.markdown.core.model
 
+import androidx.compose.runtime.Immutable
+
 sealed interface InlineNode {
     val id: InlineId
     val range: TextRange
 
+    @Immutable
     data class Text(
         override val id: InlineId,
         override val range: TextRange,
@@ -22,6 +25,7 @@ sealed interface InlineNode {
         val children: List<InlineNode>,
     ) : InlineNode
 
+    @Immutable
     data class CodeSpan(
         override val id: InlineId,
         override val range: TextRange,
@@ -46,11 +50,13 @@ sealed interface InlineNode {
         val referenceLabel: String? = null,
     ) : InlineNode
 
+    @Immutable
     data class SoftBreak(
         override val id: InlineId,
         override val range: TextRange,
     ) : InlineNode
 
+    @Immutable
     data class HardBreak(
         override val id: InlineId,
         override val range: TextRange,
@@ -62,6 +68,7 @@ sealed interface InlineNode {
         val children: List<InlineNode>,
     ) : InlineNode
 
+    @Immutable
     data class UnsupportedInline(
         override val id: InlineId,
         override val range: TextRange,

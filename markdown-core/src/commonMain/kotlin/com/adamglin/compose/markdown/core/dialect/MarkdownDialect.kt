@@ -1,5 +1,7 @@
 package com.adamglin.compose.markdown.core.dialect
 
+import androidx.compose.runtime.Immutable
+
 sealed interface MarkdownDialect {
     val id: String
     val preset: MarkdownPreset
@@ -138,6 +140,7 @@ sealed class MarkdownPreset(
     )
 }
 
+@Immutable
 data class MarkdownBlockFeatures(
     val atxHeadings: Boolean,
     val setextHeadings: Boolean,
@@ -149,6 +152,7 @@ data class MarkdownBlockFeatures(
     val rawHtml: Boolean,
 )
 
+@Immutable
 data class MarkdownInlineFeatures(
     val inlineCode: Boolean,
     val emphasis: Boolean,

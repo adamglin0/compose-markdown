@@ -1,7 +1,9 @@
 package com.adamglin.compose.markdown.core.model
 
+import androidx.compose.runtime.Immutable
 import kotlin.jvm.JvmInline
 
+@Immutable
 @JvmInline
 value class BlockId(val raw: Long) {
     init {
@@ -13,6 +15,7 @@ value class BlockId(val raw: Long) {
     }
 }
 
+@Immutable
 @JvmInline
 value class InlineId(val raw: Long) {
     init {

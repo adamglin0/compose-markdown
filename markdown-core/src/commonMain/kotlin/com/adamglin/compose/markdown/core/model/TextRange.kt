@@ -1,5 +1,8 @@
 package com.adamglin.compose.markdown.core.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class TextRange(
     val start: Int,
     val endExclusive: Int,
