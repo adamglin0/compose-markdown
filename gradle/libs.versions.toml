@@ -7,6 +7,7 @@ androidx-activity-compose = "1.13.0"
 kotlinx-browser = "0.5.0"
 androidCompileSdk = "36"
 androidMinSdk = "23"
+vanniktech-maven-publish = "0.36.0"
 
 [libraries]
 highlights = { module = "dev.snipme:highlights", version.ref = "highlights" }
@@ -23,3 +24,4 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-application = { id = "com.android.application", version.ref = "android-gradle" }
+vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-maven-publish" }

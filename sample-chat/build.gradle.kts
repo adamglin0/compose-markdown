@@ -44,7 +44,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
         }
-        jsMain.dependencies {
+        webMain.dependencies {
             implementation(libs.kotlinx.browser)
         }
         jvmMain.dependencies {
