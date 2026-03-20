@@ -236,7 +236,7 @@ private fun MarkdownCodeHighlightPalette.toSyntaxTheme(): SyntaxTheme = SyntaxTh
     mark = mark,
 )
 
-private fun resolveSyntaxLanguage(language: String?): SyntaxLanguage? = when (language?.lowercase()) {
+internal fun resolveSyntaxLanguage(language: String?): SyntaxLanguage? = when (language?.lowercase()) {
     "c" -> SyntaxLanguage.C
     "cpp" -> SyntaxLanguage.CPP
     "csharp" -> SyntaxLanguage.CSHARP
@@ -270,4 +270,3 @@ private fun toHighlightToken(highlight: CodeHighlight): HighlightToken? = when (
         foregroundColor = highlight.rgb,
     )
 }
-

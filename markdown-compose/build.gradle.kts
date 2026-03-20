@@ -33,7 +33,7 @@ val hasSigningCredentials =
         providers.gradleProperty("signing.secretKeyRingFile").isPresent
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 
     @Suppress("UnstableApiUsage")
     androidLibrary {

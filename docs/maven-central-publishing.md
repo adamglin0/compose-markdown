@@ -39,6 +39,8 @@ The repository workflow in `.github/workflows/publish.yml` reads these secrets a
 - Release upload and auto-release: `mise run publish-maven-central`
 - CI release upload: push a `v*` tag or run `.github/workflows/publish.yml` manually
 
+The publish workflow uses JDK 21 because `markdown-compose` depends on `dev.snipme:highlights`, whose JVM artifact requires a Java 21 runtime.
+
 `automaticRelease` is enabled automatically for non-`-SNAPSHOT` versions.
 
 ## Release Checklist
