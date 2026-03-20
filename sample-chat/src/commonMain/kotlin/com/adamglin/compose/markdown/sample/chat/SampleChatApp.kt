@@ -59,9 +59,9 @@ fun ComposeMarkdownSampleApp(
         var chunkDelayMs by remember { mutableFloatStateOf(120f) }
         var isStreaming by remember { mutableStateOf(false) }
         var streamJob by remember { mutableStateOf<Job?>(null) }
-        var lastLinkClick by remember { mutableStateOf("暂无") }
+        var lastLinkClick by remember { mutableStateOf("None") }
         var streamedChunkCount by remember { mutableIntStateOf(0) }
-        var statusText by remember { mutableStateOf("已载入示例，点击开始可重播流式过程。") }
+        var statusText by remember { mutableStateOf("Examples loaded. Click Start to replay the streaming flow.") }
 
         val selectedScript = scripts[selectedScriptIndex]
 
@@ -76,7 +76,7 @@ fun ComposeMarkdownSampleApp(
             markdownState.reset()
             rendererState.render(SampleChatDefaults.finalSnapshot(message = selectedScript.message))
             streamedChunkCount = 0
-            statusText = "已切换到 ${selectedScript.title}，当前展示完整预览。"
+            statusText = "Switched to ${selectedScript.title}. Showing the full preview."
         }
 
         fun startStreaming() {
@@ -91,7 +91,7 @@ fun ComposeMarkdownSampleApp(
             markdownState.reset()
             rendererState.render(markdownState.snapshot)
             streamedChunkCount = 0
-            statusText = "正在按 chunk 回放 ${selectedScript.title}。"
+            statusText = "Replaying ${selectedScript.title} chunk by chunk."
             isStreaming = true
             streamJob = scope.launch {
                 val chunks = SampleChatDefaults.createStreamingChunks(selectedScript.message)
@@ -99,14 +99,14 @@ fun ComposeMarkdownSampleApp(
                     val delta = markdownState.append(chunk)
                     rendererState.apply(delta)
                     streamedChunkCount = index + 1
-                    statusText = "${selectedScript.title} 已追加 ${index + 1}/${chunks.size} 个 chunk。"
+                    statusText = "${selectedScript.title}: appended ${index + 1}/${chunks.size} chunks."
                     delay(chunkDelayMs.toLong())
                 }
 
                 val finalDelta = markdownState.finish()
                 rendererState.apply(finalDelta)
                 streamedChunkCount = chunks.size
-                statusText = "${selectedScript.title} 回放完成。"
+                statusText = "${selectedScript.title} replay complete."
                 streamJob = null
                 isStreaming = false
             }
@@ -118,7 +118,7 @@ fun ComposeMarkdownSampleApp(
                 onStopped = {
                     streamJob = null
                     isStreaming = false
-                    statusText = "已停止回放，当前保留已渲染内容。"
+                    statusText = "Replay stopped. Keeping the rendered content on screen."
                 },
             )
         }
@@ -207,12 +207,12 @@ private fun Sidebar(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 AppText(
-                    text = "Markdown 示例",
+                    text = "Markdown Examples",
                     style = SampleChatTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
                 AppText(
-                    text = "选择左侧场景，右侧查看完整预览或重播流式 append。",
+                    text = "Pick a scenario on the left to view the full preview or replay the streaming append.",
                     style = SampleChatTheme.typography.bodyMedium,
                     color = SampleChatTheme.colors.textSecondary,
                 )
@@ -300,7 +300,7 @@ private fun Toolbar(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     AppText(
-                        text = "Chunk 模拟速度 ${chunkDelayMs.toInt()} ms",
+                        text = "Chunk playback speed ${chunkDelayMs.toInt()} ms",
                         style = SampleChatTheme.typography.titleSmall,
                         fontWeight = FontWeight.Medium,
                     )
@@ -313,14 +313,14 @@ private fun Toolbar(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    AppButton(text = "开始", onClick = onStart, enabled = !isStreaming)
-                    AppButton(text = "停止", onClick = onStop, enabled = isStreaming, filled = false)
-                    AppButton(text = "重置", onClick = onReset, enabled = !isStreaming, filled = false)
+                    AppButton(text = "Start", onClick = onStart, enabled = !isStreaming)
+                    AppButton(text = "Stop", onClick = onStop, enabled = isStreaming, filled = false)
+                    AppButton(text = "Reset", onClick = onReset, enabled = !isStreaming, filled = false)
                 }
             }
 
             AppText(
-                text = "$statusText  已发送 chunk: $streamedChunkCount",
+                text = "$statusText  Chunks sent: $streamedChunkCount",
                 style = SampleChatTheme.typography.bodyMedium,
                 color = SampleChatTheme.colors.textSecondary,
             )
@@ -353,12 +353,12 @@ private fun PreviewCanvas(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 AppText(
-                    text = "Markdown 预览",
+                    text = "Markdown Preview",
                     style = SampleChatTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
                 AppText(
-                    text = "最后点击链接: $lastLinkClick",
+                    text = "Last clicked link: $lastLinkClick",
                     style = SampleChatTheme.typography.bodySmall,
                     color = SampleChatTheme.colors.textMuted,
                 )

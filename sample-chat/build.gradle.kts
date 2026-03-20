@@ -7,6 +7,66 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+fun kotlinStringLiteral(value: String): String = buildString {
+    append('"')
+    value.forEach { character ->
+        when (character) {
+            '\\' -> append("\\\\")
+            '"' -> append("\\\"")
+            '\n' -> append("\\n")
+            '\r' -> append("\\r")
+            '\t' -> append("\\t")
+            '$' -> append("\\$")
+            else -> append(character)
+        }
+    }
+    append('"')
+}
+
+val sampleMarkdownExamplesDir = layout.projectDirectory.dir("markdown-examples")
+val generatedSampleExamplesDir = layout.buildDirectory.dir("generated/sample-chat/examples/kotlin")
+
+val generateBundledSampleScripts by tasks.registering {
+    inputs.dir(sampleMarkdownExamplesDir)
+    outputs.dir(generatedSampleExamplesDir)
+
+    doLast {
+        val outputDir = generatedSampleExamplesDir.get().asFile
+        val outputFile = outputDir.resolve(
+            "com/adamglin/compose/markdown/sample/chat/SampleChatBundledExamples.kt",
+        )
+        val exampleFiles = sampleMarkdownExamplesDir.asFile
+            .listFiles { file -> file.isFile && file.extension == "md" }
+            ?.sortedBy { file -> file.name }
+            ?: emptyList()
+
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText(
+            buildString {
+                appendLine("package com.adamglin.compose.markdown.sample.chat")
+                appendLine()
+                appendLine("internal object SampleChatBundledExamples {")
+                appendLine("    private val messagesByPath: Map<String, String> = mapOf(")
+                exampleFiles.forEachIndexed { index, file ->
+                    append("        ")
+                    append(kotlinStringLiteral("markdown-examples/${file.name}"))
+                    append(" to ")
+                    append(kotlinStringLiteral(file.readText()))
+                    if (index != exampleFiles.lastIndex) {
+                        append(',')
+                    }
+                    appendLine()
+                }
+                appendLine("    )")
+                appendLine()
+                appendLine("    fun readExample(path: String): String = messagesByPath[path]")
+                appendLine("        ?: error(\"unexpected path: ${'$'}path\")")
+                appendLine("}")
+            },
+        )
+    }
+}
+
 @OptIn(ExperimentalWasmDsl::class)
 kotlin {
     androidTarget()
@@ -32,24 +92,47 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies {
-            implementation(project(":markdown-compose"))
-            implementation(libs.compose.runtime)
-            implementation(libs.compose.foundation)
-            implementation(libs.compose.ui)
+        val commonMain by getting {
+            kotlin.srcDir(generatedSampleExamplesDir)
+
+            dependencies {
+                implementation(project(":markdown-compose"))
+                implementation(libs.compose.runtime)
+                implementation(libs.compose.foundation)
+                implementation(libs.compose.ui)
+            }
         }
-        commonTest.dependencies {
-            implementation(kotlin("test"))
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
         }
-        androidMain.dependencies {
-            implementation(libs.androidx.activity.compose)
+        val androidMain by getting {
+            dependencies {
+                implementation(libs.androidx.activity.compose)
+            }
         }
-        webMain.dependencies {
-            implementation(libs.kotlinx.browser)
+        val jsMain by getting {
+            dependencies {
+                implementation(libs.kotlinx.browser)
+            }
         }
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
+        val wasmJsMain by getting {
+            dependencies {
+                implementation(libs.kotlinx.browser)
+            }
         }
+        val jvmMain by getting {
+            dependencies {
+                implementation(compose.desktop.currentOs)
+            }
+        }
+    }
+}
+
+tasks.configureEach {
+    if (name.startsWith("compile") && name.contains("Kotlin")) {
+        dependsOn(generateBundledSampleScripts)
     }
 }
 

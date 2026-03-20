@@ -1,3 +1,3 @@
 package com.adamglin.compose.markdown.sample.chat
 
-internal expect fun loadPlatformSampleScripts(): List<SampleScript>
+internal fun loadPlatformSampleScripts(): List<SampleScript> = SampleChatDefaults.createBundledScripts()
