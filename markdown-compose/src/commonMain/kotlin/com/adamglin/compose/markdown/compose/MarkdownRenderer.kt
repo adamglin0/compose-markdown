@@ -377,7 +377,7 @@ private fun ListItemBlock(
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.Top,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         when (val leadingMarker = block.leadingMarker()) {
             is ListItemLeadingMarker.Literal -> MarkdownText(
