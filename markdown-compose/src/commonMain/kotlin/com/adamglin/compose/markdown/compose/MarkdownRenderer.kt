@@ -389,7 +389,7 @@ private fun ListItemBlock(
             is ListItemLeadingMarker.Task -> TaskListMarker(taskState = leadingMarker.taskState)
         }
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             block.children.forEach { child ->
@@ -538,7 +538,7 @@ private fun MarkdownText(
     BasicText(
         text = text,
         style = style,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
     )
 }
 

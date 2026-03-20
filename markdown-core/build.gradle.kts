@@ -33,7 +33,9 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies {}
+        commonMain.dependencies {
+            implementation(libs.compose.runtime)
+        }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
