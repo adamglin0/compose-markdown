@@ -387,7 +387,8 @@ private fun ListItemBlock(
             is ListItemLeadingMarker.Literal -> MarkdownText(
                 text = leadingMarker.value,
                 style = MarkdownTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                modifier = Modifier.padding(top = 1.dp),
+                modifier = Modifier.padding(top = 1.dp)
+                    .alignBy { it.measuredHeight / 2 },
             )
 
             is ListItemLeadingMarker.Task -> TaskListMarker(taskState = leadingMarker.taskState)
