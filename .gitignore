@@ -4,3 +4,5 @@ build/
 .kotlin/
 .DS_Store
 .idea/
+yarn.lock
+mise.local.toml
