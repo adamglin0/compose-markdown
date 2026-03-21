@@ -57,12 +57,32 @@ fun Markdown(
     codeHighlighter: CodeHighlighter? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
+    Markdown(
+        snapshot = snapshot,
+        style = MarkdownStyle.Default,
+        modifier = modifier,
+        state = state,
+        codeHighlighter = codeHighlighter,
+        onLinkClick = onLinkClick,
+    )
+}
+
+@Composable
+fun Markdown(
+    snapshot: MarkdownSnapshot,
+    style: MarkdownStyle,
+    modifier: Modifier = Modifier,
+    state: MarkdownRendererState = rememberMarkdownRendererState(snapshot = snapshot),
+    codeHighlighter: CodeHighlighter? = null,
+    onLinkClick: (String) -> Unit = {},
+) {
     LaunchedEffect(snapshot) {
         state.render(snapshot)
     }
     Markdown(
         blocks = state.blocks,
         modifier = modifier,
+        style = style,
         codeHighlighter = codeHighlighter,
         onLinkClick = onLinkClick,
     )
@@ -75,12 +95,30 @@ fun Markdown(
     codeHighlighter: CodeHighlighter? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
+    Markdown(
+        document = document,
+        style = MarkdownStyle.Default,
+        modifier = modifier,
+        codeHighlighter = codeHighlighter,
+        onLinkClick = onLinkClick,
+    )
+}
+
+@Composable
+fun Markdown(
+    document: MarkdownDocument,
+    style: MarkdownStyle,
+    modifier: Modifier = Modifier,
+    codeHighlighter: CodeHighlighter? = null,
+    onLinkClick: (String) -> Unit = {},
+) {
     val blocks = remember(document) {
         document.blocks.map(::RenderedMarkdownBlock)
     }
     Markdown(
         blocks = blocks,
         modifier = modifier,
+        style = style,
         codeHighlighter = codeHighlighter,
         onLinkClick = onLinkClick,
     )
@@ -94,8 +132,26 @@ fun Markdown(
     onLinkClick: (String) -> Unit = {},
 ) {
     Markdown(
+        state = state,
+        style = MarkdownStyle.Default,
+        modifier = modifier,
+        codeHighlighter = codeHighlighter,
+        onLinkClick = onLinkClick,
+    )
+}
+
+@Composable
+fun Markdown(
+    state: MarkdownRendererState,
+    style: MarkdownStyle,
+    modifier: Modifier = Modifier,
+    codeHighlighter: CodeHighlighter? = null,
+    onLinkClick: (String) -> Unit = {},
+) {
+    Markdown(
         blocks = state.blocks,
         modifier = modifier,
+        style = style,
         codeHighlighter = codeHighlighter,
         onLinkClick = onLinkClick,
     )
@@ -105,12 +161,13 @@ fun Markdown(
 private fun Markdown(
     blocks: List<RenderedMarkdownBlock>,
     modifier: Modifier,
+    style: MarkdownStyle,
     codeHighlighter: CodeHighlighter?,
     onLinkClick: (String) -> Unit,
 ) {
     val currentOnLinkClick = rememberUpdatedState(onLinkClick)
 
-    ProvideMarkdownTheme {
+    ProvideMarkdownTheme(colors = style.colors, typography = style.typography) {
         val styles = rememberMarkdownBlockStyles()
         val defaultCodeHighlighter = if (codeHighlighter == null) {
             rememberMarkdownCodeHighlighter()

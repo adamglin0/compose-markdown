@@ -31,17 +31,44 @@ implementation(libs.compose.markdown.compose)
 ## Example
 
 ```kotlin
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.adamglin.compose.markdown.compose.Markdown
+import com.adamglin.compose.markdown.compose.MarkdownStyle
+import com.adamglin.compose.markdown.compose.MarkdownThemeDefaults
+import com.adamglin.compose.markdown.compose.ProvideMarkdownTheme
 import com.adamglin.compose.markdown.core.api.MarkdownEngine
+import com.adamglin.compose.markdown.core.model.MarkdownSnapshot
 
 @Composable
 fun Message(content: String) {
     val engine = remember { MarkdownEngine() }
     engine.reset()
     val snapshot = engine.append(content).snapshot
-    Markdown(snapshot = snapshot)
+    val colors = MarkdownThemeDefaults.LightColors.copy(accent = Color(0xFF0A7A5C))
+    val baseTypography = MarkdownThemeDefaults.typography(colors)
+    val typography = baseTypography.copy(
+        bodyLarge = baseTypography.bodyLarge.copy(lineHeight = 26.sp),
+    )
+
+    Markdown(
+        snapshot = snapshot,
+        style = MarkdownStyle(
+            colors = colors,
+            typography = typography,
+        ),
+    )
+}
+
+@Composable
+fun Thread(snapshot: MarkdownSnapshot) {
+    val colors = MarkdownThemeDefaults.DarkColors.copy(accent = Color(0xFF7EC7A2))
+
+    ProvideMarkdownTheme(colors = colors) {
+        Markdown(snapshot = snapshot)
+    }
 }
 ```
 

@@ -5,6 +5,8 @@ Compose Multiplatform rendering layer built on top of `markdown-core`.
 Current responsibilities:
 
 - render `MarkdownSnapshot`, `MarkdownDocument`, or `MarkdownRendererState`
+- expose `colors` and `typography` overrides for renderer-level theming
+- expose `MarkdownStyle`, `ProvideMarkdownTheme`, and `MarkdownThemeDefaults` for app-level theming
 - preserve stable block identity through keyed renderer-state updates
 - provide readable rendering for paragraphs, headings, lists, quotes, fenced code blocks, thematic breaks, and tables
 - map inline links into clickable `AnnotatedString` annotations
