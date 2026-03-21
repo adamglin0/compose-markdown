@@ -1,6 +1,6 @@
 # Compose Markdown
 
-![Version](https://img.shields.io/badge/version-0.1.0--SNAPSHOT-2b2b2b)
+![Maven Central Version](https://img.shields.io/maven-central/v/com.adamglin.compose.markdown/markdown-core)
 ![License](https://img.shields.io/badge/license-MIT-111111)
 
 > Kotlin Multiplatform Markdown parser and Compose renderer for append-only streaming output.
