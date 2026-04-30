@@ -60,6 +60,26 @@ private data class StreamingCompatibilityCase(
     val expectedShape: String,
 )
 
+private val timelineTableMarkdown = """
+    | 阶段 | 时间 | 关键事件 |
+    |------|------|----------|
+    | 上升期 | 2009-2017 | 王健林给5亿启动 → 普思资本峰值10亿美元，身价63亿 |
+    | 转折期 | 2017-2019 | 熊猫直播烧光资金，承担20亿连带损失，资产被查封限高 |
+    | 蛰伏期 | 2020-2023 | 熊猫破产终局，靠母亲资助化解债务；成立寰聚商业转型文旅 |
+    | 收缩期 | 2024-2025 | 寰聚被并购、关联公司注销、麦戟负资产法拍，王健林家族财富从2600亿→100亿 |
+""".trimIndent()
+
+private const val timelineTableExpectedShape = "table(header=阶段|时间|关键事件;rows=上升期|2009-2017|王健林给5亿启动 → 普思资本峰值10亿美元，身价63亿;转折期|2017-2019|熊猫直播烧光资金，承担20亿连带损失，资产被查封限高;蛰伏期|2020-2023|熊猫破产终局，靠母亲资助化解债务；成立寰聚商业转型文旅;收缩期|2024-2025|寰聚被并购、关联公司注销、麦戟负资产法拍，王健林家族财富从2600亿→100亿)"
+
+private const val timelineTableIntro = "王思聪财富轨迹（时间线）："
+
+private val timelineTableAfterParagraphMarkdown = """
+${timelineTableIntro}
+${timelineTableMarkdown}
+""".trimIndent()
+
+private const val timelineTableAfterParagraphExpectedShape = "paragraph(text(王思聪财富轨迹（时间线）：))\n${timelineTableExpectedShape}"
+
 private val compatibilityCases = listOf(
     CompatibilityCase(
         name = "CommonMark paragraph",
@@ -118,6 +138,20 @@ private val compatibilityCases = listOf(
         expectedShape = "table(header=foo|bar;rows=baz|bim)",
     ),
     CompatibilityCase(
+        name = "GFM table starts immediately after paragraph",
+        origin = "User reported table after CJK intro line regression",
+        dialect = MarkdownDialect.GfmCompat,
+        markdown = timelineTableAfterParagraphMarkdown,
+        expectedShape = timelineTableAfterParagraphExpectedShape,
+    ),
+    CompatibilityCase(
+        name = "GFM table requires matching delimiter columns",
+        origin = "GFM table delimiter column-count guard",
+        dialect = MarkdownDialect.GfmCompat,
+        markdown = "intro\na | b\n--- | --- | ---\nstill paragraph",
+        expectedShape = "paragraph(text(intro)softbreaktext(a | b)softbreaktext(--- | --- | ---)softbreaktext(still paragraph))",
+    ),
+    CompatibilityCase(
         name = "GFM task list",
         origin = "GFM 0.29-gfm Example 279",
         dialect = MarkdownDialect.GfmCompat,
@@ -168,6 +202,16 @@ private val streamingCases = listOf(
         dialect = MarkdownDialect.GfmCompat,
         chunks = listOf("| foo | bar |\n", "| --- | --- |\n| baz | bim |"),
         expectedShape = "table(header=foo|bar;rows=baz|bim)",
+    ),
+    StreamingCompatibilityCase(
+        name = "Streaming table accepts rows after stable prefix",
+        origin = "Local regression for appending rows after a complete table snapshot",
+        dialect = MarkdownDialect.GfmCompat,
+        chunks = listOf(
+            "Name | Score\n--- | ---\nAda | 10\n",
+            "Bob | 20",
+        ),
+        expectedShape = "table(header=Name|Score;rows=Ada|10;Bob|20)",
     ),
     StreamingCompatibilityCase(
         name = "Streaming reference link",

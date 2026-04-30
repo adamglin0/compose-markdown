@@ -307,6 +307,7 @@ internal class IncrementalMarkdownEngine(
 
     private fun shouldBackUpForRetroactiveInterpretation(block: BlockNode): Boolean = when (block) {
         is BlockNode.Paragraph -> dialect.blockFeatures.setextHeadings || dialect.blockFeatures.tables
+        is BlockNode.TableBlock -> dialect.blockFeatures.tables
         is BlockNode.BlockQuote,
         is BlockNode.ListBlock,
         -> true

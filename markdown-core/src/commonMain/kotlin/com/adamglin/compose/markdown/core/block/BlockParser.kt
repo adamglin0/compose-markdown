@@ -382,16 +382,12 @@ internal class BlockParser(
             }
             val headerLine = lines[startIndex]
             val delimiterLine = lines[startIndex + 1]
-            if (!looksLikeTableRow(headerLine.content) || !isTableDelimiterRow(delimiterLine.content)) {
-                return null
-            }
-
             val headerCells = splitTableCells(headerLine)
             val alignments = parseTableAlignments(delimiterLine.content)
-            if (headerCells.isEmpty() || alignments.isEmpty()) {
+            if (headerCells.isEmpty() || headerCells.size != alignments.size) {
                 return null
             }
-            val normalizedColumnCount = maxOf(headerCells.size, alignments.size)
+            val normalizedColumnCount = headerCells.size
             var index = startIndex + 2
             val rows = mutableListOf<BlockNode.TableRow>()
             while (index < lines.size) {
@@ -489,18 +485,24 @@ internal class BlockParser(
                 if (index > startIndex && startsBlock(content = current.content)) {
                     break
                 }
-                if (
-                    dialect.blockFeatures.tables &&
-                    index == startIndex &&
-                    index + 1 < lines.size &&
-                    looksLikeTableRow(lines[startIndex].content) &&
-                    isTableDelimiterRow(lines[index + 1].content)
-                ) {
+                if (isTableStart(lines = lines, index = index)) {
                     break
                 }
                 index += 1
             }
             return index
+        }
+
+        private fun isTableStart(lines: List<ParserLine>, index: Int): Boolean =
+            tableStartColumnCount(lines = lines, index = index) != null
+
+        private fun tableStartColumnCount(lines: List<ParserLine>, index: Int): Int? {
+            if (!dialect.blockFeatures.tables || index + 1 >= lines.size) {
+                return null
+            }
+            val headerCells = splitTableCells(lines[index])
+            val alignments = parseTableAlignments(lines[index + 1].content)
+            return headerCells.size.takeIf { it > 0 && it == alignments.size }
         }
 
         private fun startsBlock(content: String): Boolean {
