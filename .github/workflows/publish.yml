@@ -89,6 +89,26 @@ jobs:
         env:
           ORG_GRADLE_PROJECT_releaseVersion: ${{ steps.version.outputs.release_version }}
 
+      - name: Verify publishing secrets
+        shell: bash
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          GPG_KEY_CONTENTS: ${{ secrets.GPG_KEY_CONTENTS }}
+        run: |
+          for secret_name in \
+            MAVEN_CENTRAL_USERNAME \
+            MAVEN_CENTRAL_PASSWORD \
+            SIGNING_PASSWORD \
+            GPG_KEY_CONTENTS
+          do
+            if [[ -z "${!secret_name}" ]]; then
+              echo "::error::${secret_name} secret is missing or empty."
+              exit 1
+            fi
+          done
+
       - name: Publish artifacts
         run: >-
           ./gradlew
@@ -101,8 +121,8 @@ jobs:
           ORG_GRADLE_PROJECT_releaseVersion: ${{ steps.version.outputs.release_version }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
 
   github-release:
     name: Create GitHub Release
