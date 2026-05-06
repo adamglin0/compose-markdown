@@ -64,10 +64,9 @@ subprojects {
         extensions.configure(SigningExtension::class.java) {
             val key = signingInMemoryKey.orNull
             val password = rootProject.providers.gradleProperty("signingInMemoryKeyPassword").orNull
-            val keyId = rootProject.providers.gradleProperty("signingInMemoryKeyId").orNull
 
             if (key != null && password != null) {
-                useInMemoryPgpKeys(keyId, key, password)
+                useInMemoryPgpKeys(key, password)
             }
         }
 
