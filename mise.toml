@@ -1,5 +1,5 @@
 [tools]
-java = "21"
+java = "17"
 
 [tasks.publish-maven-local]
 description = "Run tests and publish artifacts to local Maven."

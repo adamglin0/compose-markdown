@@ -82,7 +82,7 @@ kotlin {
         browser()
         binaries.executable()
     }
-    jvmToolchain(21)
+    jvmToolchain(17)
 
     listOf(iosX64, iosArm64, iosSimulatorArm64).forEach { iosTarget ->
         iosTarget.binaries.framework {

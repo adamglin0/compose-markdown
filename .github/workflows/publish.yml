@@ -5,6 +5,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to publish, without the leading v"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -14,77 +19,104 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  maven-central:
+  publish:
     name: Publish To Maven Central
     runs-on: macos-latest
     timeout-minutes: 60
+    outputs:
+      release_version: ${{ steps.version.outputs.release_version }}
+      release_tag: ${{ steps.version.outputs.release_tag }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
-          cache: gradle
 
-      - name: Resolve release metadata
-        id: release_meta
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Derive release version
+        id: version
         shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          python3 - <<'PY'
-          import os
-          import re
-          from pathlib import Path
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            release_tag="${GITHUB_REF_NAME}"
+            release_version="${release_tag#v}"
+          else
+            release_version="${INPUT_VERSION}"
+            release_tag="v${release_version}"
+          fi
 
-          text = Path("build.gradle.kts").read_text()
-          match = re.search(r'version\s*=\s*"([^"]+)"', text)
-          if not match:
-              raise SystemExit("Could not find the project version in build.gradle.kts")
+          if [[ -z "${release_version}" ]]; then
+            echo "Release version must not be empty." >&2
+            exit 1
+          fi
 
-          version = match.group(1)
-          print(f"Detected project version: {version}")
+          if [[ "${release_version}" == v* ]]; then
+            echo "Release version must not include a leading v." >&2
+            exit 1
+          fi
 
-          if version.endswith("-SNAPSHOT"):
-              raise SystemExit("Refusing to publish a -SNAPSHOT version from the publish workflow.")
+          if [[ ! "${release_version}" =~ ^[0-9]+(\.[0-9]+)+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "Release version must look like 1.2.3 or 1.2.3-alpha.1." >&2
+            exit 1
+          fi
 
-          tag_name = f"v{version}"
+          if [[ "${release_version}" == *"-SNAPSHOT" ]]; then
+            echo "Refusing to publish a -SNAPSHOT version from the publish workflow." >&2
+            exit 1
+          fi
 
-          if os.environ.get("GITHUB_EVENT_NAME") == "push":
-              ref_name = os.environ.get("GITHUB_REF_NAME", "")
-              if ref_name != tag_name:
-                  raise SystemExit(
-                      f"Git tag '{ref_name}' does not match project version '{version}'."
-                  )
+          prerelease=false
+          if [[ "${release_version}" == *"-"* ]]; then
+            prerelease=true
+          fi
 
-          prerelease = "true" if "-" in version else "false"
+          echo "release_version=${release_version}" >> "${GITHUB_OUTPUT}"
+          echo "release_tag=${release_tag}" >> "${GITHUB_OUTPUT}"
+          echo "prerelease=${prerelease}" >> "${GITHUB_OUTPUT}"
 
-          output_path = os.environ["GITHUB_OUTPUT"]
-          with open(output_path, "a", encoding="utf-8") as output:
-              output.write(f"version={version}\n")
-              output.write(f"tag={tag_name}\n")
-              output.write(f"prerelease={prerelease}\n")
-          PY
+      - name: Run CI checks
+        run: ./gradlew ciCheck
+        env:
+          ORG_GRADLE_PROJECT_releaseVersion: ${{ steps.version.outputs.release_version }}
 
       - name: Publish artifacts
         run: >-
           ./gradlew
-          test
           :markdown-core:publishToMavenCentral
           :markdown-compose:publishToMavenCentral
           --no-configuration-cache
+          --stacktrace
+          --info
         env:
+          ORG_GRADLE_PROJECT_releaseVersion: ${{ steps.version.outputs.release_version }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
 
-      - name: Create GitHub release
-        if: github.event_name == 'push'
+  github-release:
+    name: Create GitHub Release
+    if: github.event_name == 'push'
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.release_meta.outputs.tag }}
+          tag_name: ${{ needs.publish.outputs.release_tag }}
+          name: ${{ needs.publish.outputs.release_tag }}
           generate_release_notes: true
-          prerelease: ${{ steps.release_meta.outputs.prerelease == 'true' }}
+          prerelease: ${{ needs.publish.outputs.prerelease == 'true' }}
