@@ -99,6 +99,10 @@ kotlin {
                 implementation(libs.compose.runtime)
                 implementation(libs.compose.foundation)
                 implementation(libs.compose.ui)
+                implementation(libs.huarangmeng.latex.base)
+                implementation(libs.huarangmeng.latex.parser)
+                implementation(libs.huarangmeng.latex.renderer)
+                implementation(libs.ratex)
             }
         }
         val commonTest by getting {
@@ -124,6 +128,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                runtimeOnly(libs.ratex.native.darwin.aarch64)
             }
         }
     }

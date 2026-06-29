@@ -8,6 +8,8 @@ kotlinx-browser = "0.5.0"
 androidCompileSdk = "36"
 androidMinSdk = "23"
 vanniktech-maven-publish = "0.36.0"
+huarangmeng-latex = "1.4.7"
+ratex = "0.1.11"
 
 [libraries]
 highlights = { module = "dev.snipme:highlights", version.ref = "highlights" }
@@ -16,6 +18,11 @@ kotlinx-browser = { module = "org.jetbrains.kotlinx:kotlinx-browser", version.re
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose-multiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-multiplatform" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-multiplatform" }
+huarangmeng-latex-base = { module = "io.github.huarangmeng:latex-base", version.ref = "huarangmeng-latex" }
+huarangmeng-latex-parser = { module = "io.github.huarangmeng:latex-parser", version.ref = "huarangmeng-latex" }
+huarangmeng-latex-renderer = { module = "io.github.huarangmeng:latex-renderer", version.ref = "huarangmeng-latex" }
+ratex = { module = "io.github.darriousliu:ratex", version.ref = "ratex" }
+ratex-native-darwin-aarch64 = { module = "io.github.darriousliu:ratex-native-darwin-aarch64", version.ref = "ratex" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
