@@ -28,6 +28,15 @@ class MathBlockParserTest {
     fun parsesSingleLineDollarBlock() {
         val block = assertIs<BlockNode.MathBlock>(firstBlock("\$\$x^2 + y^2\$\$\n"))
         assertEquals("x^2 + y^2", block.latex)
+        assertEquals(MathBlockDelimiter.Dollar, block.delimiter)
+        assertTrue(block.isClosed)
+    }
+
+    @Test
+    fun parsesSingleLineBracketBlock() {
+        val block = assertIs<BlockNode.MathBlock>(firstBlock("\\[a + b\\]\n"))
+        assertEquals("a + b", block.latex)
+        assertEquals(MathBlockDelimiter.Bracket, block.delimiter)
         assertTrue(block.isClosed)
     }
 
