@@ -339,7 +339,7 @@ internal class InlineParser(
                     cursor += 2
                     continue
                 }
-                if (current == '$' && !text[cursor - 1].isWhitespace()) {
+                if (current == '$' && cursor > contentStart && !text[cursor - 1].isWhitespace()) {
                     val latex = text.substring(contentStart, cursor)
                     if (latex.isEmpty()) {
                         return null
@@ -364,21 +364,25 @@ internal class InlineParser(
             val contentStart = index + 2
             var cursor = contentStart
             while (cursor + 1 < endExclusive) {
-                if (text[cursor] == '\\' && text[cursor + 1] == ')') {
-                    val latex = text.substring(contentStart, cursor).trim()
-                    if (latex.isEmpty()) {
-                        return null
+                if (text[cursor] == '\\') {
+                    if (text[cursor + 1] == ')') {
+                        val latex = text.substring(contentStart, cursor).trim()
+                        if (latex.isEmpty()) {
+                            return null
+                        }
+                        val range = toRange(index, cursor + 2)
+                        return ParsedInlineNode(
+                            node = InlineNode.MathSpan(
+                                id = inlineId(kind = "math", range = range, salt = latex.hashCode().toLong()),
+                                range = range,
+                                latex = latex,
+                                delimiter = MathInlineDelimiter.Paren,
+                            ),
+                            nextIndex = cursor + 2,
+                        )
                     }
-                    val range = toRange(index, cursor + 2)
-                    return ParsedInlineNode(
-                        node = InlineNode.MathSpan(
-                            id = inlineId(kind = "math", range = range, salt = latex.hashCode().toLong()),
-                            range = range,
-                            latex = latex,
-                            delimiter = MathInlineDelimiter.Paren,
-                        ),
-                        nextIndex = cursor + 2,
-                    )
+                    cursor += 2
+                    continue
                 }
                 cursor += 1
             }

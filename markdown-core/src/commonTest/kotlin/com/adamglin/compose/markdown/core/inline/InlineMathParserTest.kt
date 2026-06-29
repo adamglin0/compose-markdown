@@ -45,6 +45,14 @@ class InlineMathParserTest {
     }
 
     @Test
+    fun parsesParenInlineMathWithBackslashCommands() {
+        val math = paragraph("sum \\(\\alpha + \\beta\\) end")
+            .children.filterIsInstance<InlineNode.MathSpan>().single()
+        assertEquals("\\alpha + \\beta", math.latex)
+        assertEquals(MathInlineDelimiter.Paren, math.delimiter)
+    }
+
+    @Test
     fun disabledDialectDoesNotParseInlineMath() {
         val engine = MarkdownEngine(dialect = MarkdownDialect.GfmCompat)
         val paragraph = assertIs<BlockNode.Paragraph>(
