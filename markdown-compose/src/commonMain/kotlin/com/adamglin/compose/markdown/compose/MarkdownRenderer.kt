@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -249,8 +251,8 @@ private fun MarkdownBlock(
             modifier = modifier,
         )
 
-        is BlockNode.Heading -> MarkdownText(
-            text = block.children.toAnnotatedString(styles.inline, onLinkClick),
+        is BlockNode.Heading -> MarkdownInlineText(
+            model = block.children.toInlineRenderModel(styles.inline, onLinkClick),
             style = when (block.level) {
                 1 -> MarkdownTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
                 2 -> MarkdownTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
@@ -259,6 +261,7 @@ private fun MarkdownBlock(
                 5 -> MarkdownTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                 else -> MarkdownTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
             },
+            mathRenderer = mathRenderer,
             modifier = modifier,
         )
 
@@ -284,6 +287,7 @@ private fun MarkdownBlock(
             block = block,
             styles = styles,
             codeHighlighter = codeHighlighter,
+            mathRenderer = mathRenderer,
             onLinkClick = onLinkClick,
             modifier = modifier,
         )
@@ -303,15 +307,17 @@ private fun MarkdownBlock(
             modifier = modifier,
         )
 
-        is BlockNode.TableCell -> MarkdownText(
-            text = block.children.toAnnotatedString(styles.inline, onLinkClick),
+        is BlockNode.TableCell -> MarkdownInlineText(
+            model = block.children.toInlineRenderModel(styles.inline, onLinkClick),
             style = MarkdownTheme.typography.bodyMedium,
+            mathRenderer = mathRenderer,
             modifier = modifier,
         )
 
-        is BlockNode.Paragraph -> MarkdownText(
-            text = block.children.toAnnotatedString(styles.inline, onLinkClick),
+        is BlockNode.Paragraph -> MarkdownInlineText(
+            model = block.children.toInlineRenderModel(styles.inline, onLinkClick),
             style = MarkdownTheme.typography.bodyLarge,
+            mathRenderer = mathRenderer,
             modifier = modifier,
         )
 
@@ -450,7 +456,7 @@ private fun MathBlockView(
                 }
             },
             style = styles.codeBlockTextStyle,
-            modifier = modifier,
+            modifier = modifier.fillMaxWidth(),
         )
     }
 }
@@ -585,6 +591,7 @@ private fun TableBlock(
     block: BlockNode.TableBlock,
     styles: MarkdownBlockStyles,
     codeHighlighter: CodeHighlighter,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -599,10 +606,10 @@ private fun TableBlock(
             .padding(10.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        TableRowBlock(block.header, styles, onLinkClick, isHeader = true)
+        TableRowBlock(block.header, styles, mathRenderer, onLinkClick, isHeader = true)
         MarkdownDivider(color = MarkdownTheme.colors.borderMuted)
         block.rows.forEach { row ->
-            TableRowBlock(row, styles, onLinkClick, isHeader = false)
+            TableRowBlock(row, styles, mathRenderer, onLinkClick, isHeader = false)
         }
     }
 }
@@ -611,6 +618,7 @@ private fun TableBlock(
 private fun TableRowBlock(
     row: BlockNode.TableRow,
     styles: MarkdownBlockStyles,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     isHeader: Boolean,
 ) {
@@ -620,13 +628,14 @@ private fun TableRowBlock(
     ) {
         row.cells.forEach { cell ->
             Box(modifier = Modifier.weight(1f)) {
-                MarkdownText(
-                    text = cell.children.toAnnotatedString(styles.inline, onLinkClick),
+                MarkdownInlineText(
+                    model = cell.children.toInlineRenderModel(styles.inline, onLinkClick),
                     style = if (isHeader) {
                         MarkdownTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                     } else {
                         MarkdownTheme.typography.bodyMedium
                     },
+                    mathRenderer = mathRenderer,
                 )
             }
         }
@@ -719,6 +728,31 @@ internal fun rememberMarkdownBlockStyles(): MarkdownBlockStyles {
     }
 }
 
+@Stable
+internal data class MathSpanRef(val key: String, val latex: String)
+
+@Stable
+internal data class InlineRenderModel(
+    val text: AnnotatedString,
+    val mathSpans: List<MathSpanRef>,
+)
+
+internal fun List<InlineNode>.toInlineRenderModel(
+    styles: MarkdownInlineStyles,
+    onLinkClick: (String) -> Unit,
+): InlineRenderModel {
+    val mathSpans = mutableListOf<MathSpanRef>()
+    val text = buildAnnotatedString {
+        appendInlineNodes(
+            nodes = this@toInlineRenderModel,
+            styles = styles,
+            onLinkClick = onLinkClick,
+            mathSpans = mathSpans,
+        )
+    }
+    return InlineRenderModel(text = text, mathSpans = mathSpans)
+}
+
 internal fun List<InlineNode>.toAnnotatedString(
     styles: MarkdownInlineStyles = MarkdownInlineStyles(
         emphasis = SpanStyle(fontStyle = FontStyle.Italic),
@@ -730,11 +764,31 @@ internal fun List<InlineNode>.toAnnotatedString(
         ),
     ),
     onLinkClick: (String) -> Unit = {},
-): AnnotatedString = buildAnnotatedString {
-    appendInlineNodes(
-        nodes = this@toAnnotatedString,
-        styles = styles,
-        onLinkClick = onLinkClick,
+): AnnotatedString = toInlineRenderModel(styles, onLinkClick).text
+
+@Composable
+private fun MarkdownInlineText(
+    model: InlineRenderModel,
+    style: TextStyle,
+    mathRenderer: MathRenderer?,
+    modifier: Modifier = Modifier,
+) {
+    val inlineContent = if (model.mathSpans.isEmpty() || mathRenderer == null) {
+        emptyMap()
+    } else {
+        buildMap {
+            model.mathSpans.forEach { ref ->
+                key(ref.key) {
+                    put(ref.key, mathRenderer.inlineMathContent(ref.latex, style.fontSize))
+                }
+            }
+        }
+    }
+    BasicText(
+        text = model.text,
+        style = style,
+        inlineContent = inlineContent,
+        modifier = modifier.fillMaxWidth(),
     )
 }
 
@@ -742,6 +796,7 @@ private fun AnnotatedString.Builder.appendInlineNodes(
     nodes: List<InlineNode>,
     styles: MarkdownInlineStyles,
     onLinkClick: (String) -> Unit,
+    mathSpans: MutableList<MathSpanRef>,
 ) {
     nodes.forEach { node ->
         when (node) {
@@ -750,7 +805,7 @@ private fun AnnotatedString.Builder.appendInlineNodes(
             }
 
             is InlineNode.Emphasis -> withStyle(styles.emphasis) {
-                appendInlineNodes(node.children, styles, onLinkClick)
+                appendInlineNodes(node.children, styles, onLinkClick, mathSpans)
             }
 
             is InlineNode.HardBreak -> append("\n")
@@ -762,27 +817,30 @@ private fun AnnotatedString.Builder.appendInlineNodes(
                     linkInteractionListener = { onLinkClick(node.destination) },
                 ),
             ) {
-                appendInlineNodes(node.children, styles, onLinkClick)
+                appendInlineNodes(node.children, styles, onLinkClick, mathSpans)
             }
 
             is InlineNode.SoftBreak -> append("\n")
 
-            is InlineNode.Image -> appendInlineNodes(node.alt, styles, onLinkClick)
+            is InlineNode.Image -> appendInlineNodes(node.alt, styles, onLinkClick, mathSpans)
 
             is InlineNode.Strikethrough -> withStyle(styles.strike) {
-                appendInlineNodes(node.children, styles, onLinkClick)
+                appendInlineNodes(node.children, styles, onLinkClick, mathSpans)
             }
 
             is InlineNode.Strong -> withStyle(styles.strong) {
-                appendInlineNodes(node.children, styles, onLinkClick)
+                appendInlineNodes(node.children, styles, onLinkClick, mathSpans)
             }
 
             is InlineNode.Text -> append(node.literal)
 
             is InlineNode.UnsupportedInline -> append(node.literal)
 
-            // Inline math rendering is handled in Task 6; fall back to raw latex source.
-            is InlineNode.MathSpan -> append(node.latex)
+            is InlineNode.MathSpan -> {
+                val key = "math:${mathSpans.size}"
+                mathSpans += MathSpanRef(key = key, latex = node.latex)
+                appendInlineContent(key, node.latex)
+            }
         }
     }
 }
