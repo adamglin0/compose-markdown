@@ -91,6 +91,10 @@ private fun StringBuilder.appendBlock(block: BlockNode, depth: Int) {
         is BlockNode.UnsupportedBlock -> appendLine(
             "${indent}UnsupportedBlock id=${block.id.raw} literal=${block.literal.debugLiteral()} reason=${block.reason ?: "-"} range=${block.range.start}..${block.range.endExclusive}",
         )
+
+        is BlockNode.MathBlock -> appendLine(
+            "${indent}MathBlock id=${block.id.raw} delimiter=${block.delimiter} closed=${block.isClosed} latex=${block.latex.debugLiteral()} range=${block.range.start}..${block.range.endExclusive}",
+        )
     }
 }
 
@@ -106,6 +110,7 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.Strong -> node.children.inlineLiteral()
         is InlineNode.Text -> node.literal
         is InlineNode.UnsupportedInline -> node.literal
+        is InlineNode.MathSpan -> node.latex
     }
 }
 
