@@ -13,6 +13,7 @@ class SampleChatDefaultsTest {
     fun createScriptsBuildsBundledExamples() {
         val scripts = SampleChatDefaults.createScripts { path ->
             when (path) {
+                "markdown-examples/math-showcase.md" -> "# Math Showcase\n\nInline \$E = mc^2\$ and block math."
                 "markdown-examples/full-markdown.md" -> "# Full Markdown\n\nA bundled document."
                 "markdown-examples/chat-streaming.md" -> "# Chat\n\nHello stream."
                 "markdown-examples/quotes-and-lists.md" -> "# Quotes\n\n> Quote"
@@ -24,8 +25,8 @@ class SampleChatDefaultsTest {
             }
         }
 
-        assertEquals(7, scripts.size)
-        assertEquals("full-markdown", scripts.first().id)
+        assertEquals(8, scripts.size)
+        assertEquals("math-showcase", scripts.first().id)
         assertTrue(scripts.all { it.message.isNotBlank() })
     }
 
