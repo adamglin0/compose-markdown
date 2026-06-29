@@ -247,5 +247,6 @@ private fun List<InlineNode>.inlineText(): String = joinToString(separator = "")
         is InlineNode.Strong -> node.children.inlineText()
         is InlineNode.Text -> node.literal
         is InlineNode.UnsupportedInline -> node.literal
+        is InlineNode.MathSpan -> node.latex
     }
 }
