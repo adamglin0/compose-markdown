@@ -7,6 +7,12 @@ import com.adamglin.compose.markdown.core.model.MarkdownSnapshot
 object SampleChatDefaults {
     private val exampleDefinitions: List<SampleScriptDefinition> = listOf(
         SampleScriptDefinition(
+            id = "math-showcase",
+            title = "Math Showcase",
+            summary = "Inline and block LaTeX with dollar and bracket delimiters, plus currency that must stay text.",
+            resourcePath = "markdown-examples/math-showcase.md",
+        ),
+        SampleScriptDefinition(
             id = "full-markdown",
             title = "Full Markdown",
             summary = "A full long-form document for checking long-scroll browsing and overall rendering behavior.",
@@ -95,7 +101,7 @@ object SampleChatDefaults {
     }
 
     fun createMarkdownEngine(): MarkdownEngine = MarkdownEngine(
-        dialect = MarkdownDialect.GfmCompat,
+        dialect = MarkdownDialect.GfmMath,
     )
 
     fun finalSnapshot(
