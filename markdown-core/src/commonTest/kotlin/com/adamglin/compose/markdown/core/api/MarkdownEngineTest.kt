@@ -260,6 +260,7 @@ private fun List<BlockNode>.debugShape(): String = joinToString(separator = "\n"
         is BlockNode.TableRow -> "row(${block.cells.joinToString(separator = "|") { it.children.inlineLiteral() }})"
         is BlockNode.ThematicBreak -> "break(${block.marker})"
         is BlockNode.UnsupportedBlock -> "unsupported(${block.literal.replace("\n", "\\n")})"
+        is BlockNode.MathBlock -> "math(${block.latex.replace("\n", "\\n")})"
     }
 }
 
@@ -275,5 +276,6 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.Strong -> node.children.inlineLiteral()
         is InlineNode.Text -> node.literal
         is InlineNode.UnsupportedInline -> node.literal
+        is InlineNode.MathSpan -> node.latex
     }
 }
