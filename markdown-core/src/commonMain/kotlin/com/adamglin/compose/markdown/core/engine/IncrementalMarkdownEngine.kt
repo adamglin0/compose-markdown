@@ -386,6 +386,7 @@ internal class IncrementalMarkdownEngine(
             is BlockNode.TableCell,
             is BlockNode.FencedCodeBlock,
             is BlockNode.Heading,
+            is BlockNode.MathBlock,
             is BlockNode.Paragraph,
             is BlockNode.RawTextBlock,
             is BlockNode.ThematicBreak,
@@ -587,6 +588,7 @@ internal class IncrementalMarkdownEngine(
 
         is BlockNode.Document,
         is BlockNode.FencedCodeBlock,
+        is BlockNode.MathBlock,
         is BlockNode.RawTextBlock,
         is BlockNode.ThematicBreak,
         is BlockNode.UnsupportedBlock,

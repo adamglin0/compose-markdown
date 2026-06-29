@@ -39,6 +39,7 @@ internal object BlockIdentity {
             is BlockNode.TableCell,
             is BlockNode.FencedCodeBlock,
             is BlockNode.Heading,
+            is BlockNode.MathBlock,
             is BlockNode.Paragraph,
             is BlockNode.RawTextBlock,
             is BlockNode.ThematicBreak,
@@ -84,5 +85,6 @@ internal object BlockIdentity {
         )
         is BlockNode.ThematicBreak -> BlockIdentityKey(kind = "thematic-break", start = block.range.start, discriminator = block.marker.filterNot(Char::isWhitespace))
         is BlockNode.UnsupportedBlock -> BlockIdentityKey(kind = "unsupported", start = block.range.start, discriminator = block.reason.orEmpty())
+        is BlockNode.MathBlock -> BlockIdentityKey(kind = "math-block", start = block.range.start, discriminator = block.delimiter.name)
     }
 }
