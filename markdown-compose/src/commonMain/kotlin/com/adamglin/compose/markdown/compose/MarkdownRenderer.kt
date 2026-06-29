@@ -778,9 +778,7 @@ private fun MarkdownInlineText(
     } else {
         buildMap {
             model.mathSpans.forEach { ref ->
-                key(ref.key) {
-                    put(ref.key, mathRenderer.inlineMathContent(ref.latex, style.fontSize))
-                }
+                put(ref.key, mathRenderer.inlineMathContent(ref.latex, style.fontSize))
             }
         }
     }
