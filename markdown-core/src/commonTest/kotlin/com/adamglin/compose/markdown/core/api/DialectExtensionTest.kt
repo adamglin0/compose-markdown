@@ -1,6 +1,7 @@
 package com.adamglin.compose.markdown.core.api
 
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
+import com.adamglin.compose.markdown.core.dialect.MarkdownFeature
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.HeadingStyle
 import com.adamglin.compose.markdown.core.model.InlineNode
@@ -181,6 +182,18 @@ class DialectExtensionTest {
     }
 
     @Test
+    fun gfmMathEnablesMathFeaturesAndOthersDoNot() {
+        assertTrue(MarkdownDialect.GfmMath.blockFeatures.mathBlocks)
+        assertTrue(MarkdownDialect.GfmMath.inlineFeatures.inlineMath)
+        assertTrue(MarkdownDialect.GfmMath.supports(MarkdownFeature.MathBlock))
+        assertTrue(MarkdownDialect.GfmMath.supports(MarkdownFeature.InlineMath))
+
+        assertFalse(MarkdownDialect.GfmCompat.blockFeatures.mathBlocks)
+        assertFalse(MarkdownDialect.GfmCompat.inlineFeatures.inlineMath)
+        assertFalse(MarkdownDialect.ChatFast.supports(MarkdownFeature.MathBlock))
+    }
+
+    @Test
     fun dialectPresetsExposeExpectedReferenceAndTableDifferences() {
         val referenceMarkdown = "See [guide][docs]\n\n[docs]: https://example.com/guide"
         val tableMarkdown = "A | B\n--- | ---\n1 | 2"
@@ -222,5 +235,6 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.Strong -> node.children.inlineLiteral()
         is InlineNode.Text -> node.literal
         is InlineNode.UnsupportedInline -> node.literal
+        is InlineNode.MathSpan -> node.latex
     }
 }
