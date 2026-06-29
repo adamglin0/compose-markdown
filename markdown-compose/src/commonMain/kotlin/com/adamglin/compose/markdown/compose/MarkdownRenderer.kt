@@ -55,6 +55,7 @@ fun Markdown(
     modifier: Modifier = Modifier,
     state: MarkdownRendererState = rememberMarkdownRendererState(snapshot = snapshot),
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     Markdown(
@@ -63,6 +64,7 @@ fun Markdown(
         modifier = modifier,
         state = state,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -74,6 +76,7 @@ fun Markdown(
     modifier: Modifier = Modifier,
     state: MarkdownRendererState = rememberMarkdownRendererState(snapshot = snapshot),
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     LaunchedEffect(snapshot) {
@@ -84,6 +87,7 @@ fun Markdown(
         modifier = modifier,
         style = style,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -93,6 +97,7 @@ fun Markdown(
     document: MarkdownDocument,
     modifier: Modifier = Modifier,
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     Markdown(
@@ -100,6 +105,7 @@ fun Markdown(
         style = MarkdownStyle.Default,
         modifier = modifier,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -110,6 +116,7 @@ fun Markdown(
     style: MarkdownStyle,
     modifier: Modifier = Modifier,
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     val blocks = remember(document) {
@@ -120,6 +127,7 @@ fun Markdown(
         modifier = modifier,
         style = style,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -129,6 +137,7 @@ fun Markdown(
     state: MarkdownRendererState,
     modifier: Modifier = Modifier,
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     Markdown(
@@ -136,6 +145,7 @@ fun Markdown(
         style = MarkdownStyle.Default,
         modifier = modifier,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -146,6 +156,7 @@ fun Markdown(
     style: MarkdownStyle,
     modifier: Modifier = Modifier,
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     Markdown(
@@ -153,6 +164,7 @@ fun Markdown(
         modifier = modifier,
         style = style,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -163,6 +175,7 @@ private fun Markdown(
     modifier: Modifier,
     style: MarkdownStyle,
     codeHighlighter: CodeHighlighter?,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
 ) {
     val currentOnLinkClick = rememberUpdatedState(onLinkClick)
@@ -185,6 +198,7 @@ private fun Markdown(
                             block = renderedBlock.block,
                             styles = styles,
                             codeHighlighter = codeHighlighter ?: defaultCodeHighlighter!!,
+                            mathRenderer = mathRenderer,
                             onLinkClick = { currentOnLinkClick.value(it) },
                         )
                     }
@@ -199,6 +213,7 @@ private fun MarkdownBlock(
     block: BlockNode,
     styles: MarkdownBlockStyles,
     codeHighlighter: CodeHighlighter,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -207,6 +222,7 @@ private fun MarkdownBlock(
             block = block,
             styles = styles,
             codeHighlighter = codeHighlighter,
+            mathRenderer = mathRenderer,
             onLinkClick = onLinkClick,
             modifier = modifier,
         )
@@ -220,6 +236,7 @@ private fun MarkdownBlock(
                     block = child,
                     styles = styles,
                     codeHighlighter = codeHighlighter,
+                    mathRenderer = mathRenderer,
                     onLinkClick = onLinkClick,
                 )
             }
@@ -249,6 +266,7 @@ private fun MarkdownBlock(
             block = block,
             styles = styles,
             codeHighlighter = codeHighlighter,
+            mathRenderer = mathRenderer,
             onLinkClick = onLinkClick,
             modifier = modifier,
         )
@@ -257,6 +275,7 @@ private fun MarkdownBlock(
             block = block,
             styles = styles,
             codeHighlighter = codeHighlighter,
+            mathRenderer = mathRenderer,
             onLinkClick = onLinkClick,
             modifier = modifier,
         )
@@ -266,6 +285,13 @@ private fun MarkdownBlock(
             styles = styles,
             codeHighlighter = codeHighlighter,
             onLinkClick = onLinkClick,
+            modifier = modifier,
+        )
+
+        is BlockNode.MathBlock -> MathBlockView(
+            block = block,
+            styles = styles,
+            mathRenderer = mathRenderer,
             modifier = modifier,
         )
 
@@ -314,6 +340,7 @@ private fun QuoteBlock(
     block: BlockNode.BlockQuote,
     styles: MarkdownBlockStyles,
     codeHighlighter: CodeHighlighter,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -348,6 +375,7 @@ private fun QuoteBlock(
                     block = child,
                     styles = styles,
                     codeHighlighter = codeHighlighter,
+                    mathRenderer = mathRenderer,
                     onLinkClick = onLinkClick,
                 )
             }
@@ -405,10 +433,34 @@ private fun CodeBlock(
 }
 
 @Composable
+private fun MathBlockView(
+    block: BlockNode.MathBlock,
+    styles: MarkdownBlockStyles,
+    mathRenderer: MathRenderer?,
+    modifier: Modifier = Modifier,
+) {
+    if (mathRenderer != null) {
+        mathRenderer.BlockMath(latex = block.latex, modifier = modifier.fillMaxWidth())
+    } else {
+        MarkdownText(
+            text = buildString {
+                append(block.latex)
+                if (!block.isClosed) {
+                    append("  streaming...")
+                }
+            },
+            style = styles.codeBlockTextStyle,
+            modifier = modifier,
+        )
+    }
+}
+
+@Composable
 private fun ListBlock(
     block: BlockNode.ListBlock,
     styles: MarkdownBlockStyles,
     codeHighlighter: CodeHighlighter,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -421,6 +473,7 @@ private fun ListBlock(
                 block = item,
                 styles = styles,
                 codeHighlighter = codeHighlighter,
+                mathRenderer = mathRenderer,
                 onLinkClick = onLinkClick,
             )
         }
@@ -432,6 +485,7 @@ private fun ListItemBlock(
     block: BlockNode.ListItem,
     styles: MarkdownBlockStyles,
     codeHighlighter: CodeHighlighter,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -459,6 +513,7 @@ private fun ListItemBlock(
                     block = child,
                     styles = styles,
                     codeHighlighter = codeHighlighter,
+                    mathRenderer = mathRenderer,
                     onLinkClick = onLinkClick,
                 )
             }
@@ -725,6 +780,9 @@ private fun AnnotatedString.Builder.appendInlineNodes(
             is InlineNode.Text -> append(node.literal)
 
             is InlineNode.UnsupportedInline -> append(node.literal)
+
+            // Inline math rendering is handled in Task 6; fall back to raw latex source.
+            is InlineNode.MathSpan -> append(node.latex)
         }
     }
 }
