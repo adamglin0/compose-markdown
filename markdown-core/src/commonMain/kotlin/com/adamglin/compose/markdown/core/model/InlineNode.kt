@@ -75,4 +75,17 @@ sealed interface InlineNode {
         val literal: String,
         val reason: String? = null,
     ) : InlineNode
+
+    @Immutable
+    data class MathSpan(
+        override val id: InlineId,
+        override val range: TextRange,
+        val latex: String,
+        val delimiter: MathInlineDelimiter,
+    ) : InlineNode
+}
+
+enum class MathInlineDelimiter {
+    Dollar,
+    Paren,
 }

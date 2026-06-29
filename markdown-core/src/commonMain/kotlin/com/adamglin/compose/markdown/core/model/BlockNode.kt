@@ -118,6 +118,16 @@ sealed interface BlockNode {
         override val lineRange: LineRange,
         val literal: String,
     ) : BlockNode
+
+    @Immutable
+    data class MathBlock(
+        override val id: BlockId,
+        override val range: TextRange,
+        override val lineRange: LineRange,
+        val latex: String,
+        val isClosed: Boolean,
+        val delimiter: MathBlockDelimiter,
+    ) : BlockNode
 }
 
 enum class ListStyle {
@@ -140,6 +150,11 @@ enum class TableAlignment {
     Left,
     Center,
     Right,
+}
+
+enum class MathBlockDelimiter {
+    Dollar,
+    Bracket,
 }
 
 data class BlockChange(
