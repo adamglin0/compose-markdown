@@ -7,6 +7,7 @@ import com.adamglin.compose.markdown.core.internal.BlockIdentity
 import com.adamglin.compose.markdown.core.internal.normalizeReferenceLabel
 import com.adamglin.compose.markdown.core.model.BlockId
 import com.adamglin.compose.markdown.core.model.BlockNode
+import com.adamglin.compose.markdown.core.model.MathBlockDelimiter
 import com.adamglin.compose.markdown.core.model.HeadingStyle
 import com.adamglin.compose.markdown.core.model.InlineId
 import com.adamglin.compose.markdown.core.model.InlineNode
@@ -85,6 +86,13 @@ internal class BlockParser(
                 if (fencedCode != null) {
                     blocks += fencedCode.block
                     index = fencedCode.nextIndex
+                    continue
+                }
+
+                val mathBlock = parseMathBlock(lines = lines, startIndex = index)
+                if (mathBlock != null) {
+                    blocks += mathBlock.block
+                    index = mathBlock.nextIndex
                     continue
                 }
 
@@ -219,6 +227,81 @@ internal class BlockParser(
                     languageHint = normalizeFenceLanguageHint(infoString),
                     literal = literal,
                     isClosed = isClosed,
+                ),
+                nextIndex = index,
+            )
+        }
+
+        private fun matchMathBlockOpener(content: String): MathBlockOpener? {
+            val trimmed = content.trimStart()
+            return when {
+                trimmed.startsWith("$$") -> MathBlockOpener(MathBlockDelimiter.Dollar, "$$", "$$")
+                trimmed.startsWith("\\[") -> MathBlockOpener(MathBlockDelimiter.Bracket, "\\[", "\\]")
+                else -> null
+            }
+        }
+
+        private fun parseMathBlock(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
+            if (!dialect.blockFeatures.mathBlocks) {
+                return null
+            }
+            val opener = matchMathBlockOpener(lines[startIndex].content) ?: return null
+            val afterOpen = lines[startIndex].content.trimStart().removePrefix(opener.openMarker)
+
+            // Single line: "$$ ... $$"
+            val inlineClose = afterOpen.indexOf(opener.closeMarker)
+            if (inlineClose >= 0) {
+                val consumed = lines.subList(startIndex, startIndex + 1)
+                return ParsedBlock(
+                    block = BlockNode.MathBlock(
+                        id = allocateBlockId("math-block", consumed.first().range.start, opener.openMarker),
+                        range = consumed.combinedRange(),
+                        lineRange = consumed.combinedLineRange(),
+                        latex = afterOpen.substring(0, inlineClose).trim(),
+                        isClosed = true,
+                        delimiter = opener.delimiter,
+                    ),
+                    nextIndex = startIndex + 1,
+                )
+            }
+
+            var index = startIndex + 1
+            var isClosed = false
+            val bodyLines = mutableListOf<String>()
+            if (afterOpen.isNotBlank()) {
+                bodyLines += afterOpen
+            }
+
+            withFrame(marker = "math-block", startOffset = lines[startIndex].range.start) {
+                while (index < lines.size) {
+                    val lineContent = lines[index].content
+                    val embeddedClose = lineContent.indexOf(opener.closeMarker)
+                    if (embeddedClose >= 0) {
+                        val before = lineContent.substring(0, embeddedClose)
+                        if (before.isNotBlank()) {
+                            bodyLines += before
+                        }
+                        index += 1
+                        isClosed = true
+                        break
+                    }
+                    bodyLines += lineContent
+                    index += 1
+                }
+                if (!isClosed && !isFinal) {
+                    rememberOpenFrames()
+                }
+            }
+
+            val consumed = lines.subList(startIndex, index)
+            return ParsedBlock(
+                block = BlockNode.MathBlock(
+                    id = allocateBlockId("math-block", consumed.first().range.start, opener.openMarker),
+                    range = consumed.combinedRange(),
+                    lineRange = consumed.combinedLineRange(),
+                    latex = bodyLines.joinToString(separator = "\n").trim(),
+                    isClosed = isClosed,
+                    delimiter = opener.delimiter,
                 ),
                 nextIndex = index,
             )
@@ -868,6 +951,12 @@ private data class FenceMatch(
     val fenceChar: Char,
     val fenceLength: Int,
     val infoString: String,
+)
+
+private data class MathBlockOpener(
+    val delimiter: MathBlockDelimiter,
+    val openMarker: String,
+    val closeMarker: String,
 )
 
 private data class ListMarkerMatch(

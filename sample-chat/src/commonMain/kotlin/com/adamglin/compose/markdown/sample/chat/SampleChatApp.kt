@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.adamglin.compose.markdown.compose.Markdown
+import com.adamglin.compose.markdown.compose.MathRenderer
 import com.adamglin.compose.markdown.compose.MarkdownRendererState
 import com.adamglin.compose.markdown.compose.rememberMarkdownRendererState
 import com.adamglin.compose.markdown.compose.rememberMarkdownState
@@ -62,6 +63,15 @@ fun ComposeMarkdownSampleApp(
         var lastLinkClick by remember { mutableStateOf("None") }
         var streamedChunkCount by remember { mutableIntStateOf(0) }
         var statusText by remember { mutableStateOf("Examples loaded. Click Start to replay the streaming flow.") }
+
+        var mathRendererOption by remember { mutableStateOf(MathRendererOption.Huarangmeng) }
+        val huarangmengRenderer = remember { HuarangmengMathRenderer() }
+        val ratexRenderer = remember { RaTeXMathRenderer() }
+        val mathRenderer: MathRenderer? = when (mathRendererOption) {
+            MathRendererOption.Huarangmeng -> huarangmengRenderer
+            MathRendererOption.RaTeX -> ratexRenderer
+            MathRendererOption.Placeholder -> null
+        }
 
         val selectedScript = scripts[selectedScriptIndex]
 
@@ -168,11 +178,14 @@ fun ComposeMarkdownSampleApp(
                         onStart = ::startStreaming,
                         onStop = ::stopCurrentStreaming,
                         onReset = ::renderSelectedScriptPreview,
+                        mathRendererOption = mathRendererOption,
+                        onMathRendererChange = { mathRendererOption = it },
                     )
 
                     PreviewCanvas(
                         rendererState = rendererState,
                         lastLinkClick = lastLinkClick,
+                        mathRenderer = mathRenderer,
                         onLinkClick = { url ->
                             lastLinkClick = url
                             uriHandler.openUri(url)
@@ -278,6 +291,8 @@ private fun Toolbar(
     onStart: () -> Unit,
     onStop: () -> Unit,
     onReset: () -> Unit,
+    mathRendererOption: MathRendererOption,
+    onMathRendererChange: (MathRendererOption) -> Unit,
 ) {
     AppPanel(
         shape = RoundedCornerShape(24.dp),
@@ -324,6 +339,22 @@ private fun Toolbar(
                 style = SampleChatTheme.typography.bodyMedium,
                 color = SampleChatTheme.colors.textSecondary,
             )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AppText(
+                    text = "Math renderer:",
+                    style = SampleChatTheme.typography.bodyMedium,
+                    color = SampleChatTheme.colors.textSecondary,
+                )
+                MathRendererOption.entries.forEach { option ->
+                    AppButton(
+                        text = option.label,
+                        onClick = { onMathRendererChange(option) },
+                        enabled = true,
+                        filled = option == mathRendererOption,
+                    )
+                }
+            }
         }
     }
 }
@@ -332,6 +363,7 @@ private fun Toolbar(
 private fun PreviewCanvas(
     rendererState: MarkdownRendererState,
     lastLinkClick: String,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -387,6 +419,7 @@ private fun PreviewCanvas(
                     Markdown(
                         state = rendererState,
                         modifier = Modifier.fillMaxWidth(),
+                        mathRenderer = mathRenderer,
                         onLinkClick = onLinkClick,
                     )
                     Spacer(modifier = Modifier.height(24.dp))

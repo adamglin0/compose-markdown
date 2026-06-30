@@ -30,6 +30,13 @@ sealed interface MarkdownDialect {
         override val blockFeatures: MarkdownBlockFeatures = preset.blockFeatures
         override val inlineFeatures: MarkdownInlineFeatures = preset.inlineFeatures
     }
+
+    data object GfmMath : MarkdownDialect {
+        override val id: String = "gfm-math"
+        override val preset: MarkdownPreset = MarkdownPreset.GfmMath
+        override val blockFeatures: MarkdownBlockFeatures = preset.blockFeatures
+        override val inlineFeatures: MarkdownInlineFeatures = preset.inlineFeatures
+    }
 }
 
 sealed class MarkdownPreset(
@@ -56,6 +63,8 @@ sealed class MarkdownPreset(
         if (inlineFeatures.strikethrough) add(MarkdownFeature.Strikethrough)
         if (inlineFeatures.images) add(MarkdownFeature.Image)
         if (!blockFeatures.rawHtml) add(MarkdownFeature.RawHtmlDisabled)
+        if (blockFeatures.mathBlocks) add(MarkdownFeature.MathBlock)
+        if (inlineFeatures.inlineMath) add(MarkdownFeature.InlineMath)
     }
 
     data object ChatFast : MarkdownPreset(
@@ -138,6 +147,35 @@ sealed class MarkdownPreset(
             hardBreaks = true,
         ),
     )
+
+    data object GfmMath : MarkdownPreset(
+        id = "gfm-math",
+        blockFeatures = MarkdownBlockFeatures(
+            atxHeadings = true,
+            setextHeadings = true,
+            fencedCodeBlocks = true,
+            blockQuotes = true,
+            lists = true,
+            taskListItems = true,
+            tables = true,
+            rawHtml = false,
+            mathBlocks = true,
+        ),
+        inlineFeatures = MarkdownInlineFeatures(
+            inlineCode = true,
+            emphasis = true,
+            strong = true,
+            strikethrough = true,
+            inlineLinks = true,
+            referenceLinks = true,
+            autolinks = true,
+            bareAutolinks = true,
+            images = true,
+            softBreaks = true,
+            hardBreaks = true,
+            inlineMath = true,
+        ),
+    )
 }
 
 @Immutable
@@ -150,6 +188,7 @@ data class MarkdownBlockFeatures(
     val taskListItems: Boolean,
     val tables: Boolean,
     val rawHtml: Boolean,
+    val mathBlocks: Boolean = false,
 )
 
 @Immutable
@@ -165,6 +204,7 @@ data class MarkdownInlineFeatures(
     val images: Boolean,
     val softBreaks: Boolean,
     val hardBreaks: Boolean,
+    val inlineMath: Boolean = false,
 )
 
 enum class MarkdownFeature {
@@ -186,4 +226,6 @@ enum class MarkdownFeature {
     Strikethrough,
     Image,
     RawHtmlDisabled,
+    MathBlock,
+    InlineMath,
 }

@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +57,7 @@ fun Markdown(
     modifier: Modifier = Modifier,
     state: MarkdownRendererState = rememberMarkdownRendererState(snapshot = snapshot),
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     Markdown(
@@ -63,6 +66,7 @@ fun Markdown(
         modifier = modifier,
         state = state,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -74,6 +78,7 @@ fun Markdown(
     modifier: Modifier = Modifier,
     state: MarkdownRendererState = rememberMarkdownRendererState(snapshot = snapshot),
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     LaunchedEffect(snapshot) {
@@ -84,6 +89,7 @@ fun Markdown(
         modifier = modifier,
         style = style,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -93,6 +99,7 @@ fun Markdown(
     document: MarkdownDocument,
     modifier: Modifier = Modifier,
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     Markdown(
@@ -100,6 +107,7 @@ fun Markdown(
         style = MarkdownStyle.Default,
         modifier = modifier,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -110,6 +118,7 @@ fun Markdown(
     style: MarkdownStyle,
     modifier: Modifier = Modifier,
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     val blocks = remember(document) {
@@ -120,6 +129,7 @@ fun Markdown(
         modifier = modifier,
         style = style,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -129,6 +139,7 @@ fun Markdown(
     state: MarkdownRendererState,
     modifier: Modifier = Modifier,
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     Markdown(
@@ -136,6 +147,7 @@ fun Markdown(
         style = MarkdownStyle.Default,
         modifier = modifier,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -146,6 +158,7 @@ fun Markdown(
     style: MarkdownStyle,
     modifier: Modifier = Modifier,
     codeHighlighter: CodeHighlighter? = null,
+    mathRenderer: MathRenderer? = null,
     onLinkClick: (String) -> Unit = {},
 ) {
     Markdown(
@@ -153,6 +166,7 @@ fun Markdown(
         modifier = modifier,
         style = style,
         codeHighlighter = codeHighlighter,
+        mathRenderer = mathRenderer,
         onLinkClick = onLinkClick,
     )
 }
@@ -163,6 +177,7 @@ private fun Markdown(
     modifier: Modifier,
     style: MarkdownStyle,
     codeHighlighter: CodeHighlighter?,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
 ) {
     val currentOnLinkClick = rememberUpdatedState(onLinkClick)
@@ -185,6 +200,7 @@ private fun Markdown(
                             block = renderedBlock.block,
                             styles = styles,
                             codeHighlighter = codeHighlighter ?: defaultCodeHighlighter!!,
+                            mathRenderer = mathRenderer,
                             onLinkClick = { currentOnLinkClick.value(it) },
                         )
                     }
@@ -199,6 +215,7 @@ private fun MarkdownBlock(
     block: BlockNode,
     styles: MarkdownBlockStyles,
     codeHighlighter: CodeHighlighter,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -207,6 +224,7 @@ private fun MarkdownBlock(
             block = block,
             styles = styles,
             codeHighlighter = codeHighlighter,
+            mathRenderer = mathRenderer,
             onLinkClick = onLinkClick,
             modifier = modifier,
         )
@@ -220,6 +238,7 @@ private fun MarkdownBlock(
                     block = child,
                     styles = styles,
                     codeHighlighter = codeHighlighter,
+                    mathRenderer = mathRenderer,
                     onLinkClick = onLinkClick,
                 )
             }
@@ -232,8 +251,8 @@ private fun MarkdownBlock(
             modifier = modifier,
         )
 
-        is BlockNode.Heading -> MarkdownText(
-            text = block.children.toAnnotatedString(styles.inline, onLinkClick),
+        is BlockNode.Heading -> MarkdownInlineText(
+            model = block.children.toInlineRenderModel(styles.inline, onLinkClick),
             style = when (block.level) {
                 1 -> MarkdownTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
                 2 -> MarkdownTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
@@ -242,6 +261,7 @@ private fun MarkdownBlock(
                 5 -> MarkdownTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                 else -> MarkdownTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
             },
+            mathRenderer = mathRenderer,
             modifier = modifier,
         )
 
@@ -249,6 +269,7 @@ private fun MarkdownBlock(
             block = block,
             styles = styles,
             codeHighlighter = codeHighlighter,
+            mathRenderer = mathRenderer,
             onLinkClick = onLinkClick,
             modifier = modifier,
         )
@@ -257,6 +278,7 @@ private fun MarkdownBlock(
             block = block,
             styles = styles,
             codeHighlighter = codeHighlighter,
+            mathRenderer = mathRenderer,
             onLinkClick = onLinkClick,
             modifier = modifier,
         )
@@ -265,7 +287,15 @@ private fun MarkdownBlock(
             block = block,
             styles = styles,
             codeHighlighter = codeHighlighter,
+            mathRenderer = mathRenderer,
             onLinkClick = onLinkClick,
+            modifier = modifier,
+        )
+
+        is BlockNode.MathBlock -> MathBlockView(
+            block = block,
+            styles = styles,
+            mathRenderer = mathRenderer,
             modifier = modifier,
         )
 
@@ -277,15 +307,17 @@ private fun MarkdownBlock(
             modifier = modifier,
         )
 
-        is BlockNode.TableCell -> MarkdownText(
-            text = block.children.toAnnotatedString(styles.inline, onLinkClick),
+        is BlockNode.TableCell -> MarkdownInlineText(
+            model = block.children.toInlineRenderModel(styles.inline, onLinkClick),
             style = MarkdownTheme.typography.bodyMedium,
+            mathRenderer = mathRenderer,
             modifier = modifier,
         )
 
-        is BlockNode.Paragraph -> MarkdownText(
-            text = block.children.toAnnotatedString(styles.inline, onLinkClick),
+        is BlockNode.Paragraph -> MarkdownInlineText(
+            model = block.children.toInlineRenderModel(styles.inline, onLinkClick),
             style = MarkdownTheme.typography.bodyLarge,
+            mathRenderer = mathRenderer,
             modifier = modifier,
         )
 
@@ -314,6 +346,7 @@ private fun QuoteBlock(
     block: BlockNode.BlockQuote,
     styles: MarkdownBlockStyles,
     codeHighlighter: CodeHighlighter,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -348,6 +381,7 @@ private fun QuoteBlock(
                     block = child,
                     styles = styles,
                     codeHighlighter = codeHighlighter,
+                    mathRenderer = mathRenderer,
                     onLinkClick = onLinkClick,
                 )
             }
@@ -405,10 +439,34 @@ private fun CodeBlock(
 }
 
 @Composable
+private fun MathBlockView(
+    block: BlockNode.MathBlock,
+    styles: MarkdownBlockStyles,
+    mathRenderer: MathRenderer?,
+    modifier: Modifier = Modifier,
+) {
+    if (mathRenderer != null) {
+        mathRenderer.BlockMath(latex = block.latex, modifier = modifier.fillMaxWidth())
+    } else {
+        MarkdownText(
+            text = buildString {
+                append(block.latex)
+                if (!block.isClosed) {
+                    append("  streaming...")
+                }
+            },
+            style = styles.codeBlockTextStyle,
+            modifier = modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
 private fun ListBlock(
     block: BlockNode.ListBlock,
     styles: MarkdownBlockStyles,
     codeHighlighter: CodeHighlighter,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -421,6 +479,7 @@ private fun ListBlock(
                 block = item,
                 styles = styles,
                 codeHighlighter = codeHighlighter,
+                mathRenderer = mathRenderer,
                 onLinkClick = onLinkClick,
             )
         }
@@ -432,6 +491,7 @@ private fun ListItemBlock(
     block: BlockNode.ListItem,
     styles: MarkdownBlockStyles,
     codeHighlighter: CodeHighlighter,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -459,6 +519,7 @@ private fun ListItemBlock(
                     block = child,
                     styles = styles,
                     codeHighlighter = codeHighlighter,
+                    mathRenderer = mathRenderer,
                     onLinkClick = onLinkClick,
                 )
             }
@@ -530,6 +591,7 @@ private fun TableBlock(
     block: BlockNode.TableBlock,
     styles: MarkdownBlockStyles,
     codeHighlighter: CodeHighlighter,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -544,10 +606,10 @@ private fun TableBlock(
             .padding(10.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        TableRowBlock(block.header, styles, onLinkClick, isHeader = true)
+        TableRowBlock(block.header, styles, mathRenderer, onLinkClick, isHeader = true)
         MarkdownDivider(color = MarkdownTheme.colors.borderMuted)
         block.rows.forEach { row ->
-            TableRowBlock(row, styles, onLinkClick, isHeader = false)
+            TableRowBlock(row, styles, mathRenderer, onLinkClick, isHeader = false)
         }
     }
 }
@@ -556,6 +618,7 @@ private fun TableBlock(
 private fun TableRowBlock(
     row: BlockNode.TableRow,
     styles: MarkdownBlockStyles,
+    mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
     isHeader: Boolean,
 ) {
@@ -565,13 +628,14 @@ private fun TableRowBlock(
     ) {
         row.cells.forEach { cell ->
             Box(modifier = Modifier.weight(1f)) {
-                MarkdownText(
-                    text = cell.children.toAnnotatedString(styles.inline, onLinkClick),
+                MarkdownInlineText(
+                    model = cell.children.toInlineRenderModel(styles.inline, onLinkClick),
                     style = if (isHeader) {
                         MarkdownTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                     } else {
                         MarkdownTheme.typography.bodyMedium
                     },
+                    mathRenderer = mathRenderer,
                 )
             }
         }
@@ -664,6 +728,31 @@ internal fun rememberMarkdownBlockStyles(): MarkdownBlockStyles {
     }
 }
 
+@Stable
+internal data class MathSpanRef(val key: String, val latex: String)
+
+@Stable
+internal data class InlineRenderModel(
+    val text: AnnotatedString,
+    val mathSpans: List<MathSpanRef>,
+)
+
+internal fun List<InlineNode>.toInlineRenderModel(
+    styles: MarkdownInlineStyles,
+    onLinkClick: (String) -> Unit,
+): InlineRenderModel {
+    val mathSpans = mutableListOf<MathSpanRef>()
+    val text = buildAnnotatedString {
+        appendInlineNodes(
+            nodes = this@toInlineRenderModel,
+            styles = styles,
+            onLinkClick = onLinkClick,
+            mathSpans = mathSpans,
+        )
+    }
+    return InlineRenderModel(text = text, mathSpans = mathSpans)
+}
+
 internal fun List<InlineNode>.toAnnotatedString(
     styles: MarkdownInlineStyles = MarkdownInlineStyles(
         emphasis = SpanStyle(fontStyle = FontStyle.Italic),
@@ -675,11 +764,29 @@ internal fun List<InlineNode>.toAnnotatedString(
         ),
     ),
     onLinkClick: (String) -> Unit = {},
-): AnnotatedString = buildAnnotatedString {
-    appendInlineNodes(
-        nodes = this@toAnnotatedString,
-        styles = styles,
-        onLinkClick = onLinkClick,
+): AnnotatedString = toInlineRenderModel(styles, onLinkClick).text
+
+@Composable
+private fun MarkdownInlineText(
+    model: InlineRenderModel,
+    style: TextStyle,
+    mathRenderer: MathRenderer?,
+    modifier: Modifier = Modifier,
+) {
+    val inlineContent = if (model.mathSpans.isEmpty() || mathRenderer == null) {
+        emptyMap()
+    } else {
+        buildMap {
+            model.mathSpans.forEach { ref ->
+                put(ref.key, mathRenderer.inlineMathContent(ref.latex, style.fontSize))
+            }
+        }
+    }
+    BasicText(
+        text = model.text,
+        style = style,
+        inlineContent = inlineContent,
+        modifier = modifier.fillMaxWidth(),
     )
 }
 
@@ -687,6 +794,7 @@ private fun AnnotatedString.Builder.appendInlineNodes(
     nodes: List<InlineNode>,
     styles: MarkdownInlineStyles,
     onLinkClick: (String) -> Unit,
+    mathSpans: MutableList<MathSpanRef>,
 ) {
     nodes.forEach { node ->
         when (node) {
@@ -695,7 +803,7 @@ private fun AnnotatedString.Builder.appendInlineNodes(
             }
 
             is InlineNode.Emphasis -> withStyle(styles.emphasis) {
-                appendInlineNodes(node.children, styles, onLinkClick)
+                appendInlineNodes(node.children, styles, onLinkClick, mathSpans)
             }
 
             is InlineNode.HardBreak -> append("\n")
@@ -707,24 +815,30 @@ private fun AnnotatedString.Builder.appendInlineNodes(
                     linkInteractionListener = { onLinkClick(node.destination) },
                 ),
             ) {
-                appendInlineNodes(node.children, styles, onLinkClick)
+                appendInlineNodes(node.children, styles, onLinkClick, mathSpans)
             }
 
             is InlineNode.SoftBreak -> append("\n")
 
-            is InlineNode.Image -> appendInlineNodes(node.alt, styles, onLinkClick)
+            is InlineNode.Image -> appendInlineNodes(node.alt, styles, onLinkClick, mathSpans)
 
             is InlineNode.Strikethrough -> withStyle(styles.strike) {
-                appendInlineNodes(node.children, styles, onLinkClick)
+                appendInlineNodes(node.children, styles, onLinkClick, mathSpans)
             }
 
             is InlineNode.Strong -> withStyle(styles.strong) {
-                appendInlineNodes(node.children, styles, onLinkClick)
+                appendInlineNodes(node.children, styles, onLinkClick, mathSpans)
             }
 
             is InlineNode.Text -> append(node.literal)
 
             is InlineNode.UnsupportedInline -> append(node.literal)
+
+            is InlineNode.MathSpan -> {
+                val key = "math:${mathSpans.size}"
+                mathSpans += MathSpanRef(key = key, latex = node.latex)
+                appendInlineContent(key, node.latex)
+            }
         }
     }
 }

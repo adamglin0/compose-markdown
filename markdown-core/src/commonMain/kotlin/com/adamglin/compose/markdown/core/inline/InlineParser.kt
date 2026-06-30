@@ -5,6 +5,7 @@ import com.adamglin.compose.markdown.core.internal.LinkReferenceDefinition
 import com.adamglin.compose.markdown.core.internal.normalizeReferenceLabel
 import com.adamglin.compose.markdown.core.model.InlineId
 import com.adamglin.compose.markdown.core.model.InlineNode
+import com.adamglin.compose.markdown.core.model.MathInlineDelimiter
 import com.adamglin.compose.markdown.core.model.TextRange
 
 internal class InlineParser(
@@ -73,6 +74,17 @@ internal class InlineParser(
                         continue
                     }
 
+                    if (dialect.inlineFeatures.inlineMath && index + 1 < endExclusive && text[index + 1] == '(') {
+                        val parsed = parseInlineMathParen(index = index, endExclusive = endExclusive)
+                        if (parsed != null) {
+                            flushText(index)
+                            nodes += parsed.node
+                            index = parsed.nextIndex
+                            textStart = index
+                            continue
+                        }
+                    }
+
                     if (index + 1 < endExclusive && isEscapable(text[index + 1])) {
                         flushText(index)
                         val literal = text[index + 1].toString()
@@ -98,6 +110,17 @@ internal class InlineParser(
 
                 if (char == '`' && dialect.inlineFeatures.inlineCode) {
                     val parsed = parseCodeSpan(index = index, endExclusive = endExclusive)
+                    if (parsed != null) {
+                        flushText(index)
+                        nodes += parsed.node
+                        index = parsed.nextIndex
+                        textStart = index
+                        continue
+                    }
+                }
+
+                if (char == '$' && dialect.inlineFeatures.inlineMath) {
+                    val parsed = parseInlineMathDollar(index = index, endExclusive = endExclusive)
                     if (parsed != null) {
                         flushText(index)
                         nodes += parsed.node
@@ -298,6 +321,72 @@ internal class InlineParser(
                 ),
                 nextIndex = closeIndex + delimiterLength,
             )
+        }
+
+        private fun parseInlineMathDollar(index: Int, endExclusive: Int): ParsedInlineNode? {
+            val contentStart = index + 1
+            if (contentStart >= endExclusive) {
+                return null
+            }
+            val firstChar = text[contentStart]
+            if (firstChar.isWhitespace() || firstChar == '$') {
+                return null
+            }
+            var cursor = contentStart
+            while (cursor < endExclusive) {
+                val current = text[cursor]
+                if (current == '\\') {
+                    cursor += 2
+                    continue
+                }
+                if (current == '$' && cursor > contentStart && !text[cursor - 1].isWhitespace()) {
+                    val latex = text.substring(contentStart, cursor)
+                    if (latex.isEmpty()) {
+                        return null
+                    }
+                    val range = toRange(index, cursor + 1)
+                    return ParsedInlineNode(
+                        node = InlineNode.MathSpan(
+                            id = inlineId(kind = "math", range = range, salt = latex.hashCode().toLong()),
+                            range = range,
+                            latex = latex,
+                            delimiter = MathInlineDelimiter.Dollar,
+                        ),
+                        nextIndex = cursor + 1,
+                    )
+                }
+                cursor += 1
+            }
+            return null
+        }
+
+        private fun parseInlineMathParen(index: Int, endExclusive: Int): ParsedInlineNode? {
+            val contentStart = index + 2
+            var cursor = contentStart
+            while (cursor + 1 < endExclusive) {
+                if (text[cursor] == '\\') {
+                    if (text[cursor + 1] == ')') {
+                        val latex = text.substring(contentStart, cursor).trim()
+                        if (latex.isEmpty()) {
+                            return null
+                        }
+                        val range = toRange(index, cursor + 2)
+                        return ParsedInlineNode(
+                            node = InlineNode.MathSpan(
+                                id = inlineId(kind = "math", range = range, salt = latex.hashCode().toLong()),
+                                range = range,
+                                latex = latex,
+                                delimiter = MathInlineDelimiter.Paren,
+                            ),
+                            nextIndex = cursor + 2,
+                        )
+                    }
+                    cursor += 2
+                    continue
+                }
+                cursor += 1
+            }
+            return null
         }
 
         private fun parseInlineLink(index: Int, endExclusive: Int): ParsedInlineNode? {
@@ -742,7 +831,7 @@ internal class InlineParser(
 
     private companion object {
         val ESCAPABLE_CHARS: Set<Char> = setOf(
-            '\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '#', '+', '-', '.', '!', '~', '>', '<',
+            '\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '#', '+', '-', '.', '!', '~', '>', '<', '$',
         )
         val BARE_AUTOLINK_STOP_CHARS: Set<Char> = setOf('<', '>', '"', '\'', ')', ']')
         val BARE_AUTOLINK_TRAILING_PUNCTUATION: Set<Char> = setOf('.', ',', ':', ';', '!', '?')
