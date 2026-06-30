@@ -71,7 +71,6 @@ val generateBundledSampleScripts by tasks.registering {
 kotlin {
     androidTarget()
     jvm()
-    val iosX64 = iosX64()
     val iosArm64 = iosArm64()
     val iosSimulatorArm64 = iosSimulatorArm64()
     js(IR) {
@@ -84,7 +83,7 @@ kotlin {
     }
     jvmToolchain(17)
 
-    listOf(iosX64, iosArm64, iosSimulatorArm64).forEach { iosTarget ->
+    listOf(iosArm64, iosSimulatorArm64).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "SampleChat"
             isStatic = true
