@@ -680,31 +680,43 @@ internal class BlockParser(
 
         private fun isTableDelimiterRow(content: String): Boolean {
             val compact = content.trim().removePrefix("|").removeSuffix("|")
-            if (!compact.contains('|') && compact.count { it == '-' || it == ':' || it.isWhitespace() } == compact.length) {
-                return compact.trim().length >= 3
+            val parts = if (compact.contains('|')) {
+                compact.split('|')
+            } else {
+                listOf(compact)
             }
-            val parts = compact.split('|')
-            return parts.isNotEmpty() && parts.all { part ->
-                val trimmed = part.trim()
-                trimmed.length >= 3 && trimmed.all { it == '-' || it == ':' }
-            }
+            return parts.isNotEmpty() && parts.all { parseTableAlignmentCell(it.trim()) != null }
         }
 
         private fun parseTableAlignments(content: String): List<TableAlignment> {
             val compact = content.trim().removePrefix("|").removeSuffix("|")
-            val parts = compact.split('|')
-            return parts.mapNotNull { part ->
-                val trimmed = part.trim()
-                if (trimmed.length < 3 || trimmed.any { it != '-' && it != ':' }) {
-                    null
-                } else {
-                    when {
-                        trimmed.startsWith(':') && trimmed.endsWith(':') -> TableAlignment.Center
-                        trimmed.startsWith(':') -> TableAlignment.Left
-                        trimmed.endsWith(':') -> TableAlignment.Right
-                        else -> TableAlignment.Default
-                    }
-                }
+            val parts = if (compact.contains('|')) {
+                compact.split('|')
+            } else {
+                listOf(compact)
+            }
+            return parts.mapNotNull { parseTableAlignmentCell(it.trim()) }
+        }
+
+        /**
+         * GFM delimiter cells are one or more hyphens, optionally wrapped by alignment colons.
+         * GitHub docs often show three hyphens, but the GFM tables extension accepts a single `-`.
+         */
+        private fun parseTableAlignmentCell(trimmed: String): TableAlignment? {
+            if (trimmed.isEmpty() || trimmed.any { it != '-' && it != ':' }) {
+                return null
+            }
+            val core = trimmed
+                .removePrefix(":")
+                .removeSuffix(":")
+            if (core.isEmpty() || core.any { it != '-' }) {
+                return null
+            }
+            return when {
+                trimmed.startsWith(':') && trimmed.endsWith(':') -> TableAlignment.Center
+                trimmed.startsWith(':') -> TableAlignment.Left
+                trimmed.endsWith(':') -> TableAlignment.Right
+                else -> TableAlignment.Default
             }
         }
 

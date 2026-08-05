@@ -3,9 +3,11 @@ package com.adamglin.compose.markdown.core.api
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.InlineNode
+import com.adamglin.compose.markdown.core.model.TableAlignment
 import com.adamglin.compose.markdown.core.model.TaskState
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class CompatibilityRegressionTest {
     @Test
@@ -20,6 +22,29 @@ class CompatibilityRegressionTest {
                 "${case.name} (${case.origin})",
             )
         }
+    }
+
+    @Test
+    fun shortDelimiterCellsPreserveAlignmentMarkers() {
+        val engine = MarkdownEngine(dialect = MarkdownDialect.GfmCompat)
+        val snapshot = engine.append(
+            """
+            | left | center | right | plain |
+            |:-|:-:|-:|--|
+            | a | b | c | d |
+            """.trimIndent(),
+        ).snapshot
+
+        val table = assertIs<BlockNode.TableBlock>(snapshot.document.blocks.single())
+        assertEquals(
+            listOf(
+                TableAlignment.Left,
+                TableAlignment.Center,
+                TableAlignment.Right,
+                TableAlignment.Default,
+            ),
+            table.alignments,
+        )
     }
 
     @Test
@@ -138,6 +163,27 @@ private val compatibilityCases = listOf(
         expectedShape = "table(header=foo|bar;rows=baz|bim)",
     ),
     CompatibilityCase(
+        name = "GFM table with two-hyphen delimiter cells",
+        origin = "User reported |--|--|--| delimiter not recognized as table",
+        dialect = MarkdownDialect.GfmCompat,
+        markdown = "| | 订阅（SuperGrok / Heavy） | 开发者 API |\n|--|--|--|\n| 入口 | grok.com / 客户端 | console.x.ai |",
+        expectedShape = "table(header=|订阅（SuperGrok / Heavy）|开发者 API;rows=入口|grok.com / 客户端|console.x.ai)",
+    ),
+    CompatibilityCase(
+        name = "GFM table with single-hyphen delimiter cells",
+        origin = "GFM tables extension allows one or more hyphens per delimiter cell",
+        dialect = MarkdownDialect.GfmCompat,
+        markdown = "| foo | bar |\n|-|-|\n| baz | bim |",
+        expectedShape = "table(header=foo|bar;rows=baz|bim)",
+    ),
+    CompatibilityCase(
+        name = "GFM table short delimiter cells keep alignment markers",
+        origin = "GFM delimiter cells allow one or more hyphens with optional colons",
+        dialect = MarkdownDialect.GfmCompat,
+        markdown = "| left | center | right |\n|:-|:-:|-:|\n| a | b | c |",
+        expectedShape = "table(header=left|center|right;rows=a|b|c)",
+    ),
+    CompatibilityCase(
         name = "GFM table starts immediately after paragraph",
         origin = "User reported table after CJK intro line regression",
         dialect = MarkdownDialect.GfmCompat,
@@ -202,6 +248,16 @@ private val streamingCases = listOf(
         dialect = MarkdownDialect.GfmCompat,
         chunks = listOf("| foo | bar |\n", "| --- | --- |\n| baz | bim |"),
         expectedShape = "table(header=foo|bar;rows=baz|bim)",
+    ),
+    StreamingCompatibilityCase(
+        name = "Streaming table with two-hyphen delimiter cells",
+        origin = "User reported |--|--|--| delimiter not recognized as table",
+        dialect = MarkdownDialect.GfmCompat,
+        chunks = listOf(
+            "| | 订阅（SuperGrok / Heavy） | 开发者 API |\n",
+            "|--|--|--|\n| 入口 | grok.com / 客户端 | console.x.ai |",
+        ),
+        expectedShape = "table(header=|订阅（SuperGrok / Heavy）|开发者 API;rows=入口|grok.com / 客户端|console.x.ai)",
     ),
     StreamingCompatibilityCase(
         name = "Streaming table accepts rows after stable prefix",
