@@ -286,7 +286,6 @@ private fun MarkdownBlock(
         is BlockNode.TableBlock -> TableBlock(
             block = block,
             styles = styles,
-            codeHighlighter = codeHighlighter,
             mathRenderer = mathRenderer,
             onLinkClick = onLinkClick,
             modifier = modifier,
@@ -587,62 +586,6 @@ internal fun BlockNode.ListItem.leadingMarker(): ListItemLeadingMarker =
     taskState?.let(ListItemLeadingMarker::Task) ?: ListItemLeadingMarker.Literal(marker)
 
 @Composable
-private fun TableBlock(
-    block: BlockNode.TableBlock,
-    styles: MarkdownBlockStyles,
-    codeHighlighter: CodeHighlighter,
-    mathRenderer: MathRenderer?,
-    onLinkClick: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = MarkdownTheme.colors.borderMuted.copy(alpha = 0.75f),
-                shape = RoundedCornerShape(10.dp),
-            )
-            .padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        TableRowBlock(block.header, styles, mathRenderer, onLinkClick, isHeader = true)
-        MarkdownDivider(color = MarkdownTheme.colors.borderMuted)
-        block.rows.forEach { row ->
-            TableRowBlock(row, styles, mathRenderer, onLinkClick, isHeader = false)
-        }
-    }
-}
-
-@Composable
-private fun TableRowBlock(
-    row: BlockNode.TableRow,
-    styles: MarkdownBlockStyles,
-    mathRenderer: MathRenderer?,
-    onLinkClick: (String) -> Unit,
-    isHeader: Boolean,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        row.cells.forEach { cell ->
-            Box(modifier = Modifier.weight(1f)) {
-                MarkdownInlineText(
-                    model = cell.children.toInlineRenderModel(styles.inline, onLinkClick),
-                    style = if (isHeader) {
-                        MarkdownTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                    } else {
-                        MarkdownTheme.typography.bodyMedium
-                    },
-                    mathRenderer = mathRenderer,
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun MarkdownText(
     text: AnnotatedString,
     style: TextStyle,
@@ -669,7 +612,7 @@ private fun MarkdownText(
 }
 
 @Composable
-private fun MarkdownDivider(
+internal fun MarkdownDivider(
     color: Color,
     modifier: Modifier = Modifier,
     thickness: androidx.compose.ui.unit.Dp = 1.dp,
