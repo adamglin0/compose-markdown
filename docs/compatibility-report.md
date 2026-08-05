@@ -122,7 +122,7 @@ Current curated sources:
 - block rendering is stable-ID keyed and updates changed blocks instead of rebuilding the whole renderer state list
 - inline annotations preserve links, emphasis, strong, code, and strike text styling
 - code blocks, quotes, and tables render readably in the sample app
-- renderer remains intentionally lightweight: no HTML, no image pipeline, no interactive task toggles, no advanced table sizing model
+- renderer remains intentionally lightweight: no HTML, no image pipeline, no interactive task toggles; tables size columns from content and honor alignment
 
 ## Acceptance Summary
 
