@@ -3,9 +3,11 @@ package com.adamglin.compose.markdown.core.api
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.InlineNode
+import com.adamglin.compose.markdown.core.model.TableAlignment
 import com.adamglin.compose.markdown.core.model.TaskState
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class CompatibilityRegressionTest {
     @Test
@@ -20,6 +22,29 @@ class CompatibilityRegressionTest {
                 "${case.name} (${case.origin})",
             )
         }
+    }
+
+    @Test
+    fun shortDelimiterCellsPreserveAlignmentMarkers() {
+        val engine = MarkdownEngine(dialect = MarkdownDialect.GfmCompat)
+        val snapshot = engine.append(
+            """
+            | left | center | right | plain |
+            |:-|:-:|-:|--|
+            | a | b | c | d |
+            """.trimIndent(),
+        ).snapshot
+
+        val table = assertIs<BlockNode.TableBlock>(snapshot.document.blocks.single())
+        assertEquals(
+            listOf(
+                TableAlignment.Left,
+                TableAlignment.Center,
+                TableAlignment.Right,
+                TableAlignment.Default,
+            ),
+            table.alignments,
+        )
     }
 
     @Test
