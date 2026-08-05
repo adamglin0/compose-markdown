@@ -138,6 +138,27 @@ private val compatibilityCases = listOf(
         expectedShape = "table(header=foo|bar;rows=baz|bim)",
     ),
     CompatibilityCase(
+        name = "GFM table with two-hyphen delimiter cells",
+        origin = "User reported |--|--|--| delimiter not recognized as table",
+        dialect = MarkdownDialect.GfmCompat,
+        markdown = "| | 订阅（SuperGrok / Heavy） | 开发者 API |\n|--|--|--|\n| 入口 | grok.com / 客户端 | console.x.ai |",
+        expectedShape = "table(header=|订阅（SuperGrok / Heavy）|开发者 API;rows=入口|grok.com / 客户端|console.x.ai)",
+    ),
+    CompatibilityCase(
+        name = "GFM table with single-hyphen delimiter cells",
+        origin = "GFM tables extension allows one or more hyphens per delimiter cell",
+        dialect = MarkdownDialect.GfmCompat,
+        markdown = "| foo | bar |\n|-|-|\n| baz | bim |",
+        expectedShape = "table(header=foo|bar;rows=baz|bim)",
+    ),
+    CompatibilityCase(
+        name = "GFM table short delimiter cells keep alignment markers",
+        origin = "GFM delimiter cells allow one or more hyphens with optional colons",
+        dialect = MarkdownDialect.GfmCompat,
+        markdown = "| left | center | right |\n|:-|:-:|-:|\n| a | b | c |",
+        expectedShape = "table(header=left|center|right;rows=a|b|c)",
+    ),
+    CompatibilityCase(
         name = "GFM table starts immediately after paragraph",
         origin = "User reported table after CJK intro line regression",
         dialect = MarkdownDialect.GfmCompat,
@@ -202,6 +223,16 @@ private val streamingCases = listOf(
         dialect = MarkdownDialect.GfmCompat,
         chunks = listOf("| foo | bar |\n", "| --- | --- |\n| baz | bim |"),
         expectedShape = "table(header=foo|bar;rows=baz|bim)",
+    ),
+    StreamingCompatibilityCase(
+        name = "Streaming table with two-hyphen delimiter cells",
+        origin = "User reported |--|--|--| delimiter not recognized as table",
+        dialect = MarkdownDialect.GfmCompat,
+        chunks = listOf(
+            "| | 订阅（SuperGrok / Heavy） | 开发者 API |\n",
+            "|--|--|--|\n| 入口 | grok.com / 客户端 | console.x.ai |",
+        ),
+        expectedShape = "table(header=|订阅（SuperGrok / Heavy）|开发者 API;rows=入口|grok.com / 客户端|console.x.ai)",
     ),
     StreamingCompatibilityCase(
         name = "Streaming table accepts rows after stable prefix",
