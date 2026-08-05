@@ -710,11 +710,12 @@ internal fun List<InlineNode>.toAnnotatedString(
 ): AnnotatedString = toInlineRenderModel(styles, onLinkClick).text
 
 @Composable
-private fun MarkdownInlineText(
+internal fun MarkdownInlineText(
     model: InlineRenderModel,
     style: TextStyle,
     mathRenderer: MathRenderer?,
     modifier: Modifier = Modifier,
+    fillMaxWidth: Boolean = true,
 ) {
     val inlineContent = if (model.mathSpans.isEmpty() || mathRenderer == null) {
         emptyMap()
@@ -729,7 +730,7 @@ private fun MarkdownInlineText(
         text = model.text,
         style = style,
         inlineContent = inlineContent,
-        modifier = modifier.fillMaxWidth(),
+        modifier = if (fillMaxWidth) modifier.fillMaxWidth() else modifier,
     )
 }
 

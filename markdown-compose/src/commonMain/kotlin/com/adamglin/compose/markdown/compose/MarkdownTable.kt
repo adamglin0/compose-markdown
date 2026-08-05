@@ -4,13 +4,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.SubcomposeLayout
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
@@ -46,8 +44,6 @@ internal fun TableBlock(
         columnCount = columnCount,
         rowCount = rows.size,
         alignments = block.alignments,
-        // Match previous library visuals: a single rule under the header row.
-        showDividerAfterRow = { rowIndex -> rowIndex == 0 },
         modifier = modifier
             .fillMaxWidth()
             .border(
@@ -61,37 +57,15 @@ internal fun TableBlock(
         },
     ) { rowIndex, columnIndex, alignment ->
         val model = cellModels[rowIndex][columnIndex]
-        val style = if (rowIndex == 0) headerStyle else bodyStyle
-        TableCellText(
+        val baseStyle = if (rowIndex == 0) headerStyle else bodyStyle
+        // Prefer content-sized measure: skip fillMaxWidth so preferred widths stay honest.
+        MarkdownInlineText(
             model = model,
-            style = style,
-            alignment = alignment,
+            style = baseStyle.copy(textAlign = alignment.toTextAlign()),
             mathRenderer = mathRenderer,
+            fillMaxWidth = false,
         )
     }
-}
-
-@Composable
-private fun TableCellText(
-    model: InlineRenderModel,
-    style: TextStyle,
-    alignment: TableAlignment,
-    mathRenderer: MathRenderer?,
-) {
-    val inlineContent = if (model.mathSpans.isEmpty() || mathRenderer == null) {
-        emptyMap()
-    } else {
-        buildMap {
-            model.mathSpans.forEach { ref ->
-                put(ref.key, mathRenderer.inlineMathContent(ref.latex, style.fontSize))
-            }
-        }
-    }
-    BasicText(
-        text = model.text,
-        style = style.copy(textAlign = alignment.toTextAlign()),
-        inlineContent = inlineContent,
-    )
 }
 
 @Composable
@@ -102,7 +76,6 @@ private fun TableLayout(
     modifier: Modifier = Modifier,
     columnSpacing: Dp = 8.dp,
     rowSpacing: Dp = 6.dp,
-    showDividerAfterRow: (rowIndex: Int) -> Boolean = { true },
     divider: @Composable () -> Unit,
     cell: @Composable (rowIndex: Int, columnIndex: Int, alignment: TableAlignment) -> Unit,
 ) {
@@ -155,14 +128,13 @@ private fun TableLayout(
             (columnWidths.sum() + totalColumnSpacing)
                 .coerceIn(constraints.minWidth, constraints.maxWidth)
         }
-        val dividerPlaceables = Array(rowCount) { rowIndex ->
-            if (!showDividerAfterRow(rowIndex)) {
-                null
-            } else {
-                subcompose("divider_$rowIndex") {
-                    divider()
-                }.first().measure(Constraints.fixedWidth(layoutWidth))
-            }
+        // Match previous library visuals: a single rule under the header row.
+        val headerDivider = if (rowCount > 0) {
+            subcompose("divider_header") {
+                divider()
+            }.first().measure(Constraints.fixedWidth(layoutWidth))
+        } else {
+            null
         }
         val rowHeights = IntArray(rowCount) { rowIndex ->
             var maxHeight = 0
@@ -174,9 +146,8 @@ private fun TableLayout(
         var layoutHeight = 0
         for (rowIndex in 0 until rowCount) {
             layoutHeight += rowHeights[rowIndex]
-            val dividerHeight = dividerPlaceables[rowIndex]?.height ?: 0
-            if (dividerHeight > 0) {
-                layoutHeight += rowSpacingPx + dividerHeight
+            if (rowIndex == 0 && headerDivider != null) {
+                layoutHeight += rowSpacingPx + headerDivider.height
             }
             if (rowIndex != rowCount - 1) {
                 layoutHeight += rowSpacingPx
@@ -209,11 +180,10 @@ private fun TableLayout(
                     )
                 }
                 y += rowHeights[rowIndex]
-                val dividerPlaceable = dividerPlaceables[rowIndex]
-                if (dividerPlaceable != null) {
+                if (rowIndex == 0 && headerDivider != null) {
                     y += rowSpacingPx
-                    dividerPlaceable.placeRelative(0, y)
-                    y += dividerPlaceable.height
+                    headerDivider.placeRelative(0, y)
+                    y += headerDivider.height
                 }
                 if (rowIndex != rowCount - 1) {
                     y += rowSpacingPx
@@ -236,6 +206,8 @@ internal fun resolveTableColumnWidths(
         return widths
     }
     if (totalPreferred <= availableWidth) {
+        // Keep short columns at preferred width; remaining space goes to the trailing column
+        // so the table still fills the available width.
         val widths = preferredWidths.copyOf()
         widths[widths.lastIndex] += availableWidth - totalPreferred
         return widths
