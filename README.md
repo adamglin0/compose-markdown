@@ -13,7 +13,7 @@
 
 ```toml
 [versions]
-compose-markdown = "0.1.4"
+compose-markdown = "0.1.5"
 
 [libraries]
 compose-markdown-core = { module = "com.adamglin.compose.markdown:markdown-core", version.ref = "compose-markdown" }

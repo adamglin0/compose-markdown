@@ -78,6 +78,7 @@ This repository targets predictable append-only rendering first, not full spec p
 - CommonMark compatibility: common examples work, but delimiter edge cases and several advanced constructs are intentionally not implemented
 - GFM compatibility: tables, task lists, and strikethrough are covered, but only the lightweight pipe-table subset is implemented
 - GFM table delimiter cells accept one or more hyphens (for example `|-|-|` and `|--|--|`), matching the tables extension rather than the three-hyphen docs examples only
+- Compose tables measure preferred cell widths, keep short columns when space remains, shrink tall columns first on overflow, and apply left/center/right alignment
 - reference-style links: supported only in `CommonMarkCore` and `GfmCompat`, and only for one-line definitions
 - images: parsed in the core model, but renderer intentionally falls back to alt-text only
 - Compose rendering: optimized for correctness and stable identity reuse, not for GitHub-style visual fidelity
