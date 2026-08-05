@@ -9,13 +9,11 @@
 
 ## Install
 
-> Publishing is not ready yet. The coordinates below are planned for the first public release.
-
 **libs.versions.toml**
 
 ```toml
 [versions]
-compose-markdown = "latest-version"
+compose-markdown = "0.1.4"
 
 [libraries]
 compose-markdown-core = { module = "com.adamglin.compose.markdown:markdown-core", version.ref = "compose-markdown" }

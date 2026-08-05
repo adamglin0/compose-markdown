@@ -11,7 +11,7 @@
 - indented code blocks, footnotes, and HTML export are not implemented
 - delimiter handling focuses on common chat and README cases, not the full CommonMark edge-case matrix
 - reference definitions are single-line only
-- tables implement the common pipe-table subset rather than full GFM edge behavior
+- tables implement the common pipe-table subset rather than full GFM edge behavior; delimiter cells do accept one or more hyphens (`|-|`, `|--|`, `|---|`)
 
 ## Incremental Model And Performance
 

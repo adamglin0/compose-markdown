@@ -11,7 +11,7 @@
 
 ## Versioning
 
-- current repository version: `0.1.0-SNAPSHOT`
+- current repository version: `0.1.4`
 - recommended public versioning policy for the next checkpoints:
   - `0.y.z` while public API and parser behavior are still stabilizing
   - bump `y` when snapshot/delta semantics or renderer-facing behavior change materially
