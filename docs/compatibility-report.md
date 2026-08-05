@@ -62,7 +62,7 @@ This repository targets predictable append-only rendering first, not full spec p
 | Autolinks / bare URLs | Supported | pragmatic heuristics |
 | Raw HTML | Not supported | explicitly disabled |
 | Incremental streaming | Supported | regression covers text, quote, list, fence, table, reference links |
-| Compose renderer | Partial | table layout is readable fallback, not GitHub-faithful layout |
+| Compose renderer | Partial | table layout uses content-based column widths and alignment; not full GitHub chrome |
 
 ## Supported
 
