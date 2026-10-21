@@ -43,7 +43,7 @@
 
 ## Tooling And Distribution
 
-- CI runs `ciCheck` on Linux plus the library iOS simulator tests on macOS. On Linux, the iOS part of the ABI dump cannot be generated and is taken from the committed dump, so iOS-only API changes are checked only on macOS
+- CI runs `ciCheck` on Linux plus the library iOS simulator tests on macOS
 - benchmark tasks are for local measurement and smoke verification, not for hard pass/fail release gating
 - `markdown-compose` requires Java 21 on desktop JVM because `dev.snipme:highlights` ships Java 21 bytecode; `markdown-core` targets Java 17
 - both libraries are built against Compose Multiplatform 1.11.1, which is therefore the minimum Compose version for consumers

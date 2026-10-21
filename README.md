@@ -50,7 +50,7 @@ fun Message(content: String) {
 }
 ```
 
-`Markdown(text)` parses once per distinct text. Wrap it in a `SelectionContainer` when text should be selectable.
+`Markdown(text)` parses once per distinct text and dialect. Wrap it in a `SelectionContainer` when text should be selectable.
 
 ## Stream chunks
 

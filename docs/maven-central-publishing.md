@@ -61,7 +61,7 @@ Both published modules use Kotlin explicit API mode and Kotlin's built-in ABI va
 - `api/jvm/<module>.api` and `api/android/<module>.api`: JVM and Android class files;
 - `api/<module>.klib.api`: the klib targets (iOS, JS, Wasm).
 
-`checkKotlinAbi` compares the current code with the dumps, and `check` depends on it, so `ciCheck`, the publish workflow and `mise run publish-maven-local` all fail on an unrecorded API change. After an intended change, run `./gradlew updateKotlinAbi` on macOS (only a macOS host can compile the iOS targets; on Linux the iOS part of the dump is carried over from the committed file) and commit the updated dumps with the change.
+`checkKotlinAbi` compares the current code with the dumps, and `check` depends on it, so `ciCheck`, the publish workflow and `mise run publish-maven-local` all fail on an unrecorded API change. After an intended change, run `./gradlew updateKotlinAbi` and commit the updated dumps with the change. Neither module has platform-specific source sets, and Kotlin cross-compiles the iOS klibs on Linux, so every host produces the same dumps.
 
 ## Release Checklist
 
