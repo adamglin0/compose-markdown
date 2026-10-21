@@ -50,7 +50,8 @@ Every scan is bounded so that pathological input stays linear:
 - code span closers come from a precomputed index of maximal backtick runs with forward-only cursors;
 - math closers (`$`, `\)`) come from forward-only finders over position-local predicates;
 - bracket openers are never re-scanned; link destinations cap parenthesis nesting at 32 levels and link labels at 999 characters;
-- deactivating link openers stops at the first already inactive opener;
+- link openers are chained past image openers and deactivation stops at the first already inactive one, so each opener is deactivated once;
+- closing a link only visits the delimiters inside it when processing emphasis;
 - extended autolink domain scans are memoized per domain run.
 
 `InlineParserPerformanceTest` asserts this on inputs of 40k-300k characters (nested brackets, unmatched backticks, `\(`, `$`, `[`, delimiter runs, autolink-like text).
