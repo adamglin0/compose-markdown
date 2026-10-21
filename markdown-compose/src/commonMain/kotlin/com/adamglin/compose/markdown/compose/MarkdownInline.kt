@@ -39,21 +39,25 @@ data class MarkdownImage(
     val title: String?,
 )
 
-/** A composable embedded in a line of text (inline math or an image). */
+/**
+ * A composable embedded in a line of text (inline math or an image). Equality is by content, so a
+ * measured size carries over when the surrounding paragraph is re-parsed while streaming.
+ */
 @Immutable
 internal sealed interface InlineEmbed {
-    val key: String
+    data class Math(val latex: String) : InlineEmbed
 
-    data class Math(override val key: String, val latex: String) : InlineEmbed
-
-    data class Image(override val key: String, val image: MarkdownImage) : InlineEmbed
+    data class Image(val image: MarkdownImage) : InlineEmbed
 }
 
+/** [embeds] in text order; the inline content id of `embeds[i]` is [embedId]`(i)`. */
 @Immutable
 internal data class InlineRenderModel(
     val text: AnnotatedString,
     val embeds: List<InlineEmbed>,
 )
+
+private fun embedId(index: Int): String = "embed:$index"
 
 @Composable
 internal fun rememberInlineRenderModel(
@@ -107,18 +111,16 @@ private class InlineBuilder(
                 ) { append(node.children) }
 
                 is InlineNode.MathSpan -> if (embedMath) {
-                    val key = "math:${embeds.size}"
-                    embeds += InlineEmbed.Math(key, node.latex)
-                    appendInlineContent(key, node.latex)
+                    appendInlineContent(embedId(embeds.size), node.latex)
+                    embeds += InlineEmbed.Math(node.latex)
                 } else {
                     withStyle(styles.code) { append(node.latex) }
                 }
 
                 is InlineNode.Image -> if (embedImages) {
-                    val key = "image:${embeds.size}"
                     val altText = node.alt.plainText()
-                    embeds += InlineEmbed.Image(key, MarkdownImage(node.destination, altText, node.title))
-                    appendInlineContent(key, altText)
+                    appendInlineContent(embedId(embeds.size), altText)
+                    embeds += InlineEmbed.Image(MarkdownImage(node.destination, altText, node.title))
                 } else {
                     append(node.alt)
                 }
@@ -165,6 +167,8 @@ internal fun MarkdownInlineText(
 /**
  * Text with embedded composables. Each embed is first composed invisibly, measured at its natural
  * size (capped to the text width), and its placeholder is then sized to exactly that measurement.
+ * Sizes are remembered by embed content, so streaming the paragraph does not re-measure embeds that
+ * are already laid out.
  */
 @Composable
 private fun EmbeddingText(
@@ -174,22 +178,22 @@ private fun EmbeddingText(
     modifier: Modifier,
 ) {
     val density = LocalDensity.current
-    val measuredSizes = remember(model) { mutableStateMapOf<String, IntSize>() }
+    val measuredSizes = remember(style, context, density) { mutableStateMapOf<InlineEmbed, IntSize>() }
     var maxWidth by remember { mutableIntStateOf(Constraints.Infinity) }
-    val sizes = measuredSizes.toMap()
+    val sizes = model.embeds.map { measuredSizes[it] }
     val inlineContent = remember(model, style, context, density, sizes) {
-        model.embeds.associate { embed ->
-            val size = sizes[embed.key]
+        model.embeds.withIndex().associate { (index, embed) ->
+            val size = sizes[index]
             val placeholder = if (size == null) {
                 Placeholder(1.em, 1.em, PlaceholderVerticalAlign.TextCenter)
             } else {
                 with(density) { Placeholder(size.width.toSp(), size.height.toSp(), PlaceholderVerticalAlign.TextCenter) }
             }
-            embed.key to InlineTextContent(placeholder) {
+            embedId(index) to InlineTextContent(placeholder) {
                 MeasuredEmbed(
                     maxWidth = { maxWidth },
                     isMeasured = size != null,
-                    onMeasured = { measured -> if (measuredSizes[embed.key] != measured) measuredSizes[embed.key] = measured },
+                    onMeasured = { measured -> if (measuredSizes[embed] != measured) measuredSizes[embed] = measured },
                 ) {
                     when (embed) {
                         is InlineEmbed.Math -> context.mathRenderer?.InlineMath(embed.latex, style)
