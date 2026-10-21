@@ -417,6 +417,7 @@ private fun PreviewCanvas(
                             document = document,
                             key = "preview",
                             mathRenderer = mathRenderer,
+                            components = SampleMarkdownComponents,
                             onLinkClick = onLinkClick,
                         )
                     }
