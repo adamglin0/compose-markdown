@@ -466,7 +466,7 @@ internal class BlockParser private constructor(
         if (currentList == null || !currentList.marker.continuesListOf(marker)) {
             addChild(OpenBlock.ListContainer(startLine = lineNumber, marker = marker))
         }
-        addChild(OpenBlock.Item(startLine = lineNumber, marker = marker, markerOffset = markerOffset, padding = padding))
+        addChild(OpenBlock.Item(startLine = lineNumber, markerOffset = markerOffset, padding = padding))
         return BlockStart.Container
     }
 

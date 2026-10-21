@@ -55,7 +55,7 @@ internal sealed class OpenBlock(val startLine: Int) {
         var isTight: Boolean = true
     }
 
-    class Item(startLine: Int, val marker: ListMarker, val markerOffset: Int, val padding: Int) : OpenBlock(startLine) {
+    class Item(startLine: Int, val markerOffset: Int, val padding: Int) : OpenBlock(startLine) {
         var taskState: TaskState? = null
 
         /** Whether a blank line separates two of its children. */
@@ -129,7 +129,7 @@ internal sealed class OpenBlock(val startLine: Int) {
                 it.hasGap = hasGap
                 it.isTight = isTight
             }
-            is Item -> Item(startLine, marker, markerOffset, padding).also {
+            is Item -> Item(startLine, markerOffset, padding).also {
                 it.taskState = taskState
                 it.hasGapBetweenChildren = hasGapBetweenChildren
             }
