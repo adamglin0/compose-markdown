@@ -19,4 +19,4 @@ Intentional limits:
 - task lists render as read-only checkboxes
 - no built-in image loading; supply `imageContent`
 
-See `../docs/api-draft.md` for signatures and `../docs/compatibility-report.md` for the renderer audit.
+See `../docs/api.md` for signatures and `../docs/compatibility-report.md` for the renderer audit.

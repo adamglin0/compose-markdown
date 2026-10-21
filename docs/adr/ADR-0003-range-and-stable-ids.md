@@ -40,4 +40,4 @@ An API centered on fully materialized block strings and whole-document display t
 
 ## Follow-Up
 
-Stage 1 must define the concrete range and ID types and add invariant tests around them.
+Implemented as `TextRange`, `LineRange`, `BlockId` and `InlineId`; the id rules are in `docs/api.md`.

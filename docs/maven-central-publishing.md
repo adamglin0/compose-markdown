@@ -30,7 +30,7 @@ export ORG_GRADLE_PROJECT_signingInMemoryKeyPassword="your-gpg-password"
 - `GPG_KEY_CONTENTS` (raw armored private key, as above)
 - `SIGNING_PASSWORD`
 
-`.github/workflows/publish.yml` reads these secrets and publishes when you push a `v*` tag (or run it manually with a version input). The release version comes from the tag (`v0.2.0` -> `0.2.0`) and overrides `VERSION_NAME` through the `releaseVersion` Gradle property. Before uploading, the workflow runs `:markdown-core:check` and `:markdown-compose:check`, which includes the iOS simulator tests; the sample app is not part of the publish gate.
+`.github/workflows/publish.yml` reads these secrets and publishes when you push a `v*` tag (or run it manually with a version input). The release version comes from the tag (`v0.2.0` -> `0.2.0`) and overrides `VERSION_NAME` through the `releaseVersion` Gradle property. Before uploading, the workflow runs `:markdown-core:check` and `:markdown-compose:check`: the tests of every target, including the iOS simulator tests, and the ABI check. The sample app is not part of the publish gate.
 
 ## Publish Commands
 
@@ -47,6 +47,21 @@ export ORG_GRADLE_PROJECT_signingInMemoryKeyPassword="your-gpg-password"
 - The libraries are built against Compose Multiplatform 1.11.1, which is therefore the minimum Compose version for consumers. The library and `sample-chat` share one version on purpose: the Compose Gradle plugin is applied build-wide at a single version and unpacks the skiko wasm runtime matching that version, so compiling the libraries against a different Compose version than the plugin reproduces the skiko skew that silently broke the wasmJs browser tests. `sample-chat` needs 1.11.1 for RaTeX (`io.github.darriousliu:ratex`).
 
 `automaticRelease` is enabled automatically for non-`-SNAPSHOT` versions.
+
+## Versioning
+
+- `0.y.z` while the API and parser behavior are still settling.
+- Bump `y` for changes to the public API (any change to the ABI dumps that removes or changes a declaration) or to snapshot, delta or rendering semantics.
+- Bump `z` for compatible fixes, additions, docs and performance work.
+
+## ABI Validation
+
+Both published modules use Kotlin explicit API mode and Kotlin's built-in ABI validation (`kotlin { abiValidation { ... } }`). The reference dumps are committed:
+
+- `api/jvm/<module>.api` and `api/android/<module>.api`: JVM and Android class files;
+- `api/<module>.klib.api`: the klib targets (iOS, JS, Wasm).
+
+`checkKotlinAbi` compares the current code with the dumps, and `check` depends on it, so `ciCheck`, the publish workflow and `mise run publish-maven-local` all fail on an unrecorded API change. After an intended change, run `./gradlew updateKotlinAbi` on macOS (only a macOS host can compile the iOS targets; on Linux the iOS part of the dump is carried over from the committed file) and commit the updated dumps with the change.
 
 ## Release Checklist
 

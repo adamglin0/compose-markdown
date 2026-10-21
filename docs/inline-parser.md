@@ -7,7 +7,7 @@ For the repository-wide support boundary, use `docs/compatibility-report.md` as 
 - `InlineParser` (`markdown-core/.../core/inline/InlineParser.kt`) is independent from Compose and runs inside `markdown-core`.
 - `BlockParser` owns block segmentation and block ranges; inline parsing runs on the text payloads of `Paragraph`, `Heading` and `TableCell` nodes, including those nested inside `BlockQuote` and `ListItem`.
 - `FencedCodeBlock` and `MathBlock` remain raw text and do not run inline parsing.
-- Every construct is gated by `MarkdownDialect.inlineFeatures`.
+- The dialect decides whether strikethrough, extended autolinks, reference links and inline math are parsed (see `dialects.md`); every other construct is always on.
 
 ## Algorithm
 
@@ -17,7 +17,7 @@ The parser implements the CommonMark 0.31.2 reference algorithm (spec appendix "
 2. Runs of `*`, `_` (and `~` for GFM strikethrough) become text nodes that are also pushed onto a **delimiter stack**, with `can open` / `can close` computed from the left/right-flanking rules (Unicode whitespace and Unicode punctuation, i.e. general categories P and S).
 3. `[` and `![` are pushed onto a **bracket stack**. A `]` runs "look for link or image": it tries an inline link (`(destination "title")`), then a full, collapsed or shortcut reference. On a match the bracket content becomes the link/image, emphasis inside it is processed, and earlier link openers are deactivated (links never nest).
 4. "Process emphasis" resolves the delimiter stack using the `openers_bottom` table and the rule of 3. GFM strikethrough matches `~`/`~~` openers and closers of equal length; runs of three or more tildes are literal.
-5. The mutable draft tree is converted to the immutable `InlineNode` model, merging adjacent text and, when `bareAutolinks` is enabled, splitting GFM email autolinks out of text that is not inside a link or image.
+5. The mutable draft tree is converted to the immutable `InlineNode` model, merging adjacent text and, in dialects with extended autolinks, splitting GFM email autolinks out of text that is not inside a link or image.
 
 Shared building blocks:
 
@@ -32,7 +32,7 @@ Shared building blocks:
 - Emphasis, Strong
 - Code span
 - Inline links and images with titles; reference links and images (`CommonMarkCore`, `GfmCompat`, `GfmMath`)
-- Autolinks: `<scheme:...>` and `<email>`; GFM extended autolinks where `bareAutolinks` is enabled (`ChatFast`, `GfmCompat`, `GfmMath`)
+- Autolinks: `<scheme:...>` and `<email>`; GFM extended autolinks in `ChatFast`, `GfmCompat` and `GfmMath`
 - Soft break, Hard break (two or more trailing spaces, or a backslash before the line ending)
 - Strikethrough (`~text~` and `~~text~~`)
 - Math span (`GfmMath`): `$...$` and `\(...\)`
@@ -80,7 +80,7 @@ Inline nodes nested deeper than 32 levels (emphasis, links, images) are kept as 
 
 ## Known Limitations
 
-- Raw inline HTML is not parsed (by design, in every preset); tags stay literal text.
+- Raw inline HTML is not parsed (by design, in every dialect); tags stay literal text.
 - GFM extended `www.` / URL autolinks are not recognized while a `[` or `![` bracket is open, matching cmark-gfm; this keeps `[www.example.com](url)` a single link but also leaves URLs inside unmatched brackets as text.
 - Flanking checks classify UTF-16 code units, so characters outside the Basic Multilingual Plane (for example emoji) next to a delimiter count as neither whitespace nor punctuation.
 - Unicode case folding of reference labels is approximated by lowercase-then-uppercase.

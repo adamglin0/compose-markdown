@@ -1,6 +1,6 @@
 # ADR-0002: Use A Staged Order Of Block First, Inline Later, Incremental Last
 
-- Status: Accepted
+- Status: Accepted, completed. All stages shipped; the decision is kept as a record.
 - Date: 2026-03-17
 
 ## Context

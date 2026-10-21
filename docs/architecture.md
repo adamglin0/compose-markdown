@@ -1,123 +1,49 @@
 # Architecture
 
-## Goals
+`compose-markdown` parses Markdown that arrives in chunks, such as an LLM reply, and renders it with Compose Multiplatform. The design follows from three goals:
 
-`compose-markdown` is designed around a narrow but practical target:
+- every chunk produces a renderable document that equals a one-shot parse of the same text;
+- a chunk costs work proportional to the new text, not to the document;
+- the public model is immutable, so a UI can read snapshots while the engine keeps parsing.
 
-- parse Markdown in Kotlin Multiplatform;
-- keep every append renderable;
-- reuse as much previous work as possible on append-heavy streams;
-- preserve a stable public API centered on immutable snapshots;
-- keep the toolchain light enough for library and sample development.
+It is not a rich-text editor: the source is append-only.
 
-The first optimization target remains LLM/chat-style output, not a full rich-text editor.
-
-## Module Graph
-
-```text
-compose-markdown
-|- markdown-core
-|  |- SourceBuffer / LineIndex
-|  |- BlockParser
-|  |- InlineParser
-|  |- IncrementalMarkdownEngine
-|  `- Snapshot / ParseDelta / Stats
-|
-|- markdown-compose
-|  |- Markdown composables
-|  `- snapshot -> UI mapping
-|
-|- sample-chat
-|  |- chunk driver
-|  `- visual/debug verification
-|
-|- benchmarks
-|  |- corpus generators
-|  |- JVM benchmark runner
-|  `- benchmark smoke task
-|
-`- docs
-   |- architecture / incremental model / dialect matrix
-   |- known limitations / performance notes
-   `- release planning / ADRs
-```
-
-Dependency direction:
+## Modules
 
 ```text
 markdown-core <- markdown-compose <- sample-chat
 markdown-core <- benchmarks
 ```
 
-`markdown-core` stays UI-free and benchmark code never changes public API semantics.
+- `markdown-core` (published): parser, immutable model, dialects and incremental engine. No UI or Compose dependency.
+- `markdown-compose` (published): Compose Multiplatform renderer, `MarkdownState` and theming.
+- `sample-chat`: desktop, Android, iOS and web sample that streams scripted replies and plugs in LaTeX renderers.
+- `benchmarks`: JVM benchmark runner; `benchmarkSmoke` runs in CI.
 
-## Parsing Pipeline
+## Parsing pipeline (`markdown-core`)
 
-### 1. `SourceBuffer` and `LineIndex`
+1. **Source.** `ChunkNormalizer` turns `\r\n` and `\r` into `\n`, also across chunk boundaries, and holds back a split surrogate pair. `SourceBuffer` stores the text, and `LineIndex` records line boundaries so only new lines are copied out.
+2. **Block parser** ([block-parser.md](block-parser.md)). A resumable CommonMark block parser plus GFM tables, task list items and display math. Each complete line is incorporated once. The unterminated last line is parsed in a cheap fork that copies only the open blocks.
+3. **Inline parser** ([inline-parser.md](inline-parser.md)). The CommonMark reference algorithm with delimiter and bracket stacks, plus GFM strikethrough and extended autolinks and inline math. It runs on the text of paragraphs, headings and table cells, and every scan is bounded so pathological input stays linear.
+4. **Incremental engine** ([incremental-engine.md](incremental-engine.md)). Closed top-level blocks form the stable prefix and are built once. The open top-level block is rebuilt from the cached nodes of its closed children. Inline results are cached per block, and a growing paragraph resumes from its last final line start. A link reference definition that arrives later rebuilds only the blocks that use its label. Each call publishes an immutable `MarkdownSnapshot` and a `ParseDelta`.
 
-- `SourceBuffer` stores normalized append-only text;
-- `LineIndex` tracks newline offsets, so line ranges are O(1) and only new lines are copied out of the source.
+The guarantees this gives consumers are listed in [api.md](api.md#guarantees), and the model behind them is in [incremental-model.md](incremental-model.md).
 
-### 2. `BlockParser`
+## Renderer (`markdown-compose`)
 
-- parses line-oriented blocks: paragraphs, headings, lists, quotes, fenced code blocks, tables, thematic breaks;
-- is resumable: each complete line is incorporated once, and an unterminated last line is parsed in a cheap fork;
-- `BlockTreeBuilder` builds nodes, caching closed blocks, and asks an engine-supplied allocator for stable block IDs.
+- Composables map snapshot nodes straight to UI, with no intermediate render model. Every block is keyed by its stable id, at the top level, inside quotes and lists, and as lazy items with `LazyListScope.markdown`.
+- `MarkdownState` publishes the engine's snapshot document for each chunk without copying it. The engine keeps every unchanged block as the same instance, and Compose compares core model values by identity, so it skips every block a chunk did not touch at no cost proportional to the document. `LazyListScope.markdown` composes only the visible changed blocks; `Markdown(document)` still measures and draws every top-level block per frame.
+- Code highlighting runs off the main thread with a shared cache. LaTeX and images go through app-supplied plug-ins (`MathRenderer`, `imageContent`), so the library ships no math engine and no image loader.
 
-### 3. `InlineParser`
+## Build and verification
 
-- resolves inline syntax inside block-local text ranges;
-- supports links, emphasis, strong, strikethrough, code spans, images, autolinks, and line breaks;
-- results are cached per block ID and literal, and a growing paragraph resumes from its last final line start.
+- Both published modules use Kotlin explicit API mode and Kotlin's ABI validation. The reference dumps live in each module's `api/` directory.
+- `./gradlew ciCheck` builds every module, runs the tests on every target the host supports, and runs the benchmark smoke run. CI runs it on Linux, plus the library iOS simulator tests on macOS.
+- The tests cover the CommonMark 0.31.2 and GFM extension spec examples (`SpecConformanceTest`), streaming equivalence (`StreamingDifferentialTest`, and the JVM-only seeded `StreamingFuzzTest`), pathological input, and Compose UI behavior and recomposition (`MarkdownUiTest`, JVM).
 
-### 4. Incremental Engine
+## Non-goals
 
-- appends normalized text into the source buffer;
-- feeds completed lines to the block parser and the unterminated last line to a fork of it;
-- moves closed top-level blocks into the stable prefix, built once;
-- rebuilds only blocks that use a link reference definition that changed;
-- rebuilds immutable `MarkdownSnapshot` / `ParseDelta` for consumers.
-
-### 5. Compose Renderer
-
-- renders block lists with stable IDs;
-- updates at block granularity;
-- keeps Compose concerns outside parser internals.
-
-## Incremental State Model
-
-- `stable prefix`: source range known to keep its interpretation;
-- `mutable tail`: suffix that may still change meaning after more input;
-- `dirty region`: the range whose lines the latest append parsed;
-- `block cache`: built nodes of closed blocks, plus the reference labels they use;
-- `inline cache`: per-block inline parse results.
-
-See `docs/incremental-model.md` for the detailed rules.
-
-## Stage 8 Engineering Notes
-
-- benchmarks now live in a real Gradle module instead of a placeholder directory;
-- CI stays lightweight and only runs build, test, benchmark smoke, and sample dry-run;
-- shared normalization code moved into `com.adamglin.compose.markdown.core.internal` to reduce duplicate logic and regex churn;
-- block-tree flattening now uses an accumulator instead of recursive `buildList { addAll(...) }` chains.
-
-## Public API Boundary
-
-Public API remains centered on:
-
-- `MarkdownEngine`
-- `MarkdownSnapshot`
-- `MarkdownDocument`
-- `ParseDelta`
-- `ParseStats`
-- `BlockNode` / `InlineNode` / `TextRange`
-
-Internal caches, ID allocation, and parser bookkeeping remain hidden.
-
-## Non-Goals
-
-- arbitrary middle-of-document editing;
-- raw HTML rendering;
-- parser-generator-based implementation;
-- benchmark-driven API changes;
-- heavy release or CI infrastructure before the core model stabilizes.
+- editing in the middle of the source;
+- raw HTML parsing or HTML output;
+- parser generators;
+- changing the public API for benchmark results.
