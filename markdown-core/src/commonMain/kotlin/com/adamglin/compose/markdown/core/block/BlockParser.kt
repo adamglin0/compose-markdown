@@ -95,6 +95,9 @@ internal sealed class OpenBlock(val startLine: Int) {
     var isOpen: Boolean = true
     var endLine: Int = startLine
 
+    /** Number of ancestors; the document is at depth 0. */
+    var depth: Int = 0
+
     class Document : OpenBlock(startLine = 0)
 
     class BlockQuote(startLine: Int) : OpenBlock(startLine)
@@ -408,7 +411,7 @@ internal class BlockParserSession(
         if (indented) {
             return startIndentedCode()
         }
-        return startBlockQuote()
+        return startBlockQuote(container)
             .orElse { startAtxHeading() }
             .orElse { startFencedCode() }
             .orElse { startMath() }
@@ -420,8 +423,8 @@ internal class BlockParserSession(
 
     private inline fun BlockStart.orElse(next: () -> BlockStart): BlockStart = if (this == BlockStart.None) next() else this
 
-    private fun startBlockQuote(): BlockStart {
-        if (charAt(nextNonspace) != '>') {
+    private fun startBlockQuote(container: OpenBlock): BlockStart {
+        if (charAt(nextNonspace) != '>' || container.depth >= MAX_CONTAINER_DEPTH) {
             return BlockStart.None
         }
         advanceNextNonspace()
@@ -543,6 +546,9 @@ internal class BlockParserSession(
     }
 
     private fun startListItem(container: OpenBlock): BlockStart {
+        if (container.depth >= MAX_CONTAINER_DEPTH) {
+            return BlockStart.None
+        }
         val marker = scanListMarker(line, nextNonspace) ?: return BlockStart.None
         val afterMarker = nextNonspace + marker.length
         if (charAt(afterMarker)?.isSpaceOrTab() == false) {
@@ -655,6 +661,7 @@ internal class BlockParserSession(
             finalize(tip, lineNumber - 1)
         }
         block.parent = tip
+        block.depth = tip.depth + 1
         tip.children += block
         tip = block
     }
@@ -842,6 +849,13 @@ internal class BlockParserSession(
 
     private companion object {
         const val CODE_INDENT = 4
+
+        /**
+         * Block quotes and list items do not open below this depth (a list item counts twice, with its list);
+         * deeper markers stay paragraph text. This bounds the work per line and the depth of the block tree,
+         * which every consumer walks recursively.
+         */
+        const val MAX_CONTAINER_DEPTH = 64
     }
 }
 
