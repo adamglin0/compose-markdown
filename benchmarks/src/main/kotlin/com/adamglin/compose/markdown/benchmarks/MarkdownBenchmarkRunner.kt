@@ -55,8 +55,7 @@ private class MarkdownBenchmarkRunner(
             finishTimeMillis = measurements.averageBy { it.finishTimeNanos.toMillis() },
             totalParseTimeMillis = measurements.averageBy { it.totalParseTimeNanos.toMillis() },
             averageAppendMicros = measurements.averageBy { it.averageAppendNanos.toMicros() },
-            preservedBlockRatio = measurements.averageBy { it.preservedBlockRatio },
-            reparsedBlockRatio = measurements.averageBy { it.reparsedBlockRatio },
+            builtBlocksPerCall = measurements.averageBy { it.builtBlocksPerCall },
             allocatedBytes = measurements.averageBy { it.allocatedBytes.toDouble() }.roundToLong(),
         )
     }
@@ -66,25 +65,21 @@ private class MarkdownBenchmarkRunner(
         val input = scenario.input
         var appendTotalTimeNanos = 0L
         var finishTimeNanos = 0L
-        var preservedBlocks = 0L
-        var reparsedBlocks = 0L
+        var builtBlocks = 0L
         val allocatedBytes = allocationTracker.measureAllocatedBytes {
             input.chunks.forEach { chunk ->
                 val delta = timedAppend(engine = engine, chunk = chunk)
                 appendTotalTimeNanos += delta.elapsedNanos
-                preservedBlocks += delta.delta.stats.preservedBlocks.toLong()
-                reparsedBlocks += delta.delta.stats.reparsedBlocks.toLong()
+                builtBlocks += delta.delta.stats.builtBlocks.toLong()
             }
 
             finishTimeNanos = measureNanos {
                 val delta = engine.finish()
-                preservedBlocks += delta.stats.preservedBlocks.toLong()
-                reparsedBlocks += delta.stats.reparsedBlocks.toLong()
+                builtBlocks += delta.stats.builtBlocks.toLong()
             }
         }
 
         val appendCount = input.chunks.size
-        val totalBlocks = preservedBlocks + reparsedBlocks
         return ScenarioMeasurement(
             documentChars = input.document.length,
             appendCount = appendCount,
@@ -92,8 +87,7 @@ private class MarkdownBenchmarkRunner(
             finishTimeNanos = finishTimeNanos,
             totalParseTimeNanos = appendTotalTimeNanos + finishTimeNanos,
             averageAppendNanos = if (appendCount == 0) 0.0 else appendTotalTimeNanos.toDouble() / appendCount,
-            preservedBlockRatio = if (totalBlocks == 0L) 0.0 else preservedBlocks.toDouble() / totalBlocks,
-            reparsedBlockRatio = if (totalBlocks == 0L) 0.0 else reparsedBlocks.toDouble() / totalBlocks,
+            builtBlocksPerCall = builtBlocks.toDouble() / (appendCount + 1),
             allocatedBytes = allocatedBytes,
         )
     }
@@ -143,20 +137,20 @@ private class BenchmarkScenario(
                 )
             }
             if (!smoke) {
-                add(
-                    BenchmarkScenario(
-                        "token-stream-open-fence-100kb",
-                        "One unclosed 100KB fenced code block streamed in 4-10 character tokens.",
-                        ScenarioInput.chunked(BenchmarkCorpus.tokenChunks(BenchmarkCorpus.unclosedFenceDocument(chars = 100_000))),
-                    ),
-                )
-                add(
-                    BenchmarkScenario(
-                        "token-stream-long-list-25kb",
-                        "One 25KB bullet list streamed in 4-10 character tokens.",
-                        ScenarioInput.chunked(BenchmarkCorpus.tokenChunks(BenchmarkCorpus.longListDocument(chars = 25_000))),
-                    ),
-                )
+                listOf(
+                    "open-fence" to BenchmarkCorpus.unclosedFenceDocument(chars = 100_000),
+                    "long-list" to BenchmarkCorpus.longListDocument(chars = 100_000),
+                    "long-paragraph" to BenchmarkCorpus.longParagraphDocument(chars = 100_000),
+                    "long-quote" to BenchmarkCorpus.longQuoteDocument(chars = 100_000),
+                ).forEach { (name, document) ->
+                    add(
+                        BenchmarkScenario(
+                            "token-stream-$name-100kb",
+                            "One open 100KB top-level block ($name) streamed in 4-10 character tokens.",
+                            ScenarioInput.chunked(BenchmarkCorpus.tokenChunks(document)),
+                        ),
+                    )
+                }
             }
         }
     }
@@ -199,8 +193,7 @@ private data class ScenarioResult(
     val finishTimeMillis: Double,
     val totalParseTimeMillis: Double,
     val averageAppendMicros: Double,
-    val preservedBlockRatio: Double,
-    val reparsedBlockRatio: Double,
+    val builtBlocksPerCall: Double,
     val allocatedBytes: Long,
 )
 
@@ -211,8 +204,7 @@ private data class ScenarioMeasurement(
     val finishTimeNanos: Long,
     val totalParseTimeNanos: Long,
     val averageAppendNanos: Double,
-    val preservedBlockRatio: Double,
-    val reparsedBlockRatio: Double,
+    val builtBlocksPerCall: Double,
     val allocatedBytes: Long,
 )
 
@@ -242,11 +234,11 @@ private object BenchmarkReportRenderer {
         appendLine("- warmupIterations: ${report.warmupIterations}")
         appendLine("- measuredIterations: ${report.measuredIterations}")
         appendLine()
-        appendLine("| scenario | chars | appends | append total ms | avg append us | finish ms | total ms | preserved ratio | reparsed ratio | allocated bytes |")
-        appendLine("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+        appendLine("| scenario | chars | appends | append total ms | avg append us | finish ms | total ms | built blocks per call | allocated bytes |")
+        appendLine("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
         report.results.forEach { result ->
             appendLine(
-                "| ${result.scenario} | ${result.documentChars} | ${result.appendCount} | ${result.appendTotalTimeMillis.format(3)} | ${result.averageAppendMicros.format(3)} | ${result.finishTimeMillis.format(3)} | ${result.totalParseTimeMillis.format(3)} | ${result.preservedBlockRatio.format(3)} | ${result.reparsedBlockRatio.format(3)} | ${result.allocatedBytes} |",
+                "| ${result.scenario} | ${result.documentChars} | ${result.appendCount} | ${result.appendTotalTimeMillis.format(3)} | ${result.averageAppendMicros.format(3)} | ${result.finishTimeMillis.format(3)} | ${result.totalParseTimeMillis.format(3)} | ${result.builtBlocksPerCall.format(1)} | ${result.allocatedBytes} |",
             )
         }
     }

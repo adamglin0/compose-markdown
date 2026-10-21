@@ -100,6 +100,26 @@ internal object BenchmarkCorpus {
         }
     }
 
+    /** One paragraph of many lines with inline markup, about [chars] characters long. */
+    fun longParagraphDocument(chars: Int): String = buildString(chars + 80) {
+        var line = 0
+        while (length < chars) {
+            append("Line ")
+            append(line++)
+            append(" of one paragraph with **strong**, `code` and a [link](https://example.com).\n")
+        }
+    }
+
+    /** One block quote holding one long paragraph, about [chars] characters long. */
+    fun longQuoteDocument(chars: Int): String = buildString(chars + 80) {
+        var line = 0
+        while (length < chars) {
+            append("> quoted line ")
+            append(line++)
+            append(" with _emphasis_ and more text\n")
+        }
+    }
+
     /**
      * Splits [document] into 4 to 10 character chunks, the size of the tokens an LLM streams. The sizes come
      * from a fixed seed so every run appends the same chunks.

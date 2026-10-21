@@ -13,7 +13,7 @@ The runner covers:
 
 - one-shot large-document parsing
 - 120/240 small-append streaming runs
-- documents of 25-200KB streamed in 4-10 character chunks (LLM token size), including one huge open fence and one long list
+- documents of 25-200KB streamed in 4-10 character chunks (LLM token size), and one open 100KB fence, list, paragraph and block quote
 - mixed block content with paragraphs, lists, quotes, fenced code blocks, and tables
 
 Results are printed as a Markdown table and can also be written to a file with:
