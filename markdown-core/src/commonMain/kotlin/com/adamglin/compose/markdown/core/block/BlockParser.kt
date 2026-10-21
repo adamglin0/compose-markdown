@@ -181,6 +181,9 @@ private enum class Continuation {
 private enum class BlockStart {
     None,
 
+    /** The line is paragraph text; no other block start applies. */
+    Text,
+
     /** A container started; keep looking for block starts inside it. */
     Container,
 
@@ -250,7 +253,7 @@ internal class BlockParserSession(
                 break
             }
             when (startBlock(container)) {
-                BlockStart.None -> {
+                BlockStart.None, BlockStart.Text -> {
                     advanceNextNonspace()
                     break
                 }
@@ -317,14 +320,16 @@ internal class BlockParserSession(
         }
 
         is OpenBlock.Item -> when {
-            indent >= block.markerOffset + block.padding -> {
-                advanceOffset(block.markerOffset + block.padding, columns = true)
+            // A blank line continues an item, except right after an empty first line.
+            blank -> if (block.children.isNotEmpty()) {
+                advanceNextNonspace()
                 Continuation.Matched
+            } else {
+                Continuation.Failed
             }
 
-            // A blank line continues an item, except right after an empty first line.
-            blank && block.children.isNotEmpty() -> {
-                advanceNextNonspace()
+            indent >= block.markerOffset + block.padding -> {
+                advanceOffset(block.markerOffset + block.padding, columns = true)
                 Continuation.Matched
             }
 
@@ -332,7 +337,9 @@ internal class BlockParserSession(
         }
 
         is OpenBlock.Heading, is OpenBlock.ThematicBreak -> Continuation.Failed
-        is OpenBlock.Paragraph, is OpenBlock.Table -> if (blank) Continuation.Failed else Continuation.Matched
+        is OpenBlock.Paragraph -> if (blank) Continuation.Failed else Continuation.Matched
+        // A line without cells (such as a lone `|`) ends the table, as in cmark-gfm.
+        is OpenBlock.Table -> if (blank || scanTableRow(line, nextNonspace) == null) Continuation.Failed else Continuation.Matched
         is OpenBlock.IndentedCode -> when {
             indent >= CODE_INDENT -> {
                 advanceOffset(CODE_INDENT, columns = true)
@@ -502,8 +509,10 @@ internal class BlockParserSession(
         val level = setextUnderlineLevel(line, nextNonspace) ?: return BlockStart.None
         closeUnmatchedBlocks()
         val definitionLines = leadingDefinitionLineCount(container.lines)
+        // As in cmark, an underline below link reference definitions alone is paragraph text, never a
+        // thematic break, list item or table delimiter row.
         if (definitionLines == container.lines.size) {
-            return BlockStart.None
+            return BlockStart.Text
         }
         val parent = container.parent!!
         val heading = OpenBlock.Heading(
@@ -758,7 +767,7 @@ internal class BlockParserSession(
     }
 
     private fun addTableRow(table: OpenBlock.Table) {
-        val cells = scanTableRow(line, offset) ?: return
+        val cells = checkNotNull(scanTableRow(line, offset)) { "A table only continues on a line with cells" }
         table.rows += TableRowDraft(lineIndex = lineNumber, sourceStart = lineStart, cells = cells)
     }
 

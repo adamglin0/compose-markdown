@@ -99,6 +99,18 @@ class BlockStructureRegressionTest {
     }
 
     @Test
+    fun aBlankLineAfterAnEmptyFirstLineEndsTheItemWhateverItsIndentation() {
+        assertHtml("<ul>\n<li></li>\n</ul>\n<p>foo</p>\n", "-\n  \n  foo\n")
+        assertHtml("<ul>\n<li></li>\n</ul>\n<pre><code>  wide\n</code></pre>\n", "+\n\t\t\n      wide\n")
+    }
+
+    @Test
+    fun anUnderlineBelowOnlyLinkReferenceDefinitionsIsParagraphText() {
+        assertHtml("<p>---</p>\n", "[a]: /u\n---\n")
+        assertHtml("<p>-</p>\n", "[a]: /u\n-\n", MarkdownDialect.GfmCompat)
+    }
+
+    @Test
     fun taskMarkersAreRecognizedAloneAndBeforeContent() {
         val items = blocks("- [ ]\n- [x] done\n- [X]\tdone\n- [y] not a task\n- [ ]text\n")
             .filterIsInstance<BlockNode.ListBlock>()
@@ -168,6 +180,15 @@ class BlockStructureRegressionTest {
             "<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n</tr>\n</thead>\n<tbody>\n" +
                 "<tr>\n<td>bar</td>\n<td></td>\n</tr>\n</tbody>\n</table>\n<blockquote>\n<p>q</p>\n</blockquote>\n",
             "|a|b|\n|---|---|\nbar\n> q\n",
+            MarkdownDialect.GfmCompat,
+        )
+    }
+
+    @Test
+    fun aLineWithoutCellsEndsTheTable() {
+        assertHtml(
+            "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>b</td>\n</tr>\n</tbody>\n</table>\n<p>|</p>\n",
+            "|a|\n|-|\n|b|\n|\n",
             MarkdownDialect.GfmCompat,
         )
     }
