@@ -87,7 +87,9 @@ whether it is a mixed document or one open list, paragraph, block quote, table o
 - `removedBlockIds`: ids (at any depth) built in the previous call and not built again; final blocks keep
   their ids for good;
 - `dirtyRegion`: the range whose lines this call parsed, from the start of the previous unterminated last line;
-- every top-level block not listed in `changedBlocks` is the same as in the previous snapshot.
+- every top-level block not listed in `changedBlocks` is the same instance as in the previous snapshot; a block
+  rebuilt equal to its previous version (for example when `finish()` closes it, or when it closes into the
+  stable prefix) keeps the previous instance, so renderers can compare blocks by identity.
 
 `ParseStats` reports `appendedChars`, `processedLines` (lines completed by the call plus the unterminated last
 line), `builtBlocks` (blocks at any depth built by the call instead of taken from a cache), `preservedBlocks`

@@ -14,7 +14,11 @@ import com.adamglin.compose.markdown.core.model.MarkdownDocument
  * Renders a parsed Markdown [document], e.g. [MarkdownState.document] while streaming.
  *
  * Styling comes from the enclosing [MarkdownTheme]. Wrap in a `SelectionContainer` to make the
- * text selectable. For long documents inside a `LazyColumn`, use [LazyListScope.markdown].
+ * text selectable.
+ *
+ * All top-level blocks share one `Column`: blocks a streamed chunk did not change skip
+ * recomposition, but every update still checks, measures and draws each top-level block. For long
+ * documents use [LazyListScope.markdown], which costs only the visible changed blocks.
  *
  * @param codeHighlighter colors closed fenced code blocks; `null` disables highlighting. Pass a
  *   long-lived instance: highlight results are cached per highlighter instance.

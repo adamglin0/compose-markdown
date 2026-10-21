@@ -5,11 +5,13 @@ Compose Multiplatform rendering layer built on top of `markdown-core`.
 Public API:
 
 - `Markdown(text)` and `Markdown(document)` render Markdown; `LazyListScope.markdown(document, key)` adds one lazy item per top-level block, keyed by `key` plus the block id
-- `MarkdownState` / `rememberMarkdownState()` stream chunks into a document, publishing each append synchronously and reusing unchanged blocks
+- `MarkdownState` / `rememberMarkdownState()` stream chunks into a document, publishing each append synchronously; an append costs the new text, not the document, and only the blocks it changed recompose
 - `MarkdownTheme(colors, typography, blockSpacing)` is the single theming mechanism (`MarkdownColors.Light` / `.Dark`, `MarkdownTypography.Default`)
 - plug-ins: `CodeHighlighter` (`DefaultCodeHighlighter`, or `null` to disable), `MathRenderer`, `imageContent`, `onLinkClick` (defaults to `LocalUriHandler`)
 
 Rendering covers paragraphs, headings, quotes, ordered/bullet/task lists, fenced code (highlighted, horizontally scrollable), math, thematic breaks and tables (horizontally scrollable when too wide).
+
+Streaming cost: `LazyListScope.markdown` composes only the visible blocks a chunk changed, whatever the length of the document. `Markdown(document)` renders one `Column`, which skips unchanged blocks but still checks, measures and draws every top-level block on each frame (about 4 ms per append at 25KB and 19 ms at 200KB on the JVM test harness), so use the lazy entry for long or streamed documents. `MarkdownStreamingCostTest` measures both.
 
 Intentional limits:
 
