@@ -197,7 +197,7 @@ public class MarkdownComponents(
     public val table: @Composable MarkdownBlockScope<BlockNode.TableBlock>.() -> Unit = { DefaultContent() },
     public val thematicBreak: @Composable MarkdownBlockScope<BlockNode.ThematicBreak>.() -> Unit = { DefaultContent() },
     public val image: (@Composable (MarkdownImage) -> Unit)? = null, // null shows alt text
-) // equal when all slots are equal
+)
 @Stable public interface MarkdownBlockScope<out T : BlockNode> {
     val block: T
     @Composable fun DefaultContent(modifier: Modifier = Modifier)
@@ -231,7 +231,8 @@ Components rules:
 - `HighlightedCode()` is the code text of the built-in code block: theme code style, horizontal scroll with `contentPadding` inside it, colored by `codeHighlighter` once the fence is closed.
 - `mathBlock`'s `DefaultContent()` calls `MathRenderer.BlockMath` once the block is closed and shows the LaTeX source before. Inline math stays with `MathRenderer.InlineMath`: it is measured and embedded in its line of text, which a block slot cannot do.
 - `image` is the only nullable slot: without it, images are plain alt text in the line; with it, each image is composed, measured and embedded in the line.
-- Slots may be fresh lambdas on every call (as they are in a `LazyListScope` builder). The renderer reads the latest `MarkdownComponents` through state from the composable that invokes each slot: a new instance re-runs the slots of the composed blocks (in a lazy list, the visible ones), never the blocks around them, and an instance equal to the previous one (same slot lambdas, as non-capturing or remembered lambdas are) re-runs nothing.
+- `MarkdownComponents` may be a new instance on every call (as it is in a `LazyListScope` builder). The renderer keeps each slot in its own state and reads it in the composable that invokes the slot: a slot whose lambda changed re-runs for every composed element of its kind (in a lazy list, the visible ones), and nothing else re-runs; a slot with the same lambda (a default, a non-capturing lambda, or a lambda remembered in composition) re-runs nothing. Hoist or `remember` a capturing slot that would otherwise change on every chunk.
+- Replacing a slot also replaces the semantics of the default: a custom `heading` should set `heading()` semantics, a custom `taskCheckbox` the checkbox role and toggle state.
 
 Why slots rather than plug-in interfaces: `CodeHighlighter` and `MathRenderer` stay interfaces because they are engines (code to colors, LaTeX to pixels) that the built-in rendering calls. Presentation is a slot API, the Compose convention used by Material components and other Compose Markdown renderers: one value holds a composable lambda per element, each lambda gets its element's data and the default content, and an app overrides only the slots it needs. Implementing an interface with a dozen composable methods for one changed element would be heavier and would not let a slot call back into the default.
 

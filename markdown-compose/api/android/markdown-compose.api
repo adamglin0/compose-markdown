@@ -104,7 +104,6 @@ public final class com/adamglin/compose/markdown/compose/MarkdownComponents {
 	public fun <init> ()V
 	public fun <init> (Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;)V
 	public synthetic fun <init> (Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBlockQuote ()Lkotlin/jvm/functions/Function3;
 	public final fun getCodeBlock ()Lkotlin/jvm/functions/Function3;
 	public final fun getHeading ()Lkotlin/jvm/functions/Function3;
@@ -117,7 +116,6 @@ public final class com/adamglin/compose/markdown/compose/MarkdownComponents {
 	public final fun getTable ()Lkotlin/jvm/functions/Function3;
 	public final fun getTaskCheckbox ()Lkotlin/jvm/functions/Function3;
 	public final fun getThematicBreak ()Lkotlin/jvm/functions/Function3;
-	public fun hashCode ()I
 }
 
 public abstract interface class com/adamglin/compose/markdown/compose/MarkdownContainerScope {

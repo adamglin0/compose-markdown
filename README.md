@@ -146,7 +146,7 @@ Without a renderer, math shows its LaTeX source. A math block that has not been 
 - Links open through `LocalUriHandler`. Pass `onLinkClick` to handle them yourself.
 - `codeHighlighter` colors closed fenced code blocks. It defaults to `DefaultCodeHighlighter`, which is built on `dev.snipme:highlights`; pass `null` to turn highlighting off.
 - Images show their alt text. Set `MarkdownComponents(image = { image -> ... })` to load them with your own image library.
-- Lambdas, including `MarkdownComponents` slots, can be new on every call. `codeHighlighter` and `mathRenderer` should be long-lived instances, such as objects or values you `remember`.
+- `onLinkClick` and `MarkdownComponents` can be new on every call. A slot lambda that changes re-runs for every element of its kind on screen, so hoist or `remember` slots that capture changing values. `codeHighlighter` and `mathRenderer` should be long-lived instances, such as objects or values you `remember`.
 
 ### Components
 
@@ -192,7 +192,7 @@ fun Message(content: String) {
 }
 ```
 
-`copyToClipboard` and `Divider` stand for your own code. `sample-chat` has a working version in `SampleMarkdownComponents.kt`. Each slot should emit one layout node; wrap several in a `Column` or `Box`, as above. `LazyListScope.markdown` takes the same `components`.
+`copyToClipboard` and `Divider` stand for your own code. `sample-chat` has a working version in `SampleMarkdownComponents.kt`. Each slot should emit one layout node; wrap several in a `Column` or `Box`, as above. A replaced slot drops the default's accessibility semantics, such as `heading()` on headings, unless you set them yourself. `LazyListScope.markdown` takes the same `components`.
 
 ## Parse without Compose
 

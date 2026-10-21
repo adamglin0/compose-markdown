@@ -26,7 +26,7 @@ import com.adamglin.compose.markdown.core.model.MarkdownDocument
  * @param mathRenderer renders LaTeX; `null` shows math source text. Pass a long-lived instance
  *   (e.g. `remember`ed): a new instance recomposes every block.
  * @param components renders each kind of element; the defaults are the built-in rendering. May
- *   be a new instance on every call: a new instance re-runs the slots, not the blocks.
+ *   be a new instance on every call: only slots whose lambda changed re-run, never the blocks.
  * @param onLinkClick handles link clicks; `null` opens links with `LocalUriHandler`.
  */
 @Composable

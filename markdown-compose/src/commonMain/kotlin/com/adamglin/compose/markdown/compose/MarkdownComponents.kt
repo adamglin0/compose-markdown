@@ -30,9 +30,13 @@ import com.adamglin.compose.markdown.core.model.ListType
  * its own slots and streaming behavior. A block slot should emit one layout node (wrap several in
  * a `Column` or `Box`), as the default does.
  *
- * Lambdas may be new on every call, as they are in a `LazyListScope` builder: a new instance only
- * re-runs the slots, never recomposes the blocks around them. Instances with the same slots are
- * equal.
+ * Instances and lambdas may be new on every call, as they are in a `LazyListScope` builder: each
+ * slot is tracked on its own, so a new lambda re-runs that slot for the composed elements and
+ * nothing else; an unchanged lambda (a default, or a non-capturing or remembered lambda) re-runs
+ * nothing. Hoist or `remember` capturing slots that would otherwise change on every chunk.
+ *
+ * Replacing a slot replaces the default's semantics too: keep `heading()` semantics on a custom
+ * heading and the checkbox role and state on a custom task checkbox.
  *
  * @param paragraph a paragraph.
  * @param heading a heading; `block.level` is 1-6.
@@ -63,17 +67,7 @@ public class MarkdownComponents(
     public val table: @Composable MarkdownBlockScope<BlockNode.TableBlock>.() -> Unit = { DefaultContent() },
     public val thematicBreak: @Composable MarkdownBlockScope<BlockNode.ThematicBreak>.() -> Unit = { DefaultContent() },
     public val image: (@Composable (MarkdownImage) -> Unit)? = null,
-) {
-    private val slots: List<Any?>
-        get() = listOf(
-            paragraph, heading, codeBlock, mathBlock, blockQuote, list, listItem, listMarker, taskCheckbox,
-            table, thematicBreak, image,
-        )
-
-    override fun equals(other: Any?): Boolean = other is MarkdownComponents && slots == other.slots
-
-    override fun hashCode(): Int = slots.hashCode()
-}
+)
 
 /** The element a [MarkdownComponents] slot renders, and its built-in rendering. */
 @Stable

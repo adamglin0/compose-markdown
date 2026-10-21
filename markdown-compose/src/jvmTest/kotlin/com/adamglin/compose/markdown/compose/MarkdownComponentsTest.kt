@@ -27,7 +27,6 @@ import com.adamglin.compose.markdown.core.model.ListType
 import com.adamglin.compose.markdown.core.model.TaskState
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
@@ -35,14 +34,14 @@ class MarkdownComponentsTest {
     @Test
     fun paragraphSlot() = runComposeUiTest {
         assertReplaceAndDecorate("plain words", "paragraph 1", hasText("plain words")) { mode ->
-            MarkdownComponents(paragraph = { Slot(mode, "paragraph ${block.children.size}") { DefaultContent() } })
+            MarkdownComponents(paragraph = { Slot(mode, "paragraph ${block.children.size}") { DefaultContent(it) } })
         }
     }
 
     @Test
     fun headingSlot() = runComposeUiTest {
         assertReplaceAndDecorate("## Title", "heading 2", hasText("Title")) { mode ->
-            MarkdownComponents(heading = { Slot(mode, "heading ${block.level}") { DefaultContent() } })
+            MarkdownComponents(heading = { Slot(mode, "heading ${block.level}") { DefaultContent(it) } })
         }
     }
 
@@ -50,7 +49,7 @@ class MarkdownComponentsTest {
     fun codeBlockSlot() = runComposeUiTest {
         assertReplaceAndDecorate("```kotlin title=x\nval x = 1\n```", "code kotlin [kotlin title=x] true 9", hasText("val x = 1")) { mode ->
             MarkdownComponents(
-                codeBlock = { Slot(mode, "code $language [$infoString] $isClosed ${code.length}") { DefaultContent() } },
+                codeBlock = { Slot(mode, "code $language [$infoString] $isClosed ${code.length}") { DefaultContent(it) } },
             )
         }
     }
@@ -70,28 +69,28 @@ class MarkdownComponentsTest {
     @Test
     fun mathBlockSlot() = runComposeUiTest {
         assertReplaceAndDecorate("$$\nE = mc^2\n$$", "math true", hasText("E = mc^2")) { mode ->
-            MarkdownComponents(mathBlock = { Slot(mode, "math ${block.isClosed}") { DefaultContent() } })
+            MarkdownComponents(mathBlock = { Slot(mode, "math ${block.isClosed}") { DefaultContent(it) } })
         }
     }
 
     @Test
     fun blockQuoteSlot() = runComposeUiTest {
         assertReplaceAndDecorate("> quoted words", "quote 1", hasText("quoted words")) { mode ->
-            MarkdownComponents(blockQuote = { Slot(mode, "quote ${block.children.size}") { DefaultContent() } })
+            MarkdownComponents(blockQuote = { Slot(mode, "quote ${block.children.size}") { DefaultContent(it) } })
         }
     }
 
     @Test
     fun listSlot() = runComposeUiTest {
         assertReplaceAndDecorate("1. one\n2. two", "list 2", hasText("two")) { mode ->
-            MarkdownComponents(list = { Slot(mode, "list ${block.items.size}") { DefaultContent() } })
+            MarkdownComponents(list = { Slot(mode, "list ${block.items.size}") { DefaultContent(it) } })
         }
     }
 
     @Test
     fun listItemSlot() = runComposeUiTest {
         assertReplaceAndDecorate("- only item", "item 1", hasText("only item")) { mode ->
-            MarkdownComponents(listItem = { Slot(mode, "item ${block.children.size}") { DefaultContent() } })
+            MarkdownComponents(listItem = { Slot(mode, "item ${block.children.size}") { DefaultContent(it) } })
         }
     }
 
@@ -101,7 +100,7 @@ class MarkdownComponentsTest {
             MarkdownComponents(
                 listMarker = {
                     val start = (listType as ListType.Ordered).startNumber
-                    Slot(mode, "marker ${start + index} at $depth") { DefaultContent() }
+                    Slot(mode, "marker ${start + index} at $depth") { DefaultContent(it) }
                 },
             )
         }
@@ -123,7 +122,7 @@ class MarkdownComponentsTest {
     fun taskCheckboxSlot() = runComposeUiTest {
         assertReplaceAndDecorate("- [x] done", "task true", checkbox) { mode ->
             MarkdownComponents(
-                taskCheckbox = { Slot(mode, "task ${block.taskState == TaskState.Checked}") { DefaultContent() } },
+                taskCheckbox = { Slot(mode, "task ${block.taskState == TaskState.Checked}") { DefaultContent(it) } },
             )
         }
     }
@@ -131,7 +130,7 @@ class MarkdownComponentsTest {
     @Test
     fun tableSlot() = runComposeUiTest {
         assertReplaceAndDecorate("| a | b |\n|---|---|\n| 1 | 2 |", "table 2x1", hasText("2")) { mode ->
-            MarkdownComponents(table = { Slot(mode, "table ${block.header.cells.size}x${block.rows.size}") { DefaultContent() } })
+            MarkdownComponents(table = { Slot(mode, "table ${block.header.cells.size}x${block.rows.size}") { DefaultContent(it) } })
         }
     }
 
@@ -139,7 +138,7 @@ class MarkdownComponentsTest {
     fun thematicBreakSlot() = runComposeUiTest {
         // The default rule has no semantics; the decorated case checks it through the tagged box.
         assertReplaceAndDecorate("---", "break ---", defaultContent = null) { mode ->
-            MarkdownComponents(thematicBreak = { Slot(mode, "break ${block.marker}") { DefaultContent() } })
+            MarkdownComponents(thematicBreak = { Slot(mode, "break ${block.marker}") { DefaultContent(it) } })
         }
     }
 
@@ -214,22 +213,14 @@ class MarkdownComponentsTest {
         onNodeWithText("custom rule").assertExists()
     }
 
-    @Test
-    fun componentsWithTheSameSlotsAreEqual() {
-        assertEquals(MarkdownComponents(), MarkdownComponents())
-        val image: @Composable (MarkdownImage) -> Unit = { BasicText(it.url) }
-        assertEquals(MarkdownComponents(image = image), MarkdownComponents(image = image))
-        assertNotEquals(MarkdownComponents(), MarkdownComponents(image = image))
-    }
-
     private enum class Mode { Replace, Decorate }
 
-    /** Shows [label]; in [Mode.Decorate] also the default content, in a box tagged [DEFAULT_TAG]. */
+    /** Shows [label]; in [Mode.Decorate] also the default content, given a modifier tagged [DEFAULT_TAG]. */
     @Composable
-    private fun Slot(mode: Mode, label: String, default: @Composable () -> Unit) {
+    private fun Slot(mode: Mode, label: String, default: @Composable (Modifier) -> Unit) {
         Column {
             BasicText(label)
-            if (mode == Mode.Decorate) Box(Modifier.testTag(DEFAULT_TAG)) { default() }
+            if (mode == Mode.Decorate) default(Modifier.testTag(DEFAULT_TAG))
         }
     }
 
