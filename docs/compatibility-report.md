@@ -24,7 +24,7 @@ This repository targets predictable append-only rendering first, not full spec p
 | Fenced code blocks | Supported | open fences stay renderable during streaming |
 | Block quotes | Supported | quote continuation stays localized to affected container |
 | Ordered / unordered lists | Supported | stable IDs are preserved across tail growth |
-| Task list items | Supported | parsed in core, rendered as textual markers |
+| Task list items | Supported | parsed in core, rendered as read-only checkbox markers |
 | Tables | Supported | pipe-table subset only |
 | Thematic breaks | Supported | dedicated block node |
 | Emphasis / strong / code / links | Supported | CommonMark inline algorithm (delimiter + bracket stacks) |
@@ -56,7 +56,7 @@ This repository targets predictable append-only rendering first, not full spec p
 | --- | --- | --- |
 | CommonMark-style core blocks | Supported | same core engine surface as other presets |
 | Tables | Supported | pipe-table subset with alignment metadata |
-| Task list items | Supported | parsed in core, rendered as textual markers |
+| Task list items | Supported | parsed in core, rendered as read-only checkbox markers |
 | Reference links / definitions | Supported | one-line definitions only |
 | Strikethrough | Supported | GFM `~` / `~~`; all GFM strikethrough examples pass |
 | Autolinks / bare URLs | Supported | GFM extended autolinks; all GFM autolink extension examples pass |

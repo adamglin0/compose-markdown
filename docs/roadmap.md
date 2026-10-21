@@ -52,11 +52,11 @@ This roadmap defines the implementation order and stop points. The order is deli
 
 Status: implemented in the current repository checkpoint, including newline-normalized append parsing and sample diagnostics.
 
-## Stage 6 - RenderIR And Compose Renderer
+## Stage 6 - Compose Renderer
 
 - Goal: render parsed snapshots incrementally at block granularity.
-- Deliverables: RenderIR, Compose mapping, keyed block rendering, preview surfaces in `markdown-compose`.
-- Tests: RenderIR mapping tests, renderer state tests, block-level recomposition tests.
+- Deliverables: Compose mapping straight from snapshot nodes (no intermediate render IR), keyed block rendering, preview surfaces in `markdown-compose`.
+- Tests: renderer state tests, block-level recomposition tests.
 - Docs: renderer usage guide and sample integration notes.
 - Stop point: renderer is usable, but demo app and benchmarks may still be incomplete.
 

@@ -14,15 +14,13 @@
 
 ## Priority 3 - Strengthen Cross-platform Confidence
 
-- add JS or native smoke coverage for `markdown-core` if multiplatform distribution is a near-term goal
-- verify newline normalization, text ranges, and reference-link behavior on another non-JVM target before claiming stronger multiplatform parity
 - keep renderer-facing assumptions isolated so non-Compose consumers can be added later without reshaping core APIs
 
 ## Priority 4 - Prepare Release Surface
 
 - freeze the public engine and snapshot contract for one milestone
 - decide whether module-level READMEs should stay lightweight or become publication-ready package docs
-- add publication metadata only when artifact coordinates, compatibility promises, and changelog policy are agreed
+- agree on compatibility promises and changelog policy for published releases
 
 ## Priority 5 - Renderer Follow-up
 

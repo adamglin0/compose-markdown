@@ -20,14 +20,15 @@ Measured on this repository with the built-in runner and `MarkdownDialect.GfmCom
 
 ## Metric Definitions
 
-- `append total ms`: one scenario中全部 `append()` 调用耗时之和，不含 `finish()`。
-- `avg append us`: `append total ms / appendCount`，只反映单次 `append()` 的平均成本。
-- `finish ms`: 单次 `finish()` 调用耗时，单独统计，避免掺入 append 平均值。
-- `total ms`: `append total ms + finish ms`。
+- `append total ms`: sum of all `append()` call durations in one scenario run, excluding `finish()`.
+- `avg append us`: `append total ms / appendCount`, in microseconds; the average cost of a single `append()`.
+- `finish ms`: duration of the single `finish()` call, reported separately so it does not skew the append average.
+- `total ms`: `append total ms + finish ms`.
+- `alloc bytes`: bytes allocated on the benchmark thread during the run.
 
 ## Latest Measured Results
 
-下表应与当前 benchmark runner 输出口径一致。
+Each value is the average of 8 measured iterations after 3 warmup iterations (`./gradlew :benchmarks:run`), from a single local JVM run. Treat the numbers as relative indicators for this repository, not as cross-machine baselines.
 
 | Scenario | Append total ms | Avg append us | Finish ms | Total ms | Alloc bytes |
 | --- | ---: | ---: | ---: | ---: | ---: |

@@ -23,6 +23,10 @@ huarangmeng-latex-parser = { module = "io.github.huarangmeng:latex-parser", vers
 huarangmeng-latex-renderer = { module = "io.github.huarangmeng:latex-renderer", version.ref = "huarangmeng-latex" }
 ratex = { module = "io.github.darriousliu:ratex", version.ref = "ratex" }
 ratex-native-darwin-aarch64 = { module = "io.github.darriousliu:ratex-native-darwin-aarch64", version.ref = "ratex" }
+ratex-native-darwin-x64 = { module = "io.github.darriousliu:ratex-native-darwin-x86-64", version.ref = "ratex" }
+ratex-native-linux-aarch64 = { module = "io.github.darriousliu:ratex-native-linux-aarch64", version.ref = "ratex" }
+ratex-native-linux-x64 = { module = "io.github.darriousliu:ratex-native-linux-x86-64", version.ref = "ratex" }
+ratex-native-windows-x64 = { module = "io.github.darriousliu:ratex-native-windows-x86-64", version.ref = "ratex" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
