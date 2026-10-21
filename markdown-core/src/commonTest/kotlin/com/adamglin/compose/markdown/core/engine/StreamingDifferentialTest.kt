@@ -1,5 +1,6 @@
 package com.adamglin.compose.markdown.core.engine
 
+import com.adamglin.compose.markdown.core.api.MarkdownEngine
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.fail
@@ -78,6 +79,29 @@ class StreamingDifferentialTest {
         }
         if (failures.isNotEmpty()) {
             fail("${failures.size} streaming mismatches:\n" + failures.take(10).joinToString("\n"))
+        }
+    }
+
+    /**
+     * Snapshots share storage (stable blocks, cached children, committed inline nodes, code text), and the
+     * block parser's forks write past the shared parts: no later append may change a published snapshot.
+     */
+    @Test
+    fun publishedSnapshotsNeverChange() {
+        allDialects.forEach { dialect ->
+            corpus.forEach { (name, text) ->
+                val engine = MarkdownEngine(dialect = dialect)
+                val published = randomChunks(text, Random(name.hashCode()), minSize = 1, maxSize = 6).map { chunk ->
+                    val snapshot = engine.append(chunk).snapshot
+                    snapshot to snapshot.document.blocks.dump()
+                }
+                engine.finish()
+                published.forEachIndexed { step, (snapshot, dump) ->
+                    if (snapshot.document.blocks.dump() != dump) {
+                        fail("${dialect.id} $name: snapshot of step $step changed after later appends")
+                    }
+                }
+            }
         }
     }
 
