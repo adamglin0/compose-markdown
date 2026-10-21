@@ -57,7 +57,7 @@ class IncrementalEngineStressTest {
             assertEquals(
                 full.finish().snapshot.document.blocks.debugShape(),
                 incremental.finish().snapshot.document.blocks.debugShape(),
-                "dialect: ${dialect.id}",
+                "dialect: $dialect",
             )
         }
     }

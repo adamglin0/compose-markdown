@@ -14,8 +14,8 @@ import com.adamglin.compose.markdown.core.model.TextRange
  * a single left-to-right scan that emits text, code spans, math spans, autolinks and breaks, while
  * recording emphasis delimiter runs on a delimiter stack and `[` / `![` openers on a bracket stack.
  * Closing brackets resolve links ("look for link or image") and the delimiter stack is resolved by
- * "process emphasis". GFM strikethrough and extended autolinks, plus inline math, are gated by
- * [MarkdownDialect.inlineFeatures].
+ * "process emphasis". GFM strikethrough and extended autolinks, reference links and inline math are
+ * gated by [MarkdownDialect.inlineFeatures].
  *
  * Every scan is bounded so that parsing stays linear on pathological input: closers for code spans
  * and math spans are looked up through forward-only indexes, link openers are never re-scanned, and
@@ -120,7 +120,7 @@ internal class InlineParser(
          * break node, so the finished nodes never merge with later text: they are converted and committed.
          */
         private fun commitIfFinal() {
-            if (!features.softBreaks || brackets != null || readEnd > pos) {
+            if (brackets != null || readEnd > pos) {
                 return
             }
             // Closers before the line start match the same openers whenever emphasis is processed, so
@@ -148,14 +148,14 @@ internal class InlineParser(
                 '\n' -> parseLineEnding()
                 ' ' -> parseSpacesBeforeLineEnding()
                 '\\' -> parseBackslash()
-                '`' -> features.inlineCode && parseCodeSpan()
-                '*', '_' -> (features.emphasis || features.strong) && parseDelimiterRun()
+                '`' -> parseCodeSpan()
+                '*', '_' -> parseDelimiterRun()
                 '~' -> features.strikethrough && parseDelimiterRun()
                 '$' -> features.inlineMath && parseDollarMath()
-                '[' -> (features.inlineLinks || features.referenceLinks) && openBracket(image = false)
-                '!' -> features.images && text.getOrNull(pos + 1) == '[' && openBracket(image = true)
+                '[' -> openBracket(image = false)
+                '!' -> text.getOrNull(pos + 1) == '[' && openBracket(image = true)
                 ']' -> closeBracket()
-                '<' -> features.autolinks && parseAngleAutolink()
+                '<' -> parseAngleAutolink()
                 '&' -> parseCharacterReference()
                 else -> parseExtendedUrlAutolink()
             }
@@ -192,7 +192,7 @@ internal class InlineParser(
         /** Line ending: soft break, then the next line's leading spaces are dropped. */
         private fun parseLineEnding(): Boolean {
             val start = pos
-            appendBreakOrNewline(start)
+            appendSoftBreak(start)
             pos = skipSpacesAndTabs(text, start + 1, text.length)
             lineStart = pos
             return true
@@ -209,7 +209,7 @@ internal class InlineParser(
             if (text[runEnd] != '\n') {
                 return false
             }
-            if (runEnd - start >= 2 && features.hardBreaks) {
+            if (runEnd - start >= 2) {
                 appendLeaf(
                     InlineNode.HardBreak(
                         id = inlineId(kind = "hard-break", range = toRange(start, runEnd + 1), salt = 0L),
@@ -228,7 +228,7 @@ internal class InlineParser(
             val start = pos
             val next = text.getOrNull(start + 1)
             when {
-                next == '\n' && features.hardBreaks -> {
+                next == '\n' -> {
                     appendLeaf(
                         InlineNode.HardBreak(
                             id = inlineId(kind = "hard-break", range = toRange(start, start + 2), salt = 1L),
@@ -261,15 +261,9 @@ internal class InlineParser(
             return true
         }
 
-        private fun appendBreakOrNewline(index: Int) {
+        private fun appendSoftBreak(index: Int) {
             val range = toRange(index, index + 1)
-            appendLeaf(
-                if (features.softBreaks) {
-                    InlineNode.SoftBreak(id = inlineId(kind = "soft-break", range = range, salt = 0L), range = range)
-                } else {
-                    InlineNode.Text(id = inlineId(kind = "text", range = range, salt = '\n'.code.toLong()), range = range, literal = "\n")
-                },
-            )
+            appendLeaf(InlineNode.SoftBreak(id = inlineId(kind = "soft-break", range = range, salt = 0L), range = range))
         }
 
         private fun skipSpaces(start: Int): Int {
@@ -561,13 +555,7 @@ internal class InlineParser(
 
         /** Returns the next closer to examine. */
         private fun matchEmphasis(opener: Delimiter, closer: Delimiter): Delimiter? {
-            var used = if (closer.count >= 2 && opener.count >= 2) 2 else 1
-            if (used == 2 && !features.strong) {
-                used = 1
-            }
-            if (used == 1 && !features.emphasis) {
-                return closer.next
-            }
+            val used = if (closer.count >= 2 && opener.count >= 2) 2 else 1
             val openerNode = opener.node
             val closerNode = closer.node
             opener.count -= used
@@ -686,7 +674,7 @@ internal class InlineParser(
                 appendText(closeStart, pos, "]")
                 return true
             }
-            val inlineTarget = matchInlineLinkTarget(opener)
+            val inlineTarget = matchInlineLinkTarget()
             val target = inlineTarget ?: matchReferenceTarget(opener, closeStart)
             // A link target or a label after `]` may span lines, and a failed one may succeed with more text.
             val after = text.getOrNull(closeStart + 1)
@@ -733,9 +721,8 @@ internal class InlineParser(
         }
 
         /** `(destination "title")` after `]`. */
-        private fun matchInlineLinkTarget(opener: Bracket): LinkTarget? {
-            val enabled = if (opener.image) features.images else features.inlineLinks
-            if (!enabled || pos >= text.length || text[pos] != '(') {
+        private fun matchInlineLinkTarget(): LinkTarget? {
+            if (pos >= text.length || text[pos] != '(') {
                 return null
             }
             var cursor = skipSpacesAndOneLineEnding(text, pos + 1, text.length)
