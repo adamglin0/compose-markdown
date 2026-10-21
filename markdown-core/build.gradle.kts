@@ -10,6 +10,7 @@ plugins {
 }
 
 kotlin {
+    // The parser has no Java 21 dependencies; keep it consumable from Java 17.
     jvmToolchain(17)
 
     @Suppress("UnstableApiUsage")

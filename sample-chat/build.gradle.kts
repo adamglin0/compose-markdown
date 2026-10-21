@@ -81,7 +81,8 @@ kotlin {
         browser()
         binaries.executable()
     }
-    jvmToolchain(17)
+    // Desktop runs markdown-compose, which needs Java 21 (see markdown-compose/build.gradle.kts).
+    jvmToolchain(21)
 
     listOf(iosArm64, iosSimulatorArm64).forEach { iosTarget ->
         iosTarget.binaries.framework {
@@ -156,8 +157,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     packaging {

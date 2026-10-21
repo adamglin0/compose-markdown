@@ -12,6 +12,7 @@ plugins {
 }
 
 kotlin {
+    // dev.snipme:highlights ships Java 21 bytecode, so JVM consumers of this module need Java 21.
     jvmToolchain(21)
 
     @Suppress("UnstableApiUsage")
