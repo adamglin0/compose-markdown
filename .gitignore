@@ -6,3 +6,4 @@ build/
 .idea/
 yarn.lock
 mise.local.toml
+local.properties
