@@ -155,8 +155,10 @@ class IncrementalEngineTest {
         assertIs<BlockNode.Paragraph>(blocks.single()).children.joinToString("") { (it as InlineNode.Text).literal }
 
     private companion object {
-        // Built from chars: a lone surrogate in a string literal does not survive compilation to JavaScript.
-        val HIGH_SURROGATE = '\uD83D'.toString()
-        val LOW_SURROGATE = '\uDE00'.toString()
+        // Split from a whole emoji at runtime: the JS compiler folds lone-surrogate constants into string
+        // literals, which do not survive UTF-8 encoding of the emitted JavaScript.
+        private const val EMOJI = "\uD83D\uDE00"
+        val HIGH_SURROGATE = EMOJI[0].toString()
+        val LOW_SURROGATE = EMOJI[1].toString()
     }
 }
