@@ -72,6 +72,9 @@ internal fun rememberMarkdownRenderContext(
     val colors = MarkdownTheme.colors
     val typography = MarkdownTheme.typography
     val blockSpacing = MarkdownTheme.blockSpacing
+    // Callers often pass fresh lambdas (always so from a LazyListScope builder, which is not
+    // composable). Keying on them would rebuild the context and recompose every block on each
+    // update, so only their presence is a key and the latest instance is read through state.
     val currentOnLinkClick = rememberUpdatedState(onLinkClick)
     val hasLinkHandler = onLinkClick != null
     val linkListener = remember(hasLinkHandler) {
@@ -83,15 +86,24 @@ internal fun rememberMarkdownRenderContext(
             null
         }
     }
+    val currentImageContent = rememberUpdatedState(imageContent)
+    val hasImageContent = imageContent != null
+    val stableImageContent: (@Composable (MarkdownImage) -> Unit)? = remember(hasImageContent) {
+        if (hasImageContent) {
+            { image -> currentImageContent.value?.invoke(image) }
+        } else {
+            null
+        }
+    }
     val styles = remember(colors, typography) { MarkdownStyles(colors, typography) }
-    return remember(colors, styles, blockSpacing, codeHighlighter, mathRenderer, imageContent, linkListener) {
+    return remember(colors, styles, blockSpacing, codeHighlighter, mathRenderer, stableImageContent, linkListener) {
         MarkdownRenderContext(
             colors = colors,
             styles = styles,
             blockSpacing = blockSpacing,
             codeHighlighter = codeHighlighter,
             mathRenderer = mathRenderer,
-            imageContent = imageContent,
+            imageContent = stableImageContent,
             linkListener = linkListener,
         )
     }
