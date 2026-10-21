@@ -1,27 +1,28 @@
 package com.adamglin.compose.markdown.compose
 
-import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.text.TextStyle
 
 /**
- * Pluggable renderer for LaTeX/math regions recognized by the parser.
+ * Pluggable renderer for LaTeX regions recognized by the parser.
  *
- * markdown-compose ships only this interface; concrete implementations (e.g. backed by a
- * LaTeX library) live in the consuming app. When no renderer is supplied, math falls back
- * to its raw source text.
+ * markdown-compose ships only this interface; implementations (backed by a LaTeX library) live in
+ * the consuming app. Without a renderer, math shows its source text. Math blocks that are still
+ * streaming (unclosed) always show source text and are never passed to the renderer.
  */
+@Stable
 interface MathRenderer {
-    /** Renders a display/block formula (`$$…$$` or `\[…\]`). */
+    /** Renders a display formula (`$$…$$` or `\[…\]`). */
     @Composable
     fun BlockMath(latex: String, modifier: Modifier)
 
     /**
-     * Builds the [InlineTextContent] used to lay an inline formula (`$…$` or `\(…\)`) inside a
-     * line of text. The implementation owns the placeholder sizing (it may use [fontSize] and
-     * `LocalDensity`).
+     * Renders an inline formula (`$…$` or `\(…\)`) at its natural size. The surrounding text
+     * measures the content and reserves exactly that much space in the line; [style] is the
+     * surrounding text style (font size and color).
      */
     @Composable
-    fun inlineMathContent(latex: String, fontSize: TextUnit): InlineTextContent
+    fun InlineMath(latex: String, style: TextStyle)
 }

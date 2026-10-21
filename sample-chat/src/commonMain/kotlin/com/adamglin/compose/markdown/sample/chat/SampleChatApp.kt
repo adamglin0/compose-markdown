@@ -2,16 +2,17 @@ package com.adamglin.compose.markdown.sample.chat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -33,10 +34,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.adamglin.compose.markdown.compose.Markdown
+import com.adamglin.compose.markdown.compose.MarkdownColors
+import com.adamglin.compose.markdown.compose.MarkdownState
+import com.adamglin.compose.markdown.compose.MarkdownTheme
 import com.adamglin.compose.markdown.compose.MathRenderer
-import com.adamglin.compose.markdown.compose.MarkdownRendererState
-import com.adamglin.compose.markdown.compose.rememberMarkdownRendererState
+import com.adamglin.compose.markdown.compose.markdown
 import com.adamglin.compose.markdown.compose.rememberMarkdownState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -51,10 +53,7 @@ fun ComposeMarkdownSampleApp(
         val colors = SampleChatTheme.colors
         val uriHandler = LocalUriHandler.current
         val scope = rememberCoroutineScope()
-        val markdownState = rememberMarkdownState(
-            engineFactory = SampleChatDefaults::createMarkdownEngine,
-        )
-        val rendererState = rememberMarkdownRendererState()
+        val markdownState = rememberMarkdownState(dialect = SampleChatDefaults.dialect)
 
         var selectedScriptIndex by remember { mutableIntStateOf(0) }
         var chunkDelayMs by remember { mutableFloatStateOf(120f) }
@@ -84,7 +83,8 @@ fun ComposeMarkdownSampleApp(
                 },
             )
             markdownState.reset()
-            rendererState.render(SampleChatDefaults.finalSnapshot(message = selectedScript.message))
+            markdownState.append(selectedScript.message)
+            markdownState.finish()
             streamedChunkCount = 0
             statusText = "Switched to ${selectedScript.title}. Showing the full preview."
         }
@@ -99,22 +99,19 @@ fun ComposeMarkdownSampleApp(
             )
 
             markdownState.reset()
-            rendererState.render(markdownState.snapshot)
             streamedChunkCount = 0
             statusText = "Replaying ${selectedScript.title} chunk by chunk."
             isStreaming = true
             streamJob = scope.launch {
                 val chunks = SampleChatDefaults.createStreamingChunks(selectedScript.message)
                 chunks.forEachIndexed { index, chunk ->
-                    val delta = markdownState.append(chunk)
-                    rendererState.apply(delta)
+                    markdownState.append(chunk)
                     streamedChunkCount = index + 1
                     statusText = "${selectedScript.title}: appended ${index + 1}/${chunks.size} chunks."
                     delay(chunkDelayMs.toLong())
                 }
 
-                val finalDelta = markdownState.finish()
-                rendererState.apply(finalDelta)
+                markdownState.finish()
                 streamedChunkCount = chunks.size
                 statusText = "${selectedScript.title} replay complete."
                 streamJob = null
@@ -183,7 +180,7 @@ fun ComposeMarkdownSampleApp(
                     )
 
                     PreviewCanvas(
-                        rendererState = rendererState,
+                        markdownState = markdownState,
                         lastLinkClick = lastLinkClick,
                         mathRenderer = mathRenderer,
                         onLinkClick = { url ->
@@ -361,7 +358,7 @@ private fun Toolbar(
 
 @Composable
 private fun PreviewCanvas(
-    rendererState: MarkdownRendererState,
+    markdownState: MarkdownState,
     lastLinkClick: String,
     mathRenderer: MathRenderer?,
     onLinkClick: (String) -> Unit,
@@ -410,19 +407,19 @@ private fun PreviewCanvas(
                         shape = RoundedCornerShape(22.dp),
                     )
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 26.dp, vertical = 24.dp),
-                ) {
-                    Markdown(
-                        state = rendererState,
-                        modifier = Modifier.fillMaxWidth(),
-                        mathRenderer = mathRenderer,
-                        onLinkClick = onLinkClick,
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
+                MarkdownTheme(colors = if (isSystemInDarkTheme()) MarkdownColors.Dark else MarkdownColors.Light) {
+                    val document = markdownState.document
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 26.dp, vertical = 24.dp),
+                    ) {
+                        markdown(
+                            document = document,
+                            key = "preview",
+                            mathRenderer = mathRenderer,
+                            onLinkClick = onLinkClick,
+                        )
+                    }
                 }
             }
         }

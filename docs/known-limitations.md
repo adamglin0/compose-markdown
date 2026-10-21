@@ -27,9 +27,13 @@
 ## Rendering
 
 - Compose rendering is block-oriented and intentionally lightweight
-- images currently render as alt text only; this repository does not include an image loading pipeline
+- images render as alt text unless the app passes an `imageContent` composable; the library ships no image loading
+- inline math and images are measured on first composition, so their line reflows once when they first appear
+- link titles are not shown
 - task list checkboxes render as read-only UI; toggle interactions are not implemented
-- table rendering sizes columns from content and honors left/center/right alignment, but does not implement full GitHub-style interactive or sticky table chrome
+- table rendering sizes columns from content, honors left/center/right alignment and scrolls horizontally when too wide, but has no sticky headers or GitHub-style chrome; a table is one layout that composes and measures every cell, so very large tables are not virtualized
+- syntax highlighting covers the languages of `dev.snipme:highlights` (C, C++, C#, CoffeeScript, Dart, Go, Java, JavaScript, Kotlin, Perl, PHP, Python, Ruby, Rust, Shell, Swift, TypeScript and their common aliases); other languages render as plain monospace text
+- text is selectable only inside an app-provided `SelectionContainer`; selection across lazy items follows `LazyColumn` limits
 
 ## Tooling And Distribution
 

@@ -1,287 +1,172 @@
 package com.adamglin.compose.markdown.compose
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.Placeable
-import androidx.compose.ui.layout.SubcomposeLayout
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.TableAlignment
 
+/**
+ * A GFM table laid out as a grid. Column widths come from the cells' intrinsic widths: columns keep
+ * their preferred width when everything fits, shrink (never below their longest word) when it does
+ * not, and the table scrolls horizontally when even the narrowest layout is wider than the space.
+ *
+ * Plain [Layout] with intrinsic queries on the cells, so every cell is composed once and the table
+ * can sit inside any parent (including ones that ask for intrinsics). The grid sits in a regular
+ * `horizontalScroll`, which gives it unbounded width, so the viewport width is captured in front of
+ * the scroll and read by the grid's measurement.
+ */
 @Composable
 internal fun TableBlock(
     block: BlockNode.TableBlock,
-    styles: MarkdownBlockStyles,
-    mathRenderer: MathRenderer?,
-    onLinkClick: (String) -> Unit,
+    context: MarkdownRenderContext,
     modifier: Modifier = Modifier,
 ) {
-    val rows = remember(block) { listOf(block.header) + block.rows }
     val columnCount = block.header.cells.size
     if (columnCount == 0) return
+    val rows = listOf(block.header) + block.rows
+    val borderColor = context.colors.border
+    var viewportWidth by remember { mutableIntStateOf(Constraints.Infinity) }
 
-    val headerStyle = MarkdownTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-    val bodyStyle = MarkdownTheme.typography.bodyMedium
-    val borderColor = MarkdownTheme.colors.borderMuted
-    val cellModels = remember(block, styles, onLinkClick) {
-        rows.map { row ->
-            row.cells.map { cell ->
-                cell.children.toInlineRenderModel(styles.inline, onLinkClick)
+    Layout(
+        content = {
+            rows.forEachIndexed { rowIndex, row ->
+                key(row.id.raw) {
+                    for (columnIndex in 0 until columnCount) {
+                        val cell = row.cells.getOrNull(columnIndex)
+                        val alignment = block.alignments.getOrElse(columnIndex) { TableAlignment.Default }
+                        val style = if (rowIndex == 0) context.styles.tableHeader else context.styles.table
+                        if (cell == null) {
+                            Box(Modifier)
+                        } else {
+                            MarkdownInlineText(
+                                nodes = cell.children,
+                                style = style.merge(TextStyle(textAlign = alignment.toTextAlign())),
+                                context = context,
+                            )
+                        }
+                    }
+                }
             }
-        }
-    }
-
-    TableLayout(
-        columnCount = columnCount,
-        rowCount = rows.size,
-        alignments = block.alignments,
+            Box(Modifier.fillMaxWidth().height(1.dp).background(borderColor))
+        },
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = borderColor.copy(alpha = 0.75f),
-                shape = RoundedCornerShape(10.dp),
-            )
-            .padding(10.dp),
-        divider = {
-            MarkdownDivider(color = borderColor)
-        },
-    ) { rowIndex, columnIndex, alignment ->
-        val model = cellModels[rowIndex][columnIndex]
-        val baseStyle = if (rowIndex == 0) headerStyle else bodyStyle
-        // Prefer content-sized measure: skip fillMaxWidth so preferred widths stay honest.
-        MarkdownInlineText(
-            model = model,
-            style = baseStyle.copy(textAlign = alignment.toTextAlign()),
-            mathRenderer = mathRenderer,
-            fillMaxWidth = false,
-        )
-    }
-}
-
-@Composable
-private fun TableLayout(
-    columnCount: Int,
-    rowCount: Int,
-    alignments: List<TableAlignment>,
-    modifier: Modifier = Modifier,
-    columnSpacing: Dp = 8.dp,
-    rowSpacing: Dp = 6.dp,
-    divider: @Composable () -> Unit,
-    cell: @Composable (rowIndex: Int, columnIndex: Int, alignment: TableAlignment) -> Unit,
-) {
-    SubcomposeLayout(modifier) { constraints ->
-        val columnSpacingPx = columnSpacing.roundToPx()
-        val rowSpacingPx = rowSpacing.roundToPx()
-        val totalColumnSpacing = columnSpacingPx * (columnCount - 1).coerceAtLeast(0)
-        val resolvedAlignments = Array(columnCount) { columnIndex ->
-            alignments.getOrElse(columnIndex) { TableAlignment.Default }
-        }
-
-        val preferredCells: Array<Array<Placeable>> = Array(rowCount) { rowIndex ->
-            Array(columnCount) { columnIndex ->
-                subcompose("pref_${rowIndex}_$columnIndex") {
-                    cell(rowIndex, columnIndex, resolvedAlignments[columnIndex])
-                }.first().measure(Constraints())
+            .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+            .padding(10.dp)
+            .layout { measurable, constraints ->
+                if (viewportWidth != constraints.maxWidth) viewportWidth = constraints.maxWidth
+                val placeable = measurable.measure(constraints)
+                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
             }
-        }
+            .horizontalScroll(rememberScrollState()),
+    ) { measurables, constraints ->
+        val cellMeasurables = measurables.subList(0, measurables.size - 1)
+        val dividerMeasurable = measurables.last()
+        val rowCount = rows.size
+        val columnSpacing = 12.dp.roundToPx()
+        val rowSpacing = 6.dp.roundToPx()
+        val totalSpacing = columnSpacing * (columnCount - 1)
 
-        val preferredWidths = IntArray(columnCount) { columnIndex ->
-            var maxWidth = 0
-            for (rowIndex in 0 until rowCount) {
-                maxWidth = maxOf(maxWidth, preferredCells[rowIndex][columnIndex].width)
-            }
-            maxWidth
+        val preferred = IntArray(columnCount)
+        val minimum = IntArray(columnCount)
+        cellMeasurables.forEachIndexed { index, cell ->
+            val column = index % columnCount
+            preferred[column] = maxOf(preferred[column], cell.maxIntrinsicWidth(Constraints.Infinity))
+            minimum[column] = maxOf(minimum[column], cell.minIntrinsicWidth(Constraints.Infinity))
         }
-        val availableWidth = if (constraints.hasBoundedWidth) {
-            (constraints.maxWidth - totalColumnSpacing).coerceAtLeast(0)
-        } else {
-            preferredWidths.sum()
-        }
-        val columnWidths = resolveTableColumnWidths(preferredWidths, availableWidth)
+        val available = if (viewportWidth != Constraints.Infinity) viewportWidth else preferred.sum() + totalSpacing
+        val widths = resolveTableColumnWidths(preferred, minimum, (available - totalSpacing).coerceAtLeast(0))
+        val contentWidth = widths.sum() + totalSpacing
 
-        val cells: Array<Array<Placeable>> = Array(rowCount) { rowIndex ->
-            Array(columnCount) { columnIndex ->
-                val preferred = preferredCells[rowIndex][columnIndex]
-                if (preferred.width <= columnWidths[columnIndex]) {
-                    preferred
-                } else {
-                    subcompose("cell_${rowIndex}_$columnIndex") {
-                        cell(rowIndex, columnIndex, resolvedAlignments[columnIndex])
-                    }.first().measure(Constraints(maxWidth = columnWidths[columnIndex]))
-                }
-            }
+        val placeables = cellMeasurables.mapIndexed { index, cell ->
+            val width = widths[index % columnCount]
+            cell.measure(Constraints(minWidth = width, maxWidth = width))
         }
-
-        val layoutWidth = if (constraints.hasBoundedWidth) {
-            constraints.maxWidth
-        } else {
-            (columnWidths.sum() + totalColumnSpacing)
-                .coerceIn(constraints.minWidth, constraints.maxWidth)
+        val divider = dividerMeasurable.measure(Constraints.fixedWidth(contentWidth))
+        val rowHeights = IntArray(rowCount) { row ->
+            (0 until columnCount).maxOf { column -> placeables[row * columnCount + column].height }
         }
-        // Match previous library visuals: a single rule under the header row.
-        val headerDivider = if (rowCount > 0) {
-            subcompose("divider_header") {
-                divider()
-            }.first().measure(Constraints.fixedWidth(layoutWidth))
-        } else {
-            null
-        }
-        val rowHeights = IntArray(rowCount) { rowIndex ->
-            var maxHeight = 0
-            for (columnIndex in 0 until columnCount) {
-                maxHeight = maxOf(maxHeight, cells[rowIndex][columnIndex].height)
-            }
-            maxHeight
-        }
-        var layoutHeight = 0
-        for (rowIndex in 0 until rowCount) {
-            layoutHeight += rowHeights[rowIndex]
-            if (rowIndex == 0 && headerDivider != null) {
-                layoutHeight += rowSpacingPx + headerDivider.height
-            }
-            if (rowIndex != rowCount - 1) {
-                layoutHeight += rowSpacingPx
-            }
-        }
-
-        layout(
-            width = layoutWidth.coerceIn(constraints.minWidth, constraints.maxWidth),
-            height = layoutHeight.coerceIn(constraints.minHeight, constraints.maxHeight),
-        ) {
-            val columnOffsets = IntArray(columnCount)
-            var x = 0
-            for (columnIndex in 0 until columnCount) {
-                columnOffsets[columnIndex] = x
-                x += columnWidths[columnIndex] + columnSpacingPx
-            }
-
+        val height = rowHeights.sum() + rowSpacing * (rowCount - 1) + rowSpacing + divider.height
+        layout(contentWidth, height) {
             var y = 0
-            for (rowIndex in 0 until rowCount) {
-                for (columnIndex in 0 until columnCount) {
-                    val placeable = cells[rowIndex][columnIndex]
-                    placeable.placeRelative(
-                        x = columnOffsets[columnIndex] +
-                            tableCellHorizontalOffset(
-                                alignment = resolvedAlignments[columnIndex],
-                                columnWidth = columnWidths[columnIndex],
-                                childWidth = placeable.width,
-                            ),
-                        y = y,
-                    )
+            for (row in 0 until rowCount) {
+                var x = 0
+                for (column in 0 until columnCount) {
+                    placeables[row * columnCount + column].placeRelative(x, y)
+                    x += widths[column] + columnSpacing
                 }
-                y += rowHeights[rowIndex]
-                if (rowIndex == 0 && headerDivider != null) {
-                    y += rowSpacingPx
-                    headerDivider.placeRelative(0, y)
-                    y += headerDivider.height
-                }
-                if (rowIndex != rowCount - 1) {
-                    y += rowSpacingPx
+                y += rowHeights[row] + rowSpacing
+                if (row == 0) {
+                    divider.placeRelative(0, y)
+                    y += divider.height + rowSpacing
                 }
             }
         }
     }
 }
 
+/**
+ * Resolves column widths from each column's [preferred] (single-line) and [minimum] (longest word)
+ * width. The result sums to [available] when the minimum widths fit; otherwise it is wider and the
+ * table scrolls.
+ */
 internal fun resolveTableColumnWidths(
-    preferredWidths: IntArray,
-    availableWidth: Int,
+    preferred: IntArray,
+    minimum: IntArray,
+    available: Int,
 ): IntArray {
-    if (preferredWidths.isEmpty()) return IntArray(0)
-    val totalPreferred = preferredWidths.sum()
-    if (totalPreferred == 0) {
-        val base = availableWidth / preferredWidths.size
-        val widths = IntArray(preferredWidths.size) { base }
-        widths[widths.lastIndex] += availableWidth - base * preferredWidths.size
-        return widths
+    val count = preferred.size
+    if (count == 0) return IntArray(0)
+    val minimumWidths = IntArray(count) { minOf(minimum[it], preferred[it]) }
+    if (preferred.sum() <= available) {
+        // Everything fits on one line; the trailing column takes the remaining space.
+        return preferred.copyOf().also { it[count - 1] += available - preferred.sum() }
     }
-    if (totalPreferred <= availableWidth) {
-        // Keep short columns at preferred width; remaining space goes to the trailing column
-        // so the table still fills the available width.
-        val widths = preferredWidths.copyOf()
-        widths[widths.lastIndex] += availableWidth - totalPreferred
-        return widths
+    if (minimumWidths.sum() > available) {
+        // Cannot fit without breaking words: give each column a fair share, at least its minimum.
+        val share = available / count
+        return IntArray(count) { maxOf(minimumWidths[it], minOf(preferred[it], share)) }
     }
-    return distributeTableColumnWidths(preferredWidths, availableWidth)
-}
-
-internal fun distributeTableColumnWidths(
-    preferredWidths: IntArray,
-    availableWidth: Int,
-): IntArray {
-    if (preferredWidths.isEmpty()) return IntArray(0)
-    if (availableWidth <= 0) return IntArray(preferredWidths.size)
-
-    val totalPreferred = preferredWidths.sum()
-    if (totalPreferred == 0) {
-        val base = availableWidth / preferredWidths.size
-        val widths = IntArray(preferredWidths.size) { base }
-        widths[widths.lastIndex] += availableWidth - base * preferredWidths.size
-        return widths
-    }
-    if (totalPreferred <= availableWidth) {
-        val widths = preferredWidths.copyOf()
-        widths[widths.lastIndex] += availableWidth - totalPreferred
-        return widths
-    }
-
-    val maxPreferred = preferredWidths.max()
+    // Cap the widest columns first: find the largest cap whose capped widths still fit.
+    fun widthsFor(cap: Int) = IntArray(count) { maxOf(minimumWidths[it], minOf(preferred[it], cap)) }
     var low = 0
-    var high = maxPreferred
+    var high = preferred.max()
     while (low < high) {
         val mid = (low + high + 1) ushr 1
-        val cappedSum = preferredWidths.sumOf { minOf(it, mid).toLong() }
-        if (cappedSum <= availableWidth) {
-            low = mid
-        } else {
-            high = mid - 1
-        }
+        if (widthsFor(mid).sum() <= available) low = mid else high = mid - 1
     }
-    val cap = low
-    val widths = IntArray(preferredWidths.size) { index -> minOf(preferredWidths[index], cap) }
-    var leftover = availableWidth - widths.sum()
-    if (leftover > 0) {
-        val expandable = preferredWidths.indices
-            .filter { widths[it] < preferredWidths[it] }
-            .sortedByDescending { preferredWidths[it] }
-        var cursor = 0
-        while (leftover > 0 && expandable.isNotEmpty()) {
-            val index = expandable[cursor % expandable.size]
-            if (widths[index] < preferredWidths[index]) {
-                widths[index]++
-                leftover--
-            }
-            cursor++
-            if (cursor > expandable.size * (availableWidth + 1)) break
-        }
-        if (leftover > 0) {
-            widths[widths.lastIndex] += leftover
-        }
+    val widths = widthsFor(low)
+    var leftover = available - widths.sum()
+    // Give the rounding remainder to columns that still want more, left to right.
+    var index = 0
+    while (leftover > 0 && index < count) {
+        val grow = minOf(leftover, preferred[index] - widths[index]).coerceAtLeast(0)
+        widths[index] += grow
+        leftover -= grow
+        index++
     }
+    widths[count - 1] += leftover
     return widths
-}
-
-internal fun tableCellHorizontalOffset(
-    alignment: TableAlignment,
-    columnWidth: Int,
-    childWidth: Int,
-): Int {
-    val free = (columnWidth - childWidth).coerceAtLeast(0)
-    return when (alignment) {
-        TableAlignment.Center -> free / 2
-        TableAlignment.Right -> free
-        TableAlignment.Default, TableAlignment.Left -> 0
-    }
 }
 
 private fun TableAlignment.toTextAlign(): TextAlign = when (this) {
