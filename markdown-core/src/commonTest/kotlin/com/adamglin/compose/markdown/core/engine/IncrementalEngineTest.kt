@@ -83,8 +83,8 @@ class IncrementalEngineTest {
     fun loneHighSurrogateWaitsForItsLowSurrogate() {
         val engine = MarkdownEngine()
 
-        val split = engine.append("hi \uD83D")
-        val joined = engine.append("\uDE00")
+        val split = engine.append("hi $HIGH_SURROGATE")
+        val joined = engine.append("$LOW_SURROGATE")
 
         assertEquals(3, split.snapshot.document.sourceLength)
         assertEquals("hi", paragraphText(split.snapshot.document.blocks))
@@ -95,11 +95,11 @@ class IncrementalEngineTest {
     fun unpairedHighSurrogateIsKeptAtFinish() {
         val engine = MarkdownEngine()
 
-        engine.append("x\uD83D")
+        engine.append("x$HIGH_SURROGATE")
         val finished = engine.finish()
 
         assertEquals(2, finished.snapshot.document.sourceLength)
-        assertEquals("x\uD83D", paragraphText(finished.snapshot.document.blocks))
+        assertEquals("x$HIGH_SURROGATE", paragraphText(finished.snapshot.document.blocks))
     }
 
     @Test
@@ -153,4 +153,10 @@ class IncrementalEngineTest {
 
     private fun paragraphText(blocks: List<BlockNode>): String =
         assertIs<BlockNode.Paragraph>(blocks.single()).children.joinToString("") { (it as InlineNode.Text).literal }
+
+    private companion object {
+        // Built from chars: a lone surrogate in a string literal does not survive compilation to JavaScript.
+        val HIGH_SURROGATE = '\uD83D'.toString()
+        val LOW_SURROGATE = '\uDE00'.toString()
+    }
 }
