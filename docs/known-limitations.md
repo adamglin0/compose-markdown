@@ -21,6 +21,7 @@
 ## Incremental Model And Performance
 
 - every append copies the text of the open code block or paragraph into its new node (an immutable `String`), so a single huge open leaf costs a memory copy of its size per append; parsing itself is proportional to the new text
+- the unterminated last line is parsed again on every append, so a single very long line (no line endings) costs its length per append
 - a growing paragraph is inline-parsed again from its last line start where nothing before can change; an unmatched emphasis opener, open bracket or unclosed code span early in a long paragraph makes every append parse it from there
 - a link reference definition on the unterminated last line takes effect only once the line ends (or at `finish()`)
 - performance measurements are documented from the JVM benchmark runner only; no equivalent native or JS benchmark suite ships yet
