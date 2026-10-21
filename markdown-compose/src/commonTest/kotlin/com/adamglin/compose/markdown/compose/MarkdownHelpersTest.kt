@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.LinkAnnotation
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
 import com.adamglin.compose.markdown.core.model.BlockNode
+import com.adamglin.compose.markdown.core.model.ListType
 import com.adamglin.compose.markdown.core.model.InlineNode
 import dev.snipme.highlights.model.SyntaxLanguage
 import kotlin.test.Test
@@ -63,9 +64,8 @@ class MarkdownHelpersTest {
 
     @Test
     fun orderedListsCountFromTheirStartNumber() {
-        assertEquals(listOf("3.", "4.", "5."), listMarkers(firstList("3. a\n3. b\n3. c")))
-        assertEquals(listOf("1)", "2)"), listMarkers(firstList("1) a\n1) b")))
-        assertEquals(listOf(null, null), listMarkers(firstList("- a\n- b")))
+        assertEquals(listOf("3.", "4.", "5."), orderedMarkers(firstList("3. a\n3. b\n3. c")))
+        assertEquals(listOf("1)", "2)"), orderedMarkers(firstList("1) a\n1) b")))
     }
 
     @Test
@@ -153,6 +153,9 @@ class MarkdownHelpersTest {
         assertContentEquals(intArrayOf(600, 200), widths)
     }
 }
+
+private fun orderedMarkers(list: BlockNode.ListBlock): List<String> =
+    list.items.indices.map { orderedMarker(list.type as ListType.Ordered, it) }
 
 private fun firstList(markdown: String): BlockNode.ListBlock =
     parseMarkdown(markdown, MarkdownDialect.ChatFast).blocks.filterIsInstance<BlockNode.ListBlock>().first()

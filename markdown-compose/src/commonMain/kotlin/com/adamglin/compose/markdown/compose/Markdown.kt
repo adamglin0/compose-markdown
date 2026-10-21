@@ -1,5 +1,6 @@
 package com.adamglin.compose.markdown.compose
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
@@ -24,7 +25,8 @@ import com.adamglin.compose.markdown.core.model.MarkdownDocument
  *   long-lived instance: highlight results are cached per highlighter instance.
  * @param mathRenderer renders LaTeX; `null` shows math source text. Pass a long-lived instance
  *   (e.g. `remember`ed): a new instance recomposes every block.
- * @param imageContent renders images; `null` shows their alt text.
+ * @param components renders each kind of element; the defaults are the built-in rendering. May
+ *   be a new instance on every call: only slots whose lambda changed re-run, never the blocks.
  * @param onLinkClick handles link clicks; `null` opens links with `LocalUriHandler`.
  */
 @Composable
@@ -33,10 +35,10 @@ public fun Markdown(
     modifier: Modifier = Modifier,
     codeHighlighter: CodeHighlighter? = DefaultCodeHighlighter,
     mathRenderer: MathRenderer? = null,
-    imageContent: (@Composable (MarkdownImage) -> Unit)? = null,
+    components: MarkdownComponents = MarkdownComponents(),
     onLinkClick: ((url: String) -> Unit)? = null,
 ) {
-    val context = rememberMarkdownRenderContext(codeHighlighter, mathRenderer, imageContent, onLinkClick)
+    val context = rememberMarkdownRenderContext(codeHighlighter, mathRenderer, components, onLinkClick)
     MarkdownBlocks(
         blocks = document.blocks,
         context = context,
@@ -54,7 +56,7 @@ public fun Markdown(
     dialect: MarkdownDialect = MarkdownDialect.ChatFast,
     codeHighlighter: CodeHighlighter? = DefaultCodeHighlighter,
     mathRenderer: MathRenderer? = null,
-    imageContent: (@Composable (MarkdownImage) -> Unit)? = null,
+    components: MarkdownComponents = MarkdownComponents(),
     onLinkClick: ((url: String) -> Unit)? = null,
 ) {
     Markdown(
@@ -62,7 +64,7 @@ public fun Markdown(
         modifier = modifier,
         codeHighlighter = codeHighlighter,
         mathRenderer = mathRenderer,
-        imageContent = imageContent,
+        components = components,
         onLinkClick = onLinkClick,
     )
 }
@@ -80,7 +82,7 @@ public fun LazyListScope.markdown(
     key: Any,
     codeHighlighter: CodeHighlighter? = DefaultCodeHighlighter,
     mathRenderer: MathRenderer? = null,
-    imageContent: (@Composable (MarkdownImage) -> Unit)? = null,
+    components: MarkdownComponents = MarkdownComponents(),
     onLinkClick: ((url: String) -> Unit)? = null,
 ) {
     itemsIndexed(
@@ -88,11 +90,9 @@ public fun LazyListScope.markdown(
         key = { _, block -> "$key:${block.id.raw}" },
         contentType = { _, block -> block::class },
     ) { index, block ->
-        val context = rememberMarkdownRenderContext(codeHighlighter, mathRenderer, imageContent, onLinkClick)
-        MarkdownBlock(
-            block = block,
-            context = context,
-            modifier = Modifier.padding(top = if (index == 0) 0.dp else context.blockSpacing),
-        )
+        val context = rememberMarkdownRenderContext(codeHighlighter, mathRenderer, components, onLinkClick)
+        Box(Modifier.padding(top = if (index == 0) 0.dp else context.blockSpacing)) {
+            MarkdownBlock(block = block, context = context, listDepth = 0)
+        }
     }
 }

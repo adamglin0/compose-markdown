@@ -50,7 +50,7 @@ Pass counts from `SpecConformanceTest` (`CommonMarkCore` for CommonMark 0.31.2, 
 
 ## Partially Supported
 
-- images: parsed in the core model; the renderer shows alt text unless the app passes an `imageContent` composable
+- images: parsed in the core model; the renderer shows alt text unless the app sets `MarkdownComponents.image`
 - Compose tables size columns from content (preferred and minimum width), shrink the widest columns first, scroll horizontally when even the minimum widths do not fit, and apply left/center/right alignment; there is no GitHub-style chrome
 - Compose rendering aims at correctness and stable block identity, not GitHub visual fidelity
 
@@ -68,7 +68,7 @@ Pass counts from `SpecConformanceTest` (`CommonMarkCore` for CommonMark 0.31.2, 
 - raw HTML is not parsed, so the examples that rely on HTML blocks, inline HTML or HTML comments render the tags as text
 - a task marker alone on an item's line (`- [ ]`) is an empty task item, where cmark-gfm requires a space or tab after the marker
 - task list rendering uses read-only checkbox UI rather than plain textual markers
-- image rendering emits alt text unless the app supplies `imageContent`; no built-in image fetching pipeline exists
+- image rendering emits alt text unless the app sets `MarkdownComponents.image`; no built-in image fetching pipeline exists
 - link titles are parsed but not shown by the renderer
 
 ## Test Suites

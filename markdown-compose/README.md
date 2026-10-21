@@ -7,7 +7,8 @@ Public API:
 - `Markdown(text)` and `Markdown(document)` render Markdown; `LazyListScope.markdown(document, key)` adds one lazy item per top-level block, keyed by `key` plus the block id
 - `MarkdownState` / `rememberMarkdownState()` stream chunks into a document, publishing each append synchronously; an append costs the new text, not the document, and only the blocks it changed recompose
 - `MarkdownTheme(colors, typography, blockSpacing)` is the single theming mechanism (`MarkdownColors.Light` / `.Dark`, `MarkdownTypography.Default`)
-- plug-ins: `CodeHighlighter` (`DefaultCodeHighlighter`, or `null` to disable), `MathRenderer`, `imageContent`, `onLinkClick` (defaults to `LocalUriHandler`)
+- `MarkdownComponents` has a slot per element (paragraph, heading, code block, math block, quote, list, list item, list marker, task checkbox, table, thematic break, image); each slot gets the element's data and its built-in `DefaultContent()`, so it can decorate or replace it, and containers render nested blocks with `Children()`
+- plug-ins: `CodeHighlighter` (`DefaultCodeHighlighter`, or `null` to disable), `MathRenderer`, `onLinkClick` (defaults to `LocalUriHandler`)
 
 Rendering covers paragraphs, headings, quotes, ordered/bullet/task lists, fenced code (highlighted, horizontally scrollable), math, thematic breaks and tables (horizontally scrollable when too wide).
 
@@ -17,6 +18,6 @@ Intentional limits:
 
 - no HTML rendering or export
 - task lists render as read-only checkboxes
-- no built-in image loading; supply `imageContent`
+- no built-in image loading; supply `MarkdownComponents(image = ...)`
 
 See `../docs/api.md` for signatures and `../docs/compatibility-report.md` for the renderer audit.

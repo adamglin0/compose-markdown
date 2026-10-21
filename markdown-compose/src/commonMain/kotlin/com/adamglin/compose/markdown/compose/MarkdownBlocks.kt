@@ -6,6 +6,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -47,61 +48,151 @@ internal fun MarkdownBlocks(
     }
 }
 
+/**
+ * Renders [block] through its [MarkdownComponents] slot. Each slot is invoked from its own
+ * composable, so a new components instance re-runs only the slots, never this function.
+ */
 @Composable
 internal fun MarkdownBlock(
     block: BlockNode,
     context: MarkdownRenderContext,
-    listDepth: Int = 0,
-    modifier: Modifier = Modifier,
+    listDepth: Int,
 ) {
     when (block) {
-        is BlockNode.Paragraph -> MarkdownInlineText(
-            nodes = block.children,
-            style = context.styles.body,
-            context = context,
-            modifier = modifier.fillMaxWidth(),
-        )
-
-        is BlockNode.Heading -> MarkdownInlineText(
-            nodes = block.children,
-            style = context.styles.heading(block.level),
-            context = context,
-            modifier = modifier.fillMaxWidth().semantics { heading() },
-        )
-
-        is BlockNode.BlockQuote -> QuoteBlock(block, context, listDepth, modifier)
-        is BlockNode.ListBlock -> ListBlock(block, context, listDepth, modifier.fillMaxWidth())
-        is BlockNode.FencedCodeBlock -> CodeBlock(
-            code = if (block.isClosed) {
-                // Highlight only closed fences: a streaming fence changes every chunk.
-                rememberHighlightedCode(block.literal, block.languageHint, context.codeHighlighter, context.colors)
-            } else {
-                remember(block.literal) { AnnotatedString(block.literal) }
-            },
-            label = block.infoString?.trim().orEmpty(),
-            context = context,
-            modifier = modifier,
-        )
-
-        is BlockNode.IndentedCodeBlock -> CodeBlock(
-            code = remember(block.literal) { AnnotatedString(block.literal) },
-            label = "",
-            context = context,
-            modifier = modifier,
-        )
-        is BlockNode.MathBlock -> MathBlock(block, context, modifier)
-        is BlockNode.TableBlock -> TableBlock(block, context, modifier)
-        is BlockNode.ThematicBreak -> Box(
-            modifier = modifier
-                .padding(vertical = 4.dp)
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(context.colors.border),
-        )
-
+        is BlockNode.Paragraph -> ParagraphSlot(block, context)
+        is BlockNode.Heading -> HeadingSlot(block, context)
+        is BlockNode.BlockQuote -> BlockQuoteSlot(block, context, listDepth)
+        is BlockNode.ListBlock -> ListSlot(block, context, listDepth)
+        is BlockNode.FencedCodeBlock -> CodeBlockSlot(block.literal, block.languageHint, block.infoString, block.isClosed, context)
+        is BlockNode.IndentedCodeBlock -> CodeBlockSlot(block.literal, language = null, infoString = null, isClosed = true, context)
+        is BlockNode.MathBlock -> MathBlockSlot(block, context)
+        is BlockNode.TableBlock -> TableSlot(block, context)
+        is BlockNode.ThematicBreak -> ThematicBreakSlot(block, context)
         // Rendered by their parents.
         is BlockNode.ListItem, is BlockNode.TableRow, is BlockNode.TableCell -> Unit
     }
+}
+
+@Composable
+private fun ParagraphSlot(block: BlockNode.Paragraph, context: MarkdownRenderContext) {
+    val scope = remember(block, context) {
+        BlockScope(block) { modifier ->
+            MarkdownInlineText(block.children, context.styles.body, context, modifier.fillMaxWidth())
+        }
+    }
+    context.components.paragraph(scope)
+}
+
+@Composable
+private fun HeadingSlot(block: BlockNode.Heading, context: MarkdownRenderContext) {
+    val scope = remember(block, context) {
+        BlockScope(block) { modifier ->
+            MarkdownInlineText(
+                nodes = block.children,
+                style = context.styles.heading(block.level),
+                context = context,
+                modifier = modifier.fillMaxWidth().semantics { heading() },
+            )
+        }
+    }
+    context.components.heading(scope)
+}
+
+@Composable
+private fun BlockQuoteSlot(block: BlockNode.BlockQuote, context: MarkdownRenderContext, listDepth: Int) {
+    val scope = remember(block, context, listDepth) {
+        ContainerScope(
+            block = block,
+            children = { modifier -> MarkdownBlocks(block.children, context, listDepth, context.blockSpacing, modifier) },
+            content = { modifier -> QuoteBlock(block, context, listDepth, modifier) },
+        )
+    }
+    context.components.blockQuote(scope)
+}
+
+@Composable
+private fun ListSlot(block: BlockNode.ListBlock, context: MarkdownRenderContext, listDepth: Int) {
+    val scope = remember(block, context, listDepth) {
+        BlockScope(block) { modifier -> ListBlock(block, context, listDepth, modifier.fillMaxWidth()) }
+    }
+    context.components.list(scope)
+}
+
+@Composable
+private fun CodeBlockSlot(
+    code: String,
+    language: String?,
+    infoString: String?,
+    isClosed: Boolean,
+    context: MarkdownRenderContext,
+) {
+    val scope = remember(code, language, infoString, isClosed, context) {
+        CodeBlockScope(code, language, infoString, isClosed, context)
+    }
+    context.components.codeBlock(scope)
+}
+
+@Composable
+private fun MathBlockSlot(block: BlockNode.MathBlock, context: MarkdownRenderContext) {
+    val scope = remember(block, context) { BlockScope(block) { modifier -> MathBlock(block, context, modifier) } }
+    context.components.mathBlock(scope)
+}
+
+@Composable
+private fun TableSlot(block: BlockNode.TableBlock, context: MarkdownRenderContext) {
+    val scope = remember(block, context) { BlockScope(block) { modifier -> TableBlock(block, context, modifier) } }
+    context.components.table(scope)
+}
+
+@Composable
+private fun ThematicBreakSlot(block: BlockNode.ThematicBreak, context: MarkdownRenderContext) {
+    val scope = remember(block, context) {
+        BlockScope(block) { modifier ->
+            Box(
+                modifier = modifier
+                    .padding(vertical = 4.dp)
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(context.colors.border),
+            )
+        }
+    }
+    context.components.thematicBreak(scope)
+}
+
+internal class BlockScope<out T : BlockNode>(
+    override val block: T,
+    private val content: @Composable (Modifier) -> Unit,
+) : MarkdownBlockScope<T> {
+    @Composable
+    override fun DefaultContent(modifier: Modifier) = content(modifier)
+}
+
+internal class ContainerScope<out T : BlockNode>(
+    override val block: T,
+    private val children: @Composable (Modifier) -> Unit,
+    private val content: @Composable (Modifier) -> Unit = children,
+) : MarkdownContainerScope<T> {
+    @Composable
+    override fun DefaultContent(modifier: Modifier) = content(modifier)
+
+    @Composable
+    override fun Children(modifier: Modifier) = children(modifier)
+}
+
+private class CodeBlockScope(
+    override val code: String,
+    override val language: String?,
+    override val infoString: String?,
+    override val isClosed: Boolean,
+    private val context: MarkdownRenderContext,
+) : MarkdownCodeBlockScope {
+    @Composable
+    override fun DefaultContent(modifier: Modifier) = CodeBlock(this, context, modifier)
+
+    @Composable
+    override fun HighlightedCode(modifier: Modifier, contentPadding: PaddingValues) =
+        CodeText(this, context, contentPadding, modifier)
 }
 
 @Composable
@@ -139,12 +230,12 @@ private fun QuoteBlock(
 
 @Composable
 private fun CodeBlock(
-    code: AnnotatedString,
-    label: String,
+    scope: MarkdownCodeBlockScope,
     context: MarkdownRenderContext,
     modifier: Modifier,
 ) {
     val shape = RoundedCornerShape(14.dp)
+    val label = scope.infoString?.trim().orEmpty()
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -157,16 +248,35 @@ private fun CodeBlock(
         if (label.isNotEmpty()) {
             BasicText(label, Modifier.padding(horizontal = 14.dp), context.styles.label)
         }
-        BasicText(
-            text = code,
-            style = context.styles.code,
-            softWrap = false,
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 14.dp),
-        )
+        CodeText(scope, context, PaddingValues(horizontal = 14.dp))
     }
+}
+
+/**
+ * The code of [scope], highlighted once closed: a streaming fence changes every chunk. [padding]
+ * sits inside the horizontal scroll, so scrolled code reaches the edges.
+ */
+@Composable
+private fun CodeText(
+    scope: MarkdownCodeBlockScope,
+    context: MarkdownRenderContext,
+    padding: PaddingValues,
+    modifier: Modifier = Modifier,
+) {
+    val code = if (scope.isClosed) {
+        rememberHighlightedCode(scope.code, scope.language, context.codeHighlighter, context.colors)
+    } else {
+        remember(scope.code) { AnnotatedString(scope.code) }
+    }
+    BasicText(
+        text = code,
+        style = context.styles.code,
+        softWrap = false,
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(padding),
+    )
 }
 
 @Composable

@@ -6,9 +6,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.CompositionTracer
 import androidx.compose.runtime.Composer
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.InternalComposeTracingApi
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -16,6 +19,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
+import com.adamglin.compose.markdown.core.model.BlockNode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -49,10 +53,15 @@ class MarkdownStreamingCostTest {
         runComposeUiTest {
             val state = MarkdownState(dialect)
             val math = CountingMathRenderer()
-            setContent { Markdown(state.document, mathRenderer = math) }
+            val slots = CountingComponents()
+            setContent {
+                val document = state.document
+                // A capturing lambda in a new instance on every chunk; the other slots stay the same.
+                Markdown(document, mathRenderer = math, components = slots.componentsWith(codeBlock = { BasicText("${document.blocks.size}") }))
+            }
             state.append(documentOfSize(size))
             waitForIdle()
-            assertTailOnlyRecomposes(state, math, label = "Markdown(document)")
+            assertTailOnlyRecomposes(state, math, slots, label = "Markdown(document)")
         }
     }
 
@@ -61,11 +70,19 @@ class MarkdownStreamingCostTest {
         runComposeUiTest {
             val state = MarkdownState(dialect)
             val math = CountingMathRenderer()
+            val slots = CountingComponents()
             val listState = LazyListState()
             setContent {
                 Box(Modifier.width(400.dp).height(800.dp)) {
+                    val document = state.document
                     LazyColumn(state = listState) {
-                        markdown(state.document, key = "doc", mathRenderer = math)
+                        markdown(
+                            document = document,
+                            key = "doc",
+                            mathRenderer = math,
+                            // Built in the builder with a capturing lambda: a new instance on every chunk.
+                            components = slots.componentsWith(codeBlock = { BasicText("${document.blocks.size}") }),
+                        )
                         // Room below the last block, so the streamed tail is visible once scrolled to it.
                         item(key = "end") { Spacer(Modifier.height(800.dp)) }
                     }
@@ -73,9 +90,11 @@ class MarkdownStreamingCostTest {
             }
             state.append(documentOfSize(size))
             waitForIdle()
-            runOnIdle { listState.requestScrollToItem(state.document.blocks.lastIndex) }
+            // Show the whole last section (heading, list, formula, quote) above the streamed tail, so
+            // closed blocks with counting slots are composed while the tail streams.
+            runOnIdle { listState.requestScrollToItem(state.document.blocks.lastIndex - 4) }
             waitForIdle()
-            assertTailOnlyRecomposes(state, math, label = "LazyListScope.markdown")
+            assertTailOnlyRecomposes(state, math, slots, label = "LazyListScope.markdown")
         }
     }
 
@@ -86,9 +105,11 @@ class MarkdownStreamingCostTest {
     ).forEach { (name, line) ->
         runComposeUiTest {
             val state = MarkdownState(dialect)
-            setContent { Markdown(state.document) }
+            val slots = CountingComponents()
+            setContent { Markdown(state.document, components = slots.components) }
             state.append((0 until 200).joinToString("") { line(it) })
             waitForIdle()
+            val markersBefore = slots.markers
             val counter = BlockCounter()
             var worst = 0
             withTracer(counter) {
@@ -99,21 +120,30 @@ class MarkdownStreamingCostTest {
                     worst = maxOf(worst, counter.blocks)
                 }
             }
-            println("$name of 200 items: at most $worst blocks composed per append")
+            println("$name of 200 items: at most $worst blocks composed per append, ${slots.markers} marker slots run")
             onNodeWithText("item 209", substring = true).assertExists()
             // The top-level container and the blocks on the path to the open item's paragraph; closed
             // items keep their instances and skip.
             assertTrue(worst in 1..4, "$name: an append composed $worst blocks")
+            // Markers of closed items keep their slot; only the ten new items add theirs.
+            assertTrue(slots.markers - markersBefore <= 10, "$name: ${slots.markers - markersBefore} marker slots ran")
         }
     }
 
     /**
      * Streams a tail into the document [state] holds, token by token, and checks that every append
-     * composes the changed tail block (at most the two last top-level blocks) and never a closed formula.
+     * composes the changed tail block (at most the two last top-level blocks), never a closed
+     * formula and never the custom slot of a block the tail does not touch.
      */
-    private fun ComposeUiTest.assertTailOnlyRecomposes(state: MarkdownState, math: CountingMathRenderer, label: String) {
+    private fun ComposeUiTest.assertTailOnlyRecomposes(
+        state: MarkdownState,
+        math: CountingMathRenderer,
+        slots: CountingComponents,
+        label: String,
+    ) {
         val blocks = state.document.blocks.size
         val formulasBefore = math.blockCompositions
+        val closedSlotsBefore = slots.closedBlockSlots
         val tail = "\n\nThe tail paragraph grows token by token, with *emphasis* and `code` spans.\n\nA second one starts here and keeps going."
         val counter = BlockCounter()
         var worst = 0
@@ -133,6 +163,7 @@ class MarkdownStreamingCostTest {
         }
         println("$label, $blocks blocks: at most $worst blocks composed per append, ${nanos / chunks.size / 1000} us per append")
         assertEquals(formulasBefore, math.blockCompositions, "closed formulas recomposed")
+        assertEquals(closedSlotsBefore, slots.closedBlockSlots, "slots of untouched blocks ran")
         onNodeWithText("A second one starts here and keeps going.").assertExists()
         // Every chunk changes the tail paragraph, which must compose; nothing else may.
         assertTrue(fewest >= 1, "an append composed no block")
@@ -166,6 +197,48 @@ class MarkdownStreamingCostTest {
     private inline fun fastestOf(run: () -> Long): Long {
         repeat(3) { run() }
         return (1..5).minOf { run() }
+    }
+
+    /**
+     * Decorates every block kind and counts slot runs: [closedBlockSlots] for the kinds a streamed
+     * tail paragraph never touches (headings, formulas, lists), [markers] for list markers. The tests
+     * pass a new capturing `codeBlock` on every chunk: that must not re-run the other slots.
+     */
+    private class CountingComponents {
+        var closedBlockSlots = 0
+        var markers = 0
+        private val heading: @Composable MarkdownBlockScope<BlockNode.Heading>.() -> Unit = {
+            SideEffect { closedBlockSlots++ }
+            DefaultContent()
+        }
+        private val mathBlock: @Composable MarkdownBlockScope<BlockNode.MathBlock>.() -> Unit = {
+            SideEffect { closedBlockSlots++ }
+            DefaultContent()
+        }
+        private val list: @Composable MarkdownBlockScope<BlockNode.ListBlock>.() -> Unit = {
+            SideEffect { closedBlockSlots++ }
+            DefaultContent()
+        }
+        private val listMarker: @Composable MarkdownListMarkerScope.() -> Unit = {
+            SideEffect { markers++ }
+            DefaultContent()
+        }
+
+        /** The counting slots with [codeBlock]; every call returns a new instance. */
+        fun componentsWith(
+            codeBlock: @Composable MarkdownCodeBlockScope.() -> Unit = { DefaultContent() },
+        ) = MarkdownComponents(
+            paragraph = { Box { DefaultContent() } },
+            codeBlock = codeBlock,
+            heading = heading,
+            mathBlock = mathBlock,
+            list = list,
+            blockQuote = { Box { Children() } },
+            listItem = { Box { DefaultContent() } },
+            listMarker = listMarker,
+        )
+
+        val components = componentsWith()
     }
 
     private class BlockCounter : CompositionTracer {

@@ -33,7 +33,7 @@
 - Compose rendering is block-oriented and intentionally lightweight
 - `Markdown(document)` lays out every top-level block in one `Column`: unchanged blocks skip recomposition, but each streamed append still costs a skip check, a measure and a draw per top-level block. `LazyListScope.markdown` costs only the visible changed blocks; use it for long documents
 - `Markdown(text)` parses the whole text again whenever the text changes; stream with `MarkdownState` instead of passing a growing string
-- images render as alt text unless the app passes an `imageContent` composable; the library ships no image loading
+- images render as alt text unless the app sets `MarkdownComponents.image`; the library ships no image loading
 - inline math and images are measured on first composition, so their line reflows once when they first appear
 - link titles are not shown
 - task list checkboxes render as read-only UI; toggle interactions are not implemented

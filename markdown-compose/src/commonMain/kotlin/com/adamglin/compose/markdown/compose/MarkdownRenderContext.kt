@@ -3,6 +3,9 @@ package com.adamglin.compose.markdown.compose
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.graphics.Color
@@ -57,16 +60,54 @@ internal class MarkdownRenderContext(
     val blockSpacing: Dp,
     val codeHighlighter: CodeHighlighter?,
     val mathRenderer: MathRenderer?,
-    val imageContent: (@Composable (MarkdownImage) -> Unit)?,
+    /** Read a slot only in the composable that invokes it, so a new slot re-runs just that composable. */
+    val components: ComponentSlots,
+    /** Whether [MarkdownComponents.image] is set: images are then embedded instead of shown as alt text. */
+    val embedImages: Boolean,
     /** `null` keeps the platform default: links open through `LocalUriHandler`. */
     val linkListener: LinkInteractionListener?,
 )
+
+/**
+ * The latest slots of [MarkdownComponents], each in its own state: a new [MarkdownComponents]
+ * invalidates only the readers of the slots whose lambda changed.
+ */
+@Stable
+internal class ComponentSlots(components: MarkdownComponents) {
+    var paragraph by mutableStateOf(components.paragraph)
+    var heading by mutableStateOf(components.heading)
+    var codeBlock by mutableStateOf(components.codeBlock)
+    var mathBlock by mutableStateOf(components.mathBlock)
+    var blockQuote by mutableStateOf(components.blockQuote)
+    var list by mutableStateOf(components.list)
+    var listItem by mutableStateOf(components.listItem)
+    var listMarker by mutableStateOf(components.listMarker)
+    var taskCheckbox by mutableStateOf(components.taskCheckbox)
+    var table by mutableStateOf(components.table)
+    var thematicBreak by mutableStateOf(components.thematicBreak)
+    var image by mutableStateOf(components.image)
+
+    fun update(components: MarkdownComponents) {
+        paragraph = components.paragraph
+        heading = components.heading
+        codeBlock = components.codeBlock
+        mathBlock = components.mathBlock
+        blockQuote = components.blockQuote
+        list = components.list
+        listItem = components.listItem
+        listMarker = components.listMarker
+        taskCheckbox = components.taskCheckbox
+        table = components.table
+        thematicBreak = components.thematicBreak
+        image = components.image
+    }
+}
 
 @Composable
 internal fun rememberMarkdownRenderContext(
     codeHighlighter: CodeHighlighter?,
     mathRenderer: MathRenderer?,
-    imageContent: (@Composable (MarkdownImage) -> Unit)?,
+    components: MarkdownComponents,
     onLinkClick: ((String) -> Unit)?,
 ): MarkdownRenderContext {
     val colors = MarkdownTheme.colors
@@ -74,7 +115,7 @@ internal fun rememberMarkdownRenderContext(
     val blockSpacing = MarkdownTheme.blockSpacing
     // Callers often pass fresh lambdas (always so from a LazyListScope builder, which is not
     // composable). Keying on them would rebuild the context and recompose every block on each
-    // update, so only their presence is a key and the latest instance is read through state.
+    // update, so they are read through state and only their presence is a key.
     val currentOnLinkClick = rememberUpdatedState(onLinkClick)
     val hasLinkHandler = onLinkClick != null
     val linkListener = remember(hasLinkHandler) {
@@ -86,24 +127,19 @@ internal fun rememberMarkdownRenderContext(
             null
         }
     }
-    val currentImageContent = rememberUpdatedState(imageContent)
-    val hasImageContent = imageContent != null
-    val stableImageContent: (@Composable (MarkdownImage) -> Unit)? = remember(hasImageContent) {
-        if (hasImageContent) {
-            { image -> currentImageContent.value?.invoke(image) }
-        } else {
-            null
-        }
-    }
+    // Like rememberUpdatedState, per slot: setting a slot to the same lambda notifies no reader.
+    val slots = remember { ComponentSlots(components) }.apply { update(components) }
+    val embedImages = components.image != null
     val styles = remember(colors, typography) { MarkdownStyles(colors, typography) }
-    return remember(colors, styles, blockSpacing, codeHighlighter, mathRenderer, stableImageContent, linkListener) {
+    return remember(colors, styles, blockSpacing, codeHighlighter, mathRenderer, embedImages, linkListener) {
         MarkdownRenderContext(
             colors = colors,
             styles = styles,
             blockSpacing = blockSpacing,
             codeHighlighter = codeHighlighter,
             mathRenderer = mathRenderer,
-            imageContent = stableImageContent,
+            components = slots,
+            embedImages = embedImages,
             linkListener = linkListener,
         )
     }
