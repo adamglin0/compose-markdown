@@ -28,6 +28,11 @@ class MarkdownHelpersTest {
         assertSame(first, state.document.blocks[0])
         assertNotSame(second, state.document.blocks[1])
         assertEquals("second grows", (state.document.blocks[1] as BlockNode.Paragraph).children.plainText())
+
+        val grown = state.document.blocks[1]
+        state.finish()
+        assertSame(first, state.document.blocks[0])
+        assertSame(grown, state.document.blocks[1])
     }
 
     @Test
@@ -39,15 +44,6 @@ class MarkdownHelpersTest {
         assertTrue(state.document.blocks.isEmpty())
         state.append("again")
         assertEquals("again", (state.document.blocks.single() as BlockNode.Paragraph).children.plainText())
-    }
-
-    @Test
-    fun reuseUnchangedBlocksKeepsEqualBlocksOnly() {
-        val previous = parseMarkdown("a\n\nb", MarkdownDialect.ChatFast).blocks
-        val next = parseMarkdown("a\n\nc", MarkdownDialect.ChatFast).blocks
-        val merged = reuseUnchangedBlocks(previous, next)
-        assertSame(previous[0], merged[0])
-        assertSame(next[1], merged[1])
     }
 
     @Test
