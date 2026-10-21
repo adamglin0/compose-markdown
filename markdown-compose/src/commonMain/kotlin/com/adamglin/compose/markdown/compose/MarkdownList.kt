@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,15 +21,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.isSpecified
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.ListStyle
 import com.adamglin.compose.markdown.core.model.TaskState
@@ -122,8 +120,8 @@ internal fun ListBlock(
 }
 
 /**
- * Task-list checkbox: read-only, exposed to accessibility as a checkbox with its state. Sized to
- * the body line height and centered in it, so it lines up with the item's first line.
+ * Task-list checkbox: read-only, exposed to accessibility as a checkbox with its state, centered
+ * in the item's first line.
  */
 @Composable
 private fun TaskCheckbox(taskState: TaskState, context: MarkdownRenderContext) {
@@ -181,12 +179,17 @@ private fun BulletMarker(bullet: Bullet, context: MarkdownRenderContext) {
     }
 }
 
-/** A box as tall as the first line of body text, centering [content] in it. */
+/**
+ * A box as tall as one line of body text, centering [content] in it. An empty body-styled text
+ * sets the height (whatever unit the line height uses) and gives the box a first baseline, so the
+ * list aligns it with the item's first line.
+ */
 @Composable
 private fun FirstLineBox(context: MarkdownRenderContext, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    val lineHeight = context.styles.body.lineHeight
-    val height = with(LocalDensity.current) { if (lineHeight.isSpecified) lineHeight.toDp() else 24.dp }
-    Box(modifier.height(height), contentAlignment = Alignment.Center) { content() }
+    Box(modifier, contentAlignment = Alignment.Center) {
+        BasicText(text = "", style = context.styles.body, modifier = Modifier.clearAndSetSemantics {})
+        content()
+    }
 }
 
 internal sealed interface ListMarkerType {

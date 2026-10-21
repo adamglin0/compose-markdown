@@ -29,6 +29,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performFirstLinkClick
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -97,6 +100,20 @@ class MarkdownUiTest {
         onNode(isHeading()).assertExists()
         onNode(checkbox(ToggleableState.On)).assertExists()
         onNode(checkbox(ToggleableState.Off)).assertExists()
+    }
+
+    @Test
+    fun taskCheckboxCentersOnFirstLineWithEmLineHeight() = runComposeUiTest {
+        setContent {
+            val body = TextStyle(fontSize = 16.sp, lineHeight = 1.5.em)
+            MarkdownTheme(typography = MarkdownTypography.Default.copy(body = body)) {
+                Markdown("- [x] done\n  second line", dialect = gfm)
+            }
+        }
+        val box = onNode(checkbox(ToggleableState.On)).fetchSemanticsNode().boundsInRoot
+        val text = onNodeWithText("done", substring = true).fetchSemanticsNode()
+        val firstLineCenter = text.positionInRoot.y + text.size.height / 4f
+        assertTrue(abs(box.center.y - firstLineCenter) < 2f, "checkbox ${box.center.y} vs first line $firstLineCenter")
     }
 
     @Test
