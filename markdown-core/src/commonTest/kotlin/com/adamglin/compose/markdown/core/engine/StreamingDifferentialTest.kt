@@ -51,6 +51,12 @@ class StreamingDifferentialTest {
         "blank-heavy" to "\n\n\npara\n\n\n\npara2\n\n",
         "indented" to "    code?\n    more\n\npara\n",
         "html-like" to "<div>\nhi\n</div>\n\npara\n",
+        "inline-across-lines" to "a *b\nc* d `e\nf` g [h\ni](/j\n\"k\") l  \nm\\\nn **o\np\nq** r ~~s\nt~~ \$u\nv\$\n\nw\n",
+        "inline-unclosed-openers" to "*a\nb\n_c\nd\n`e\nf\n[g\nh\n<i\nj\n\nk\n",
+        "inline-closed-late" to "x *a\nb\nc\nd* y\n[e\nf\ng](/h) z `i\nj\nk` w\n",
+        "list-late-definition" to "- [x]\n- b\n- c *d*\n\n  more [x]\n- e\n\n[x]: /u\n",
+        "list-definition-inside" to "- [y]\n- [y]: /in-list\n- z [y]\n\n[y]: /outside\n",
+        "quote-long-lazy" to "> a *b\nc* d\ne\n> f\n\ng\n",
         "mixed" to "# Title\n\nIntro *text* with [ref].\n\n- a\n  - b\n> quote\n\n```js\nlet x\n```\n\n| h | i |\n|---|---|\n| 1 | 2 |\n\n\$\$\nm\n\$\$\n\n[ref]: /r\n",
     )
 

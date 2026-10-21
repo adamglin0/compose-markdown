@@ -1,8 +1,8 @@
 package com.adamglin.compose.markdown.core.engine
 
 import com.adamglin.compose.markdown.core.api.MarkdownEngine
-import com.adamglin.compose.markdown.core.block.BlockParseResult
 import com.adamglin.compose.markdown.core.block.BlockParser
+import com.adamglin.compose.markdown.core.block.BlockTreeBuilder
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
 import com.adamglin.compose.markdown.core.inline.InlineParser
 import com.adamglin.compose.markdown.core.internal.LinkReferenceDefinition
@@ -18,21 +18,15 @@ import com.adamglin.compose.markdown.core.source.LineIndex
 import com.adamglin.compose.markdown.core.source.SourceBuffer
 
 /**
- * Streaming engine: the document is a stable prefix of final top-level blocks followed by a mutable tail
- * that is re-parsed on every call.
+ * Streaming engine on top of a resumable block parser.
  *
- * Block parser contract this engine relies on ([BlockParser.parse]):
- * - Parsing may start at any offset that begins a top-level block (or is the end of the last complete
- *   line) once everything before it is closed, and yields exactly the blocks a parse from the start of the
- *   document would yield from there on.
- * - Unless final, [BlockParseResult.openBlockStack] lists the blocks that later input can still change,
- *   outermost first. Its first frame starts the first top-level block that may change; every top-level
- *   block and link reference definition before it is final. A block closed only by the unterminated last
- *   line stays open, because that line can still turn into something else.
- *
- * Each call therefore parses from the end of the stable prefix to the end of input, moves the blocks
- * before the first open frame into the stable prefix, and keeps the rest as the new tail. Per-call work is
- * proportional to the tail, not to the document.
+ * Every complete line is parsed exactly once ([BlockParser.incorporate]); closed top-level blocks are final
+ * and move into the stable prefix, built once. The unterminated last line can still turn into something
+ * else, so it is parsed in a fork of the parser that is thrown away after the call; the fork copies only
+ * the open blocks. The mutable tail (the open top-level block and whatever the last line adds) is built
+ * from the fork, reusing the cached nodes of every closed block inside it. Per-call work is therefore
+ * proportional to the new text and the open part of the tail, not to the document or to the size of the
+ * open block, apart from copying the text of the open leaf into its node.
  */
 internal class IncrementalMarkdownEngine(
     override val dialect: MarkdownDialect,
@@ -41,15 +35,18 @@ internal class IncrementalMarkdownEngine(
     private val lineIndex = LineIndex()
     private val normalizer = ChunkNormalizer()
     private val definitions = ReferenceDefinitions()
-    private val inlineParser = InlineParser(dialect = dialect, referenceDefinitions = definitions.effective)
-    private val stable = StableBlocks()
+    private val inlineCache = InlineCache(InlineParser(dialect = dialect, referenceDefinitions = definitions.effective))
     private val blockIds = BlockIdAllocator()
+    private val builder = BlockTreeBuilder(lineIndex = lineIndex, ids = blockIds, inline = inlineCache)
+    private val stable = StableBlocks()
 
-    /** Top-level blocks after the stable prefix, with inline content. */
+    private var parser = BlockParser(dialect = dialect, lineIndex = lineIndex)
+
+    /** Source offset up to which lines were incorporated into [parser]: the start of the unterminated last line. */
+    private var parsedEnd = 0
+
+    /** Top-level blocks after the stable prefix. */
     private var tail: List<BlockNode> = emptyList()
-    private var stablePrefixEnd = 0
-    private var inlineCache: Map<Long, InlineCacheEntry> = emptyMap()
-    private var referenceRevision = 0
     private var version = 0L
     private var isFinal = false
     private var snapshot = emptySnapshot()
@@ -61,7 +58,7 @@ internal class IncrementalMarkdownEngine(
             return noChangeDelta()
         }
         appendSource(text)
-        return rebuild(appendedChars = text.length)
+        return update(appendedChars = text.length)
     }
 
     override fun finish(): ParseDelta {
@@ -71,7 +68,7 @@ internal class IncrementalMarkdownEngine(
         val text = normalizer.flush()
         appendSource(text)
         isFinal = true
-        return rebuild(appendedChars = text.length)
+        return update(appendedChars = text.length)
     }
 
     override fun snapshot(): MarkdownSnapshot = snapshot
@@ -81,78 +78,81 @@ internal class IncrementalMarkdownEngine(
         lineIndex.reset()
         normalizer.reset()
         definitions.clear()
-        stable.clear()
-        tail = emptyList()
-        stablePrefixEnd = 0
-        inlineCache = emptyMap()
-        referenceRevision = 0
+        inlineCache.clear()
         blockIds.reset()
+        stable.clear()
+        parser = BlockParser(dialect = dialect, lineIndex = lineIndex)
+        parsedEnd = 0
+        tail = emptyList()
         version = 0L
         isFinal = false
         snapshot = emptySnapshot()
     }
 
     private fun appendSource(text: String) {
-        lineIndex.append(chunk = text, startOffset = source.length)
+        lineIndex.append(text)
         source.append(text)
     }
 
-    private fun rebuild(appendedChars: Int): ParseDelta {
+    private fun update(appendedChars: Int): ParseDelta {
         version += 1
-        val parseStart = stablePrefixEnd
+        val dirtyStart = parsedEnd
         val sourceLength = source.length
         val previousTail = tail
         val previousStableCount = stable.size
+        val builtBefore = builder.builtCount
 
-        val result = parseTail(parseStart = parseStart)
-        val newStablePrefixEnd = if (isFinal) sourceLength else stablePrefixEndAfter(result)
-        check(newStablePrefixEnd >= parseStart) { "stable prefix moved backward: $parseStart -> $newStablePrefixEnd" }
+        // Complete lines become part of the parser for good; on finish() so does the last line.
+        val completeEnd = if (isFinal) sourceLength else lineIndex.lastLineStart()
+        val completeLines = lineIndex.lines(source = source.content, startOffset = parsedEnd, endExclusive = completeEnd)
+        completeLines.forEach(parser::incorporate)
+        parsedEnd = completeEnd
+        if (isFinal) {
+            parser.finish()
+        }
+        val closedBlocks = parser.takeClosedBlocks()
+        val openBlock = parser.openBlock()
+
+        // The unterminated last line is parsed in a fork, which is then closed as if the input ended there.
+        val pendingLine = lineIndex.lines(source = source.content, startOffset = completeEnd, endExclusive = sourceLength).singleOrNull()
+        val fork = if (isFinal) null else parser.fork()
+        pendingLine?.let { fork?.incorporate(it) }
+        fork?.finish()
 
         // Definitions on the unterminated last line may still change, so they take effect once the line ends.
-        val pendingLineStart = if (isFinal) sourceLength else lineIndex.lastLineStart()
-        val newlyStableDefinitions = ArrayList<LinkReferenceDefinition>()
         val tailDefinitions = LinkedHashMap<String, LinkReferenceDefinition>()
-        result.parsedDefinitions.values.forEach { definition ->
-            when {
-                definition.range.start < newStablePrefixEnd -> newlyStableDefinitions += definition
-                definition.range.endExclusive <= pendingLineStart -> tailDefinitions[definition.label] = definition
+        fork?.takeDefinitions()?.forEach { definition ->
+            if (definition.range.endExclusive <= completeEnd && definition.label !in tailDefinitions) {
+                tailDefinitions[definition.label] = definition
             }
         }
-        val changedLabels = definitions.update(newlyStable = newlyStableDefinitions, newTail = tailDefinitions)
-        if (changedLabels.isNotEmpty()) {
-            referenceRevision += 1
-        }
-
-        val hydrator = InlineHydrator(
-            inlineParser = inlineParser,
-            referenceRevision = referenceRevision,
-            previousCache = inlineCache,
-        )
+        val changedLabels = definitions.update(newlyStable = parser.takeDefinitions(), newTail = tailDefinitions)
         val changedBlocks = ArrayList<BlockChange>()
-
-        // Stable blocks are only touched when a definition they use changed.
-        val rehydratedIndexes = stable.indexesUsing(changedLabels)
-        rehydratedIndexes.forEach { index ->
-            val previous = stable[index]
-            val current = stable.rehydrate(index = index, hydrator = hydrator)
-            if (current != previous) {
-                changedBlocks += BlockChange(id = current.id, oldIndex = index, newIndex = index, block = current)
+        var rebuiltStableCount = 0
+        if (changedLabels.isNotEmpty()) {
+            inlineCache.definitionsChanged()
+            stable.indexesUsing(changedLabels).forEach { index ->
+                val previous = stable[index]
+                val current = stable.rebuild(index = index, labels = changedLabels, builder = builder)
+                rebuiltStableCount += 1
+                if (current != previous) {
+                    changedBlocks += BlockChange(id = current.id, oldIndex = index, newIndex = index, block = current)
+                }
             }
+            closedBlocks.forEach { builder.invalidate(it, changedLabels) }
+            openBlock?.let { builder.invalidate(it, changedLabels) }
         }
 
-        val newTail = ArrayList<BlockNode>()
-        result.blocks.forEach { raw ->
-            val hydrated = hydrator.hydrate(raw)
-            if (raw.range.start < newStablePrefixEnd) {
-                stable.add(raw = raw, hydrated = hydrated)
-            } else {
-                newTail += hydrated.block
-            }
+        closedBlocks.forEach { block ->
+            builder.build(block)?.let { node -> stable.add(node = node, source = block) }
         }
-        tail = newTail
-        stablePrefixEnd = newStablePrefixEnd
-        inlineCache = hydrator.cache
-        val removedBlockIds = blockIds.endParse(tailStart = newStablePrefixEnd)
+        tail = fork?.blocks()?.mapNotNull(builder::build).orEmpty()
+        val stablePrefixEnd = when {
+            isFinal -> sourceLength
+            openBlock != null -> lineIndex.lineStart(openBlock.startLine)
+            else -> completeEnd
+        }
+        val removedBlockIds = blockIds.endCall()
 
         // Only blocks from the previous tail onward can be new, moved, changed or removed.
         val previousById = HashMap<BlockId, Int>(previousTail.size * 2)
@@ -171,46 +171,29 @@ internal class IncrementalMarkdownEngine(
             dialect = dialect,
             document = MarkdownDocument(
                 sourceLength = sourceLength,
-                lineCount = lineIndex.lineCount(sourceLength = sourceLength),
+                lineCount = lineIndex.lineCount(),
                 blocks = blocks,
             ),
             stablePrefixRange = TextRange(start = 0, endExclusive = stablePrefixEnd),
             isFinal = isFinal,
         )
+        val stats = ParseStats(
+            appendedChars = appendedChars,
+            processedLines = completeLines.size + (if (pendingLine != null) 1 else 0),
+            builtBlocks = builder.builtCount - builtBefore,
+            preservedBlocks = previousStableCount - rebuiltStableCount,
+            inlineParsedBlockCount = inlineCache.parsedCount,
+            inlineCacheHitBlockCount = inlineCache.hitCount,
+        )
+        inlineCache.endCall()
         return ParseDelta(
             version = version,
             changedBlocks = changedBlocks,
             removedBlockIds = removedBlockIds,
-            dirtyRegion = TextRange(start = parseStart, endExclusive = sourceLength),
+            dirtyRegion = TextRange(start = dirtyStart, endExclusive = sourceLength),
             snapshot = snapshot,
-            stats = ParseStats(
-                appendedChars = appendedChars,
-                processedLines = result.processedLineCount,
-                reparsedBlocks = result.blocks.size + rehydratedIndexes.size,
-                preservedBlocks = previousStableCount - rehydratedIndexes.size,
-                inlineParsedBlockCount = hydrator.parsedCount,
-                inlineCacheHitBlockCount = hydrator.cacheHitCount,
-            ),
+            stats = stats,
         )
-    }
-
-    private fun parseTail(parseStart: Int): BlockParseResult {
-        val parser = BlockParser(
-            sourceBuffer = source,
-            lineIndex = lineIndex,
-            dialect = dialect,
-            allocateBlockId = blockIds::allocate,
-        )
-        return parser.parse(isFinal = isFinal, range = TextRange(start = parseStart, endExclusive = source.length))
-    }
-
-    /**
-     * Start of the first top-level block that later input can change. Without open blocks everything up to
-     * the last complete line is final; an unterminated last line never is, even when it is blank.
-     */
-    private fun stablePrefixEndAfter(result: BlockParseResult): Int {
-        val firstOpenStart = result.openBlockStack.firstOrNull()?.startOffset ?: source.length
-        return minOf(firstOpenStart, lineIndex.lastLineStart())
     }
 
     private fun noChangeDelta(): ParseDelta = ParseDelta(

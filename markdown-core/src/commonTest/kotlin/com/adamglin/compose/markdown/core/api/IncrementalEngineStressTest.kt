@@ -89,7 +89,7 @@ class IncrementalEngineStressTest {
         assertEquals("prefix", paragraph.children.inlineLiteral())
         assertTrue(fence.isClosed)
         assertEquals(1, delta.stats.preservedBlocks)
-        assertEquals(1, delta.stats.reparsedBlocks)
+        assertEquals(1, delta.stats.builtBlocks)
     }
 
     @Test
@@ -103,7 +103,8 @@ class IncrementalEngineStressTest {
         assertEquals(headingId, second.snapshot.document.blocks.first().id)
         assertEquals(9, second.dirtyRegion.start)
         assertEquals(1, second.stats.preservedBlocks)
-        assertEquals(2, second.stats.reparsedBlocks)
+        // The list with two items and their paragraphs, then the block quote and its paragraph.
+        assertEquals(7, second.stats.builtBlocks)
     }
 
     @Test

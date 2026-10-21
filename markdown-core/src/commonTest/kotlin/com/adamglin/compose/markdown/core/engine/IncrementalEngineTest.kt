@@ -74,7 +74,8 @@ class IncrementalEngineTest {
         assertEquals(TextRange(0, 20), delta.snapshot.stablePrefixRange)
         assertEquals(TextRange(20, 26), delta.dirtyRegion)
         assertEquals(2, delta.stats.preservedBlocks)
-        assertEquals(1, delta.stats.reparsedBlocks)
+        // The list, its item and the item's paragraph.
+        assertEquals(3, delta.stats.builtBlocks)
         assertEquals(1, delta.stats.processedLines)
     }
 

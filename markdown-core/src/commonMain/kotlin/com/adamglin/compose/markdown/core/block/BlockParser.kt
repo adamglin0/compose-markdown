@@ -3,214 +3,46 @@ package com.adamglin.compose.markdown.core.block
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
 import com.adamglin.compose.markdown.core.inline.unescapeString
 import com.adamglin.compose.markdown.core.internal.LinkReferenceDefinition
-import com.adamglin.compose.markdown.core.internal.OpenBlockFrame
-import com.adamglin.compose.markdown.core.model.BlockId
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.MathBlockDelimiter
-import com.adamglin.compose.markdown.core.model.TableAlignment
 import com.adamglin.compose.markdown.core.model.TaskState
 import com.adamglin.compose.markdown.core.model.TextRange
 import com.adamglin.compose.markdown.core.source.IndexedLine
 import com.adamglin.compose.markdown.core.source.LineIndex
-import com.adamglin.compose.markdown.core.source.SourceBuffer
 
 /**
- * Block structure parser following CommonMark 0.31.2, appendix "A parsing strategy" (the commonmark.js
- * reference implementation): each line first walks the stack of open blocks to match their continuation
- * markers, then looks for new block starts, and finally adds the remaining text to the innermost block,
- * possibly as a lazy paragraph continuation. Tabs advance to the next multiple of four columns.
+ * Streaming block structure parser following CommonMark 0.31.2, appendix "A parsing strategy" (the
+ * commonmark.js reference implementation): each line first walks the stack of open blocks to match their
+ * continuation markers, then looks for new block starts, and finally adds the remaining text to the
+ * innermost block, possibly as a lazy paragraph continuation. Tabs advance to the next multiple of four
+ * columns. GFM tables follow cmark-gfm's table extension; display math (`$$` / `\[`) is a fence-like leaf
+ * block.
  *
- * GFM tables follow cmark-gfm's table extension; display math (`$$` / `\[`) is a fence-like leaf block.
- * The result is turned into immutable [BlockNode]s by
- * [BlockTreeBuilder]; inline content is left as a single text node for the inline parser.
+ * Lines are incorporated one at a time and for good: a later line only changes the open blocks, which
+ * always form the rightmost path of the tree, so closed blocks are final. An unterminated last line may
+ * still grow into something else; it is parsed in a [fork], which copies only the open path and shares
+ * every closed block, and then [finish]ed there. [BlockTreeBuilder] turns the trees into [BlockNode]s.
  */
-internal class BlockParser(
-    private val sourceBuffer: SourceBuffer,
+internal class BlockParser private constructor(
+    private val dialect: MarkdownDialect,
     private val lineIndex: LineIndex,
-    private val dialect: MarkdownDialect,
-    private val allocateBlockId: (kind: String, start: Int, discriminator: String) -> BlockId,
+    private val document: OpenBlock.Document,
+    /** Whether this parser is a speculative copy; blocks it creates or copies are marked speculative. */
+    private val isFork: Boolean,
 ) {
-    /**
-     * Parses the lines of [range], which must start at a line boundary outside any container block.
-     * Unless [isFinal], the result reports the blocks that later input can still change as
-     * [BlockParseResult.openBlockStack], outermost first.
-     */
-    fun parse(
-        isFinal: Boolean,
-        range: TextRange = TextRange(start = 0, endExclusive = sourceBuffer.length),
-    ): BlockParseResult {
-        val source = sourceBuffer.content
-        val lines = if (source.isEmpty() || range.isEmpty) {
-            emptyList()
-        } else {
-            lineIndex.lines(source = source, startOffset = range.start, endExclusive = range.endExclusive)
-        }
-        val session = BlockParserSession(lines = lines, dialect = dialect)
-        // An unterminated last line may still grow into a different block start, so blocks it closed stay open.
-        val pendingLine = lines.lastOrNull()?.takeIf { !isFinal && !it.hasTrailingNewline }
-        val completeLineCount = if (pendingLine != null) lines.size - 1 else lines.size
-        for (index in 0 until completeLineCount) {
-            session.incorporateLine(index)
-        }
-        val openBlockStack = when {
-            isFinal -> emptyList()
-            pendingLine == null -> session.openBlockFrames()
-            else -> {
-                val beforePendingLine = session.openBlockFrames()
-                session.incorporateLine(lines.lastIndex)
-                val afterPendingLine = session.openBlockFrames()
-                val before = beforePendingLine.firstOrNull()?.startOffset
-                val after = afterPendingLine.firstOrNull()?.startOffset
-                if (before != null && (after == null || before < after)) beforePendingLine else afterPendingLine
-            }
-        }
-        val document = session.finish()
-        return BlockParseResult(
-            blocks = BlockTreeBuilder(lines = lines, allocateBlockId = allocateBlockId).build(document),
-            openBlockStack = openBlockStack,
-            processedLineCount = lines.size,
-            parsedDefinitions = session.definitions,
-        )
-    }
-}
+    constructor(dialect: MarkdownDialect, lineIndex: LineIndex) : this(dialect, lineIndex, OpenBlock.Document(), isFork = false)
 
-internal data class BlockParseResult(
-    val blocks: List<BlockNode>,
-    val openBlockStack: List<OpenBlockFrame>,
-    val processedLineCount: Int,
-    val parsedDefinitions: Map<String, LinkReferenceDefinition>,
-)
-
-/** One line of leaf content: [text] from the line's current offset, starting at source offset [sourceStart]. */
-internal class ContentLine(
-    val lineIndex: Int,
-    val text: String,
-    val sourceStart: Int,
-)
-
-/** Mutable block tree built while lines are incorporated; see [BlockTreeBuilder] for the public model. */
-internal sealed class OpenBlock(val startLine: Int) {
-    var parent: OpenBlock? = null
-    val children: MutableList<OpenBlock> = mutableListOf()
-    var isOpen: Boolean = true
-    var endLine: Int = startLine
-
-    /** Number of ancestors; the document is at depth 0. */
-    var depth: Int = 0
-
-    class Document : OpenBlock(startLine = 0)
-
-    class BlockQuote(startLine: Int) : OpenBlock(startLine)
-
-    class ListContainer(startLine: Int, val marker: ListMarker) : OpenBlock(startLine) {
-        var isTight: Boolean = true
-    }
-
-    class Item(startLine: Int, val markerOffset: Int, val padding: Int) : OpenBlock(startLine) {
-        var taskState: TaskState? = null
-    }
-
-    class Paragraph(startLine: Int) : OpenBlock(startLine) {
-        val lines: MutableList<ContentLine> = mutableListOf()
-
-        /** Leading lines that held link reference definitions; they are not paragraph content. */
-        var definitionLineCount: Int = 0
-
-        /** cmark-gfm only tries to turn a paragraph into a table header once. */
-        var triedTableHeader: Boolean = false
-    }
-
-    class Heading(startLine: Int, val level: Int, val isSetext: Boolean, val lines: List<ContentLine>) : OpenBlock(startLine)
-
-    class ThematicBreak(startLine: Int, val marker: String) : OpenBlock(startLine)
-
-    class FencedCode(startLine: Int, val fence: FenceOpener, val fenceOffset: Int, val info: String) : OpenBlock(startLine) {
-        val lines: MutableList<ContentLine> = mutableListOf()
-        var isClosed: Boolean = false
-    }
-
-    class IndentedCode(startLine: Int) : OpenBlock(startLine) {
-        val lines: MutableList<ContentLine> = mutableListOf()
-    }
-
-    /** Display math; a single-line block (`$$x$$`) is complete as soon as it starts. */
-    class Math(startLine: Int, val delimiter: MathBlockDelimiter, val fenceOffset: Int, val isSingleLine: Boolean) : OpenBlock(startLine) {
-        val lines: MutableList<ContentLine> = mutableListOf()
-        var isClosed: Boolean = isSingleLine
-    }
-
-    /**
-     * A table whose header was the last line of the paragraph starting at [paragraphStartLine]; reparsing
-     * must restart there, because the header line alone may parse differently (as a paragraph's first line).
-     */
-    class Table(
-        startLine: Int,
-        val paragraphStartLine: Int,
-        val alignments: List<TableAlignment>,
-        val header: TableRowDraft,
-    ) : OpenBlock(startLine) {
-        val rows: MutableList<TableRowDraft> = mutableListOf()
-    }
-
-    fun canContain(child: OpenBlock): Boolean = when (this) {
-        is Document, is BlockQuote, is Item -> child !is Item
-        is ListContainer -> child is Item
-        else -> false
-    }
-
-    /** Whether the final step of a line may add text (or a table row) to this block. */
-    val acceptsLines: Boolean
-        get() = this is Paragraph || this is FencedCode || this is IndentedCode || (this is Math && !isSingleLine) || this is Table
-
-    /** Whether a later line can still change this block while it is open. */
-    val canGrow: Boolean
-        get() = this !is Heading && this !is ThematicBreak && !(this is Math && isSingleLine)
-}
-
-internal class TableRowDraft(
-    val lineIndex: Int,
-    val sourceStart: Int,
-    val cells: List<TableCellSpan>,
-)
-
-private enum class Continuation {
-    Matched,
-    Failed,
-
-    /** The line was fully handled (a closing fence); go to the next line. */
-    LineConsumed,
-}
-
-private enum class BlockStart {
-    None,
-
-    /** The line is paragraph text; no other block start applies. */
-    Text,
-
-    /** A container started; keep looking for block starts inside it. */
-    Container,
-
-    /** A leaf that takes the rest of the line as content started. */
-    Leaf,
-
-    /** A leaf started and consumed the whole line. */
-    LeafConsumedLine,
-}
-
-internal class BlockParserSession(
-    private val lines: List<IndexedLine>,
-    private val dialect: MarkdownDialect,
-) {
-    private val document = OpenBlock.Document()
     private var tip: OpenBlock = document
     private var oldTip: OpenBlock = document
     private var lastMatchedContainer: OpenBlock = document
     private var allClosed = true
 
-    val definitions: MutableMap<String, LinkReferenceDefinition> = linkedMapOf()
+    /** Labels defined by paragraphs this parser finalized; the first definition of a label wins. */
+    private val definedLabels = HashSet<String>()
+    private val newDefinitions = ArrayList<LinkReferenceDefinition>()
 
     // State of the line being incorporated, as in commonmark.js.
-    private var lineNumber = 0
+    private var lineNumber = -1
     private var line = ""
     private var lineStart = 0
     private var offset = 0
@@ -222,10 +54,84 @@ internal class BlockParserSession(
     private var blank = false
     private var partiallyConsumedTab = false
 
-    fun incorporateLine(index: Int) {
-        lineNumber = index
-        line = lines[index].content.replace('\u0000', '\uFFFD')
-        lineStart = lines[index].range.start
+    /** Incorporates the next source line into the open blocks. */
+    fun incorporate(line: IndexedLine) {
+        incorporateLine(line)
+        // Headings, thematic breaks and single-line math never take another line; closing them right away
+        // keeps every open block changeable, which is what the open path of a fork relies on.
+        val finished = tip
+        if (finished is OpenBlock.Heading || finished is OpenBlock.ThematicBreak || (finished is OpenBlock.Math && finished.isSingleLine)) {
+            finalize(finished, lineNumber)
+        }
+    }
+
+    /** Closes every open block. */
+    fun finish() {
+        while (tip !== document) {
+            finalize(tip, lineNumber)
+        }
+    }
+
+    /**
+     * Top-level blocks closed since the last call, in document order. They are final; the parser forgets
+     * them. At most one top-level block, the last, stays open.
+     */
+    fun takeClosedBlocks(): List<OpenBlock> {
+        val children = document.children
+        val closedCount = if (children.lastOrNull()?.isOpen == true) children.size - 1 else children.size
+        if (closedCount == 0) {
+            return emptyList()
+        }
+        val closed = children.subList(0, closedCount)
+        val result = closed.toList()
+        closed.clear()
+        return result
+    }
+
+    /** Link reference definitions of the paragraphs finalized since the last call, in document order. */
+    fun takeDefinitions(): List<LinkReferenceDefinition> {
+        if (newDefinitions.isEmpty()) {
+            return emptyList()
+        }
+        val result = newDefinitions.toList()
+        newDefinitions.clear()
+        return result
+    }
+
+    /** The top-level blocks; after [finish] they are all closed. */
+    fun blocks(): List<OpenBlock> = document.children
+
+    /** The open top-level block, if any: the only top-level block that later lines can still change. */
+    fun openBlock(): OpenBlock? = document.children.lastOrNull()?.takeIf { it.isOpen }
+
+    /**
+     * A speculative copy for parsing a line that may still change. Only the open blocks are copied, with
+     * forked child and line lists; closed blocks are shared, and the copy never writes to anything shared.
+     */
+    fun fork(): BlockParser {
+        check(!isFork) { "a fork cannot be forked" }
+        val copy = BlockParser(dialect = dialect, lineIndex = lineIndex, document = document.fork(parent = null) as OpenBlock.Document, isFork = true)
+        var original: OpenBlock = document
+        var copied: OpenBlock = copy.document
+        while (true) {
+            val child = original.children.lastOrNull()?.takeIf { it.isOpen } ?: break
+            val childCopy = child.fork(parent = copied)
+            copied.children[copied.children.lastIndex] = childCopy
+            original = child
+            copied = childCopy
+        }
+        check(original === tip) { "the open blocks must end at the tip" }
+        copy.tip = copied
+        copy.oldTip = copied
+        copy.lastMatchedContainer = copied
+        copy.lineNumber = lineNumber
+        return copy
+    }
+
+    private fun incorporateLine(source: IndexedLine) {
+        lineNumber = source.number
+        line = source.content.replace('\u0000', '\uFFFD')
+        lineStart = source.range.start
         offset = 0
         column = 0
         blank = false
@@ -286,25 +192,6 @@ internal class BlockParserSession(
                 addLine()
             }
         }
-    }
-
-    /** Frames of the open blocks that later lines can still change, outermost first. */
-    fun openBlockFrames(): List<OpenBlockFrame> = buildList {
-        var block = document.children.lastOrNull()
-        while (block != null && block.isOpen && block.canGrow) {
-            val startLine = if (block is OpenBlock.Table) block.paragraphStartLine else block.startLine
-            add(OpenBlockFrame(marker = block.frameMarker(), startOffset = lines[startLine].range.start))
-            block = block.children.lastOrNull()
-        }
-    }
-
-    /** Closes every open block and returns the finished tree. */
-    fun finish(): OpenBlock.Document {
-        while (tip !== document) {
-            finalize(tip, lines.lastIndex)
-        }
-        document.isOpen = false
-        return document
     }
 
     // region Continuation
@@ -381,11 +268,7 @@ internal class BlockParserSession(
         val contentEnd = trimmedEnd(line, nextNonspace) - closer.length
         if (contentEnd >= nextNonspace && line.startsWith(closer, contentEnd)) {
             if (!isBlankFrom(line.substring(0, contentEnd), nextNonspace)) {
-                block.lines += ContentLine(
-                    lineIndex = lineNumber,
-                    text = line.substring(nextNonspace, contentEnd),
-                    sourceStart = lineStart + nextNonspace,
-                )
+                block.text.append(line.substring(nextNonspace, contentEnd))
             }
             block.isClosed = true
             finalize(block, lineNumber)
@@ -499,7 +382,7 @@ internal class BlockParserSession(
             isSingleLine = isSingleLine,
         )
         if (isSingleLine) {
-            math.lines += ContentLine(lineIndex = lineNumber, text = line.substring(contentStart, closerIndex), sourceStart = lineStart + contentStart)
+            math.text.append(line.substring(contentStart, closerIndex))
         }
         addChild(math)
         return BlockStart.LeafConsumedLine
@@ -530,9 +413,7 @@ internal class BlockParserSession(
         } else {
             parent.children.removeAt(parent.children.lastIndex)
         }
-        heading.parent = parent
-        parent.children += heading
-        tip = heading
+        replaceTip(parent, heading)
         return BlockStart.LeafConsumedLine
     }
 
@@ -585,7 +466,7 @@ internal class BlockParserSession(
         if (currentList == null || !currentList.marker.continuesListOf(marker)) {
             addChild(OpenBlock.ListContainer(startLine = lineNumber, marker = marker))
         }
-        addChild(OpenBlock.Item(startLine = lineNumber, markerOffset = markerOffset, padding = padding))
+        addChild(OpenBlock.Item(startLine = lineNumber, marker = marker, markerOffset = markerOffset, padding = padding))
         return BlockStart.Container
     }
 
@@ -636,9 +517,13 @@ internal class BlockParserSession(
         val parent = container.parent!!
         val table = OpenBlock.Table(
             startLine = headerLine.lineIndex,
-            paragraphStartLine = container.startLine,
             alignments = alignments,
-            header = TableRowDraft(lineIndex = headerLine.lineIndex, sourceStart = headerLine.sourceStart, cells = headerCells),
+            header = TableRowDraft(
+                lineIndex = headerLine.lineIndex,
+                sourceStart = headerLine.sourceStart,
+                cells = headerCells,
+                isSpeculative = isFork,
+            ),
         )
         if (container.lines.size > 1) {
             container.lines.removeAt(container.lines.lastIndex)
@@ -646,9 +531,7 @@ internal class BlockParserSession(
         } else {
             parent.children.removeAt(parent.children.lastIndex)
         }
-        table.parent = parent
-        parent.children += table
-        tip = table
+        replaceTip(parent, table)
         return BlockStart.LeafConsumedLine
     }
 
@@ -660,9 +543,32 @@ internal class BlockParserSession(
         while (!tip.canContain(block)) {
             finalize(tip, lineNumber - 1)
         }
-        block.parent = tip
-        block.depth = tip.depth + 1
-        tip.children += block
+        // The tip's children are all closed, so their end lines are final: record the blank lines that
+        // make a list loose as children arrive instead of rescanning every item when the list closes.
+        val parent = tip
+        val previous = parent.children.lastOrNull()
+        if (previous != null) {
+            val gap = block.startLine != previous.endLine + 1
+            if (parent is OpenBlock.Item && gap) {
+                parent.hasGapBetweenChildren = true
+            }
+            if (parent is OpenBlock.ListContainer && (gap || (previous as OpenBlock.Item).hasGapBetweenChildren)) {
+                parent.hasGap = true
+            }
+        }
+        block.parent = parent
+        block.depth = parent.depth + 1
+        block.isSpeculative = isFork
+        parent.children += block
+        tip = block
+    }
+
+    /** Adds the setext heading or table that replaces the paragraph that was the last child of [parent]. */
+    private fun replaceTip(parent: OpenBlock, block: OpenBlock) {
+        block.parent = parent
+        block.depth = parent.depth + 1
+        block.isSpeculative = isFork
+        parent.children += block
         tip = block
     }
 
@@ -697,20 +603,20 @@ internal class BlockParserSession(
         tip = block.parent ?: document
     }
 
-    /** Leading link reference definitions become [definitions] (the first one per label wins); they are not paragraph content. */
+    /** Leading link reference definitions are not paragraph content; the first one per label wins. */
     private fun finalizeParagraph(paragraph: OpenBlock.Paragraph) {
         var consumedLines = 0
         scanLeadingDefinitions(paragraph.lines).forEach { (definition, lineCount) ->
             val firstLine = paragraph.lines[consumedLines]
             val lastLine = paragraph.lines[consumedLines + lineCount - 1]
-            if (definition.label !in definitions) {
-                definitions[definition.label] = LinkReferenceDefinition(
+            if (definedLabels.add(definition.label)) {
+                newDefinitions += LinkReferenceDefinition(
                     label = definition.label,
                     destination = definition.destination,
                     title = definition.title,
                     range = TextRange(
-                        start = lines[firstLine.lineIndex].range.start,
-                        endExclusive = lines[lastLine.lineIndex].range.endExclusive,
+                        start = lineIndex.lineStart(firstLine.lineIndex),
+                        endExclusive = lineIndex.lineEnd(lastLine.lineIndex),
                     ),
                 )
             }
@@ -725,7 +631,9 @@ internal class BlockParserSession(
 
     /** Link reference definitions at the start of a paragraph, each with the number of lines it spans. */
     private fun scanLeadingDefinitions(paragraphLines: List<ContentLine>): List<Pair<ScannedDefinition, Int>> {
-        if (!dialect.inlineFeatures.referenceLinks) {
+        // Paragraph lines start at a non-space character, so only a paragraph starting with `[` can
+        // hold definitions; checking first keeps finalizing a long open paragraph cheap.
+        if (!dialect.inlineFeatures.referenceLinks || paragraphLines.firstOrNull()?.text?.startsWith('[') != true) {
             return emptyList()
         }
         val text = paragraphLines.joinToString(separator = "\n") { it.text }
@@ -744,12 +652,9 @@ internal class BlockParserSession(
      * holds two children separated by a blank line (commonmark.js compares source line positions).
      */
     private fun finalizeList(list: OpenBlock.ListContainer) {
-        list.endLine = list.children.last().endLine
-        list.isTight = list.children.withIndex().none { (index, item) ->
-            val nextItem = list.children.getOrNull(index + 1)
-            (nextItem != null && nextItem.startLine != item.endLine + 1) ||
-                item.children.zipWithNext().any { (child, nextChild) -> nextChild.startLine != child.endLine + 1 }
-        }
+        val lastItem = list.children.last() as OpenBlock.Item
+        list.endLine = lastItem.endLine
+        list.isTight = !list.hasGap && !lastItem.hasGapBetweenChildren
     }
 
     // endregion
@@ -765,17 +670,20 @@ internal class BlockParserSession(
         }
         val contentLine = ContentLine(lineIndex = lineNumber, text = padding + line.substring(offset), sourceStart = lineStart + offset)
         when (block) {
-            is OpenBlock.Paragraph -> block.lines += contentLine
-            is OpenBlock.FencedCode -> block.lines += contentLine
+            is OpenBlock.Paragraph -> {
+                block.lines += contentLine
+                block.text.append(contentLine.text)
+            }
+            is OpenBlock.FencedCode -> block.text.append(contentLine.text)
             is OpenBlock.IndentedCode -> block.lines += contentLine
-            is OpenBlock.Math -> block.lines += contentLine
+            is OpenBlock.Math -> block.text.append(contentLine.text)
             else -> error("${block::class.simpleName} does not accept lines")
         }
     }
 
     private fun addTableRow(table: OpenBlock.Table) {
         val cells = checkNotNull(scanTableRow(line, offset)) { "A table only continues on a line with cells" }
-        table.rows += TableRowDraft(lineIndex = lineNumber, sourceStart = lineStart, cells = cells)
+        table.rows += TableRowDraft(lineIndex = lineNumber, sourceStart = lineStart, cells = cells, isSpeculative = isFork)
     }
 
     private fun charAt(index: Int): Char? = line.getOrNull(index)
@@ -833,20 +741,6 @@ internal class BlockParserSession(
 
     // endregion
 
-    private fun OpenBlock.frameMarker(): String = when (this) {
-        is OpenBlock.Document -> "document"
-        is OpenBlock.BlockQuote -> "blockquote"
-        is OpenBlock.ListContainer -> "list"
-        is OpenBlock.Item -> "list-item"
-        is OpenBlock.Paragraph -> "paragraph"
-        is OpenBlock.Heading -> "heading"
-        is OpenBlock.ThematicBreak -> "thematic-break"
-        is OpenBlock.FencedCode -> "fenced-code"
-        is OpenBlock.IndentedCode -> "indented-code"
-        is OpenBlock.Math -> "math-block"
-        is OpenBlock.Table -> "table"
-    }
-
     private companion object {
         const val CODE_INDENT = 4
 
@@ -880,4 +774,28 @@ private fun String.lineCountBetween(start: Int, endExclusive: Int): Int {
         }
     }
     return count
+}
+
+private enum class Continuation {
+    Matched,
+    Failed,
+
+    /** The line was fully handled (a closing fence); go to the next line. */
+    LineConsumed,
+}
+
+private enum class BlockStart {
+    None,
+
+    /** The line is paragraph text; no other block start applies. */
+    Text,
+
+    /** A container started; keep looking for block starts inside it. */
+    Container,
+
+    /** A leaf that takes the rest of the line as content started. */
+    Leaf,
+
+    /** A leaf started and consumed the whole line. */
+    LeafConsumedLine,
 }

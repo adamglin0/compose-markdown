@@ -15,7 +15,7 @@ data class ParseDelta(
     val changedBlocks: List<BlockChange>,
     /** Ids of blocks (at any depth) present in the previous snapshot and absent from this one. */
     val removedBlockIds: List<BlockId>,
-    /** The source range this call re-parsed: from the end of the previous stable prefix to the end of input. */
+    /** The source range this call parsed: from the start of the previous unterminated last line (or the previous end of input) to the end of input. */
     val dirtyRegion: TextRange,
     val snapshot: MarkdownSnapshot,
     val stats: ParseStats,
@@ -30,10 +30,10 @@ data class ParseDelta(
 data class ParseStats(
     /** Characters added to the source by this call, after line ending normalization. */
     val appendedChars: Int,
-    /** Source lines the block parser processed. */
+    /** Source lines the block parser processed: the lines completed by this call and the unterminated last line. */
     val processedLines: Int,
-    /** Top-level blocks produced by the block parser, plus stable blocks whose inline content was resolved again. */
-    val reparsedBlocks: Int,
+    /** Blocks (at any depth) built from parser state by this call; closed blocks are built once and then reused. */
+    val builtBlocks: Int,
     /** Stable top-level blocks carried over untouched. */
     val preservedBlocks: Int,
     /** Blocks (at any depth) whose inline content was parsed. */
@@ -44,7 +44,7 @@ data class ParseStats(
     init {
         require(appendedChars >= 0) { "appendedChars must be non-negative" }
         require(processedLines >= 0) { "processedLines must be non-negative" }
-        require(reparsedBlocks >= 0) { "reparsedBlocks must be non-negative" }
+        require(builtBlocks >= 0) { "builtBlocks must be non-negative" }
         require(preservedBlocks >= 0) { "preservedBlocks must be non-negative" }
         require(inlineParsedBlockCount >= 0) { "inlineParsedBlockCount must be non-negative" }
         require(inlineCacheHitBlockCount >= 0) { "inlineCacheHitBlockCount must be non-negative" }
@@ -54,7 +54,7 @@ data class ParseStats(
         val Empty = ParseStats(
             appendedChars = 0,
             processedLines = 0,
-            reparsedBlocks = 0,
+            builtBlocks = 0,
             preservedBlocks = 0,
             inlineParsedBlockCount = 0,
             inlineCacheHitBlockCount = 0,

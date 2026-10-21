@@ -1,104 +1,58 @@
 package com.adamglin.compose.markdown.core.source
 
-import com.adamglin.compose.markdown.core.model.LineRange
 import com.adamglin.compose.markdown.core.model.TextRange
 
+/**
+ * Line boundaries of the append-only source. Lines are numbered from 0; a line ends after its `\n`, and
+ * the last line ends at the end of the source. A final line ending does not start another line for
+ * [lines], but [lineCount] counts the empty line after it.
+ */
 internal class LineIndex {
-    private val _newlineOffsets: MutableList<Int> = mutableListOf()
+    private var newlineOffsets = IntArray(INITIAL_CAPACITY)
+    private var newlineCount = 0
+
+    /** Length of the source indexed so far. */
+    var length: Int = 0
+        private set
 
     fun reset() {
-        _newlineOffsets.clear()
+        newlineOffsets = IntArray(INITIAL_CAPACITY)
+        newlineCount = 0
+        length = 0
     }
 
-    fun append(chunk: String, startOffset: Int) {
+    fun append(chunk: String) {
         chunk.forEachIndexed { index, char ->
             if (char == '\n') {
-                _newlineOffsets += startOffset + index
+                if (newlineCount == newlineOffsets.size) {
+                    newlineOffsets = newlineOffsets.copyOf(newSize = newlineCount * 2)
+                }
+                newlineOffsets[newlineCount] = length + index
+                newlineCount += 1
             }
         }
+        length += chunk.length
     }
 
-    fun lineCount(sourceLength: Int): Int {
-        if (sourceLength == 0) {
-            return 0
-        }
-
-        return _newlineOffsets.size + 1
-    }
-
-    fun lineRangeOf(range: TextRange, sourceLength: Int): LineRange {
-        if (sourceLength == 0) {
-            return LineRange.Empty
-        }
-
-        if (range.isEmpty && range.start == sourceLength) {
-            val count = lineCount(sourceLength = sourceLength)
-            return LineRange(startLine = count - 1, endLineExclusive = count)
-        }
-
-        val startLine = lineOf(offset = range.start)
-        val endProbe = when {
-            range.isEmpty -> range.start
-            range.endExclusive == 0 -> 0
-            else -> range.endExclusive - 1
-        }
-        val endLineExclusive = lineOf(offset = endProbe) + 1
-        return LineRange(startLine = startLine, endLineExclusive = endLineExclusive)
-    }
+    fun lineCount(): Int = if (length == 0) 0 else newlineCount + 1
 
     /** Offset where the last line starts: just after the last line ending, or 0 without one. */
-    fun lastLineStart(): Int = if (_newlineOffsets.isEmpty()) 0 else _newlineOffsets.last() + 1
+    fun lastLineStart(): Int = if (newlineCount == 0) 0 else newlineOffsets[newlineCount - 1] + 1
 
-    /** Lines of [source] within [startOffset, endExclusive); only the lines are copied, never the whole source. */
-    fun lines(
-        source: CharSequence,
-        startOffset: Int = 0,
-        endExclusive: Int = source.length,
-    ): List<IndexedLine> {
-        if (source.isEmpty() || startOffset >= endExclusive) {
-            return emptyList()
-        }
+    fun lineStart(number: Int): Int = if (number == 0) 0 else newlineOffsets[number - 1] + 1
 
-        val result = mutableListOf<IndexedLine>()
-        var lineStart = startOffset
-        var lineNumber = lineOf(offset = startOffset)
-        var newlineIndex = lowerBound(value = startOffset)
-        while (newlineIndex < _newlineOffsets.size) {
-            val newlineOffset = _newlineOffsets[newlineIndex]
-            if (newlineOffset >= endExclusive) {
-                break
-            }
-            result += IndexedLine(
-                number = lineNumber,
-                range = TextRange(start = lineStart, endExclusive = newlineOffset + 1),
-                content = source.substring(lineStart, newlineOffset),
-                hasTrailingNewline = true,
-            )
-            lineStart = newlineOffset + 1
-            lineNumber += 1
-            newlineIndex += 1
-        }
+    /** End of line [number], after its line ending. */
+    fun lineEnd(number: Int): Int = if (number < newlineCount) newlineOffsets[number] + 1 else length
 
-        if (lineStart < endExclusive) {
-            result += IndexedLine(
-                number = lineNumber,
-                range = TextRange(start = lineStart, endExclusive = endExclusive),
-                content = source.substring(lineStart, endExclusive),
-                hasTrailingNewline = false,
-            )
-        }
+    /** End of the content of line [number], before its line ending. */
+    fun contentEnd(number: Int): Int = if (number < newlineCount) newlineOffsets[number] else length
 
-        return result
-    }
-
-    fun lineOf(offset: Int): Int = lowerBound(value = offset)
-
-    private fun lowerBound(value: Int): Int {
+    fun lineOf(offset: Int): Int {
         var low = 0
-        var high = _newlineOffsets.size
+        var high = newlineCount
         while (low < high) {
             val mid = (low + high) ushr 1
-            if (_newlineOffsets[mid] < value) {
+            if (newlineOffsets[mid] < offset) {
                 low = mid + 1
             } else {
                 high = mid
@@ -106,16 +60,34 @@ internal class LineIndex {
         }
         return low
     }
+
+    /** Lines of [source] that start within [startOffset, endExclusive); only these lines are copied. */
+    fun lines(source: CharSequence, startOffset: Int, endExclusive: Int): List<IndexedLine> {
+        val result = ArrayList<IndexedLine>()
+        var number = lineOf(startOffset)
+        var start = startOffset
+        while (start < endExclusive) {
+            val end = minOf(lineEnd(number), endExclusive)
+            val contentEnd = minOf(contentEnd(number), end)
+            result += IndexedLine(
+                number = number,
+                range = TextRange(start = start, endExclusive = end),
+                content = source.substring(start, contentEnd),
+            )
+            start = end
+            number += 1
+        }
+        return result
+    }
+
+    private companion object {
+        const val INITIAL_CAPACITY = 64
+    }
 }
 
-/**
- * One source line. [content] excludes the line ending; [hasTrailingNewline] is false only for an
- * unterminated last line, which a streaming source may still extend. A final line ending does not start
- * another (empty) line.
- */
-internal data class IndexedLine(
+/** One source line; [content] excludes the line ending. */
+internal class IndexedLine(
     val number: Int,
     val range: TextRange,
     val content: String,
-    val hasTrailingNewline: Boolean,
 )

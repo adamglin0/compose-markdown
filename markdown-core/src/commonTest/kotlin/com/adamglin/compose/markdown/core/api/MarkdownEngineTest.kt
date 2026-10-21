@@ -44,7 +44,7 @@ class MarkdownEngineTest {
         assertTrue(delta.snapshot.isFinal)
         assertEquals(5, delta.snapshot.stablePrefixEnd)
         assertEquals(0, delta.changedBlocks.size)
-        assertEquals(0, delta.stats.reparsedBlocks)
+        assertEquals(0, delta.stats.builtBlocks)
         assertEquals(0, delta.stats.processedLines)
     }
 
@@ -90,7 +90,7 @@ class MarkdownEngineTest {
         assertEquals(8, delta.dirtyRegion.start)
         assertEquals(delta.snapshot.document.sourceLength, delta.dirtyRegion.endExclusive)
         assertEquals(1, delta.stats.preservedBlocks)
-        assertEquals(1, delta.stats.reparsedBlocks)
+        assertEquals(1, delta.stats.builtBlocks)
         assertEquals(1, delta.stats.processedLines)
     }
 
@@ -149,7 +149,8 @@ class MarkdownEngineTest {
         assertEquals(5, delta.snapshot.stablePrefixEnd)
         assertEquals(0, delta.snapshot.stablePrefixRange.start)
         assertEquals(0, delta.stats.preservedBlocks)
-        assertEquals(2, delta.stats.reparsedBlocks)
+        // The heading, the block quote and its fence.
+        assertEquals(3, delta.stats.builtBlocks)
     }
 
     @Test

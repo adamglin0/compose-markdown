@@ -4,193 +4,360 @@ import com.adamglin.compose.markdown.core.internal.BlockIdentity
 import com.adamglin.compose.markdown.core.model.BlockId
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.HeadingStyle
-import com.adamglin.compose.markdown.core.model.InlineId
 import com.adamglin.compose.markdown.core.model.InlineNode
 import com.adamglin.compose.markdown.core.model.LineRange
 import com.adamglin.compose.markdown.core.model.ListType
-import com.adamglin.compose.markdown.core.model.TableAlignment
 import com.adamglin.compose.markdown.core.model.TextRange
-import com.adamglin.compose.markdown.core.source.IndexedLine
+import com.adamglin.compose.markdown.core.source.LineIndex
+
+/** Inline content of one leaf and the reference labels it uses. */
+internal class ResolvedInline(
+    val nodes: List<InlineNode>,
+    val labels: Set<String>,
+)
+
+/** Parses the raw inline text of the leaf with [id]; see the engine's inline cache. */
+internal fun interface InlineResolver {
+    fun resolve(id: BlockId, literal: String, range: TextRange): ResolvedInline
+}
+
+/** Hands out a block id for an identity key; [isFinal] ids are never requested again. */
+internal fun interface BlockIdSource {
+    fun allocate(kind: String, start: Int, depth: Int, discriminator: String, isFinal: Boolean): BlockId
+}
 
 /**
- * Turns a finished [OpenBlock] tree into immutable [BlockNode]s. Every block spans whole source lines;
- * paragraph, heading and table cell content becomes a single [InlineNode.Text] for the inline parser.
- * Block IDs are allocated parent first, in document order.
+ * Turns [OpenBlock] trees into immutable [BlockNode]s with resolved inline content. Every block spans
+ * whole source lines.
+ *
+ * A closed block that is not speculative is final, so it is built once and cached on the block; an open
+ * container reuses the cached nodes of its closed children (and an open table those of its rows) through
+ * a shared array, so rebuilding it costs time proportional to its open part, not to its size. Ids of
+ * final blocks are kept when they are rebuilt for a changed link reference definition ([invalidate]).
  */
 internal class BlockTreeBuilder(
-    private val lines: List<IndexedLine>,
-    private val allocateBlockId: (kind: String, start: Int, discriminator: String) -> BlockId,
+    private val lineIndex: LineIndex,
+    private val ids: BlockIdSource,
+    private val inline: InlineResolver,
 ) {
-    fun build(document: OpenBlock.Document): List<BlockNode> = buildChildren(document)
+    /** Blocks (at any depth) built so far, not counting cache hits. */
+    var builtCount: Int = 0
+        private set
 
-    private fun buildChildren(block: OpenBlock): List<BlockNode> = block.children.mapNotNull(::build)
+    /** Builds [block]; returns null for a paragraph that holds only link reference definitions. */
+    fun build(block: OpenBlock): BlockNode? = build(block, labels = null)
 
-    private fun build(block: OpenBlock): BlockNode? = when (block) {
-        is OpenBlock.Document -> error("The document is not a child block")
-        is OpenBlock.BlockQuote -> BlockNode.BlockQuote(
-            id = allocate("blockquote", block.startLine, "container"),
-            range = rangeOf(block.startLine, block.endLine),
-            lineRange = lineRangeOf(block.startLine, block.endLine),
-            children = buildChildren(block),
-        )
-
-        is OpenBlock.ListContainer -> {
-            val type = block.marker.toListType()
-            BlockNode.ListBlock(
-                id = allocate("list-block", block.startLine, BlockIdentity.listDiscriminator(type)),
-                range = rangeOf(block.startLine, block.endLine),
-                lineRange = lineRangeOf(block.startLine, block.endLine),
-                type = type,
-                items = block.children.map { item -> build(item) as BlockNode.ListItem },
-                isLoose = !block.isTight,
-            )
+    /**
+     * Marks the cached nodes in [block] (closed or open) that use any of [labels] as stale and rebuilds the
+     * cached children among them, so that the next [build] resolves their inline content again.
+     */
+    fun invalidate(block: OpenBlock, labels: Set<String>) {
+        if (block.isBuilt) {
+            if (block.labels.none(labels::contains)) {
+                return
+            }
+            block.isBuilt = false
         }
-
-        is OpenBlock.Item -> BlockNode.ListItem(
-            id = allocate("list-item", block.startLine, BlockIdentity.LIST_ITEM_DISCRIMINATOR),
-            range = rangeOf(block.startLine, block.endLine),
-            lineRange = lineRangeOf(block.startLine, block.endLine),
-            children = buildChildren(block),
-            taskState = block.taskState,
-        )
-
-        is OpenBlock.Paragraph -> buildParagraph(block)
-        is OpenBlock.Heading -> {
-            val style = if (block.isSetext) HeadingStyle.Setext else HeadingStyle.Atx
-            BlockNode.Heading(
-                id = allocate("heading", block.startLine, BlockIdentity.headingDiscriminator(style = style, level = block.level)),
-                range = rangeOf(block.startLine, block.endLine),
-                lineRange = lineRangeOf(block.startLine, block.endLine),
-                level = block.level,
-                children = inlineText(block.lines),
-                style = style,
-            )
+        val cache = block.childCache
+        for (index in 0 until cache.consumed) {
+            val child = block.children[index]
+            if (child.labels.any(labels::contains)) {
+                invalidate(child, labels)
+                val node = build(child, labels = null)
+                if (child.cacheIndex >= 0) {
+                    cache.nodes[child.cacheIndex] = checkNotNull(node) { "a block that used labels still builds to a node" }
+                }
+            }
         }
-
-        is OpenBlock.ThematicBreak -> BlockNode.ThematicBreak(
-            id = allocate("thematic-break", block.startLine, block.marker.filterNot(Char::isWhitespace)),
-            range = rangeOf(block.startLine, block.endLine),
-            lineRange = lineRangeOf(block.startLine, block.endLine),
-            marker = block.marker,
-        )
-
-        is OpenBlock.FencedCode -> {
-            val infoString = block.info.ifEmpty { null }
-            BlockNode.FencedCodeBlock(
-                id = allocate("fenced-code", block.startLine, block.info),
-                range = rangeOf(block.startLine, block.endLine),
-                lineRange = lineRangeOf(block.startLine, block.endLine),
-                infoString = infoString,
-                languageHint = normalizeFenceLanguageHint(infoString),
-                literal = block.lines.joinToString(separator = "\n") { it.text },
-                isClosed = block.isClosed,
-            )
+        if (block is OpenBlock.Table) {
+            val rowCache = block.rowCache
+            for (index in 0 until rowCache.size) {
+                val row = block.rows[index]
+                if (row.labels.any(labels::contains)) {
+                    rowCache[index] = buildRow(block, row, isHeader = false, isFinal = true, previous = rowCache[index], labels = null)
+                }
+            }
         }
-
-        is OpenBlock.IndentedCode -> BlockNode.IndentedCodeBlock(
-            id = allocate("indented-code", block.startLine, "indented"),
-            range = rangeOf(block.startLine, block.endLine),
-            lineRange = lineRangeOf(block.startLine, block.endLine),
-            literal = block.lines.joinToString(separator = "\n") { it.text },
-        )
-
-        is OpenBlock.Math -> BlockNode.MathBlock(
-            id = allocate("math-block", block.startLine, block.delimiter.name),
-            range = rangeOf(block.startLine, block.endLine),
-            lineRange = lineRangeOf(block.startLine, block.endLine),
-            latex = block.lines.joinToString(separator = "\n") { it.text }.trim(),
-            isClosed = block.isClosed,
-            delimiter = block.delimiter,
-        )
-
-        is OpenBlock.Table -> buildTable(block)
+        block.children.lastOrNull()?.takeIf { it.isOpen }?.let { invalidate(it, labels) }
     }
 
-    private fun buildParagraph(block: OpenBlock.Paragraph): BlockNode.Paragraph? {
-        val contentLines = block.lines.drop(block.definitionLineCount)
-        if (contentLines.isEmpty()) {
+    private fun build(block: OpenBlock, labels: MutableSet<String>?): BlockNode? {
+        if (block.isOpen || block.isSpeculative) {
+            return buildNode(block, isFinal = false, labels = labels)
+        }
+        if (!block.isBuilt) {
+            val own = HashSet<String>()
+            block.built = buildNode(block, isFinal = true, labels = own)
+            block.labels = own
+            block.isBuilt = true
+        }
+        labels?.addAll(block.labels)
+        return block.built
+    }
+
+    private fun buildNode(block: OpenBlock, isFinal: Boolean, labels: MutableSet<String>?): BlockNode? {
+        builtCount += 1
+        return when (block) {
+            is OpenBlock.Document -> error("The document is not a child block")
+            is OpenBlock.BlockQuote -> BlockNode.BlockQuote(
+                id = idOf(block, "blockquote", "container", isFinal),
+                range = rangeOf(block.startLine, block.endLine),
+                lineRange = lineRangeOf(block.startLine, block.endLine),
+                children = buildChildren(block, labels),
+            )
+
+            is OpenBlock.ListContainer -> {
+                val type = block.marker.toListType()
+                BlockNode.ListBlock(
+                    id = idOf(block, "list-block", BlockIdentity.listDiscriminator(type), isFinal),
+                    range = rangeOf(block.startLine, block.endLine),
+                    lineRange = lineRangeOf(block.startLine, block.endLine),
+                    type = type,
+                    items = buildChildren(block, labels).asItems(),
+                    isLoose = !block.isTight,
+                )
+            }
+
+            is OpenBlock.Item -> BlockNode.ListItem(
+                id = idOf(block, "list-item", BlockIdentity.LIST_ITEM_DISCRIMINATOR, isFinal),
+                range = rangeOf(block.startLine, block.endLine),
+                lineRange = lineRangeOf(block.startLine, block.endLine),
+                children = buildChildren(block, labels),
+                taskState = block.taskState,
+            )
+
+            is OpenBlock.Paragraph -> buildParagraph(block, isFinal, labels)
+            is OpenBlock.Heading -> {
+                val style = if (block.isSetext) HeadingStyle.Setext else HeadingStyle.Atx
+                val id = idOf(block, "heading", BlockIdentity.headingDiscriminator(style = style, level = block.level), isFinal)
+                BlockNode.Heading(
+                    id = id,
+                    range = rangeOf(block.startLine, block.endLine),
+                    lineRange = lineRangeOf(block.startLine, block.endLine),
+                    level = block.level,
+                    children = inlineContent(id, block.lines, labels),
+                    style = style,
+                )
+            }
+
+            is OpenBlock.ThematicBreak -> BlockNode.ThematicBreak(
+                id = idOf(block, "thematic-break", block.marker.filterNot(Char::isWhitespace), isFinal),
+                range = rangeOf(block.startLine, block.endLine),
+                lineRange = lineRangeOf(block.startLine, block.endLine),
+                marker = block.marker,
+            )
+
+            is OpenBlock.FencedCode -> {
+                val infoString = block.info.ifEmpty { null }
+                BlockNode.FencedCodeBlock(
+                    id = idOf(block, "fenced-code", block.info, isFinal),
+                    range = rangeOf(block.startLine, block.endLine),
+                    lineRange = lineRangeOf(block.startLine, block.endLine),
+                    infoString = infoString,
+                    languageHint = normalizeFenceLanguageHint(infoString),
+                    literal = block.text.toString(),
+                    isClosed = block.isClosed,
+                )
+            }
+
+            is OpenBlock.IndentedCode -> BlockNode.IndentedCodeBlock(
+                id = idOf(block, "indented-code", "indented", isFinal),
+                range = rangeOf(block.startLine, block.endLine),
+                lineRange = lineRangeOf(block.startLine, block.endLine),
+                literal = block.lines.joinToString(separator = "\n") { it.text },
+            )
+
+            is OpenBlock.Math -> BlockNode.MathBlock(
+                id = idOf(block, "math-block", block.delimiter.name, isFinal),
+                range = rangeOf(block.startLine, block.endLine),
+                lineRange = lineRangeOf(block.startLine, block.endLine),
+                latex = block.text.toString().trim(),
+                isClosed = block.isClosed,
+                delimiter = block.delimiter,
+            )
+
+            is OpenBlock.Table -> buildTable(block, isFinal, labels)
+        }
+    }
+
+    /** Cached nodes of the leading closed children, followed by the others built now. */
+    private fun buildChildren(block: OpenBlock, labels: MutableSet<String>?): List<BlockNode> {
+        val cache = block.childCache
+        val children = block.children
+        while (cache.consumed < children.size) {
+            val child = children[cache.consumed]
+            if (child.isOpen || child.isSpeculative) {
+                break
+            }
+            build(child, labels = null)?.let { node ->
+                child.cacheIndex = cache.nodes.size
+                cache.nodes.add(node)
+            }
+            cache.consumed += 1
+        }
+        if (labels != null) {
+            for (index in 0 until cache.consumed) {
+                labels += children[index].labels
+            }
+        }
+        val rest = ArrayList<BlockNode>(children.size - cache.consumed)
+        for (index in cache.consumed until children.size) {
+            build(children[index], labels)?.let(rest::add)
+        }
+        return cache.nodes.followedBy(rest)
+    }
+
+    private fun buildParagraph(block: OpenBlock.Paragraph, isFinal: Boolean, labels: MutableSet<String>?): BlockNode.Paragraph? {
+        if (block.definitionLineCount == block.lines.size) {
             return null
         }
+        val contentLines = block.lines.subList(block.definitionLineCount, block.lines.size)
         val startLine = contentLines.first().lineIndex
         val endLine = contentLines.last().lineIndex
+        val id = idOf(block, "paragraph", "paragraph", isFinal, startLine = startLine)
+        val joined = if (block.text.lineCount == block.lines.size) {
+            var definitionLength = 0
+            for (index in 0 until block.definitionLineCount) {
+                definitionLength += block.lines[index].text.length + 1
+            }
+            block.text.substring(definitionLength)
+        } else {
+            contentLines.joinToString(separator = "\n") { it.text }
+        }
         return BlockNode.Paragraph(
-            id = allocate("paragraph", startLine, "paragraph"),
+            id = id,
             range = rangeOf(startLine, endLine),
             lineRange = lineRangeOf(startLine, endLine),
-            children = inlineText(contentLines),
+            children = inlineContent(id, contentLines, labels, joined),
         )
     }
 
-    private fun buildTable(block: OpenBlock.Table): BlockNode.TableBlock {
-        val columnCount = block.alignments.size
+    private fun buildTable(block: OpenBlock.Table, isFinal: Boolean, labels: MutableSet<String>?): BlockNode.TableBlock {
+        val rowCache = block.rowCache
+        while (rowCache.size < block.rows.size && !block.rows[rowCache.size].isSpeculative) {
+            val row = block.rows[rowCache.size]
+            rowCache.add(buildRow(block, row, isHeader = false, isFinal = true, previous = null, labels = null))
+        }
+        if (labels != null) {
+            for (index in 0 until rowCache.size) {
+                labels += block.rows[index].labels
+            }
+        }
+        val rest = ArrayList<BlockNode.TableRow>(block.rows.size - rowCache.size)
+        for (index in rowCache.size until block.rows.size) {
+            rest += buildRow(block, block.rows[index], isHeader = false, isFinal = false, previous = null, labels = labels)
+        }
+        val previousHeader = (block.built as BlockNode.TableBlock?)?.header?.takeIf { isFinal }
         return BlockNode.TableBlock(
-            id = allocate("table", block.startLine, BlockIdentity.tableDiscriminator(alignments = block.alignments)),
+            id = idOf(block, "table", BlockIdentity.tableDiscriminator(alignments = block.alignments), isFinal),
             range = rangeOf(block.startLine, block.endLine),
             lineRange = lineRangeOf(block.startLine, block.endLine),
-            header = buildTableRow(block.header, columnCount, isHeader = true),
+            header = buildRow(block, block.header, isHeader = true, isFinal = isFinal, previous = previousHeader, labels = labels),
             alignments = block.alignments,
-            rows = block.rows.map { row -> buildTableRow(row, columnCount, isHeader = false) },
+            rows = rowCache.followedBy(rest),
         )
     }
 
-    /** Rows keep exactly [columnCount] cells: extra cells are dropped and missing ones are empty. */
-    private fun buildTableRow(row: TableRowDraft, columnCount: Int, isHeader: Boolean): BlockNode.TableRow {
-        val line = lines[row.lineIndex]
-        val rowStart = line.range.start
+    /**
+     * Rows keep exactly as many cells as the table has columns: extra cells are dropped and missing ones
+     * are empty. A final row keeps the ids of its [previous] node.
+     */
+    private fun buildRow(
+        table: OpenBlock.Table,
+        row: TableRowDraft,
+        isHeader: Boolean,
+        isFinal: Boolean,
+        previous: BlockNode.TableRow?,
+        labels: MutableSet<String>?,
+    ): BlockNode.TableRow {
+        builtCount += 1
+        val rowLabels = if (isFinal && !isHeader) HashSet<String>() else labels
+        val rowStart = lineIndex.lineStart(row.lineIndex)
         val lineRange = lineRangeOf(row.lineIndex, row.lineIndex)
-        val rowId = allocateBlockId("table-row", rowStart, BlockIdentity.tableRowDiscriminator(isHeader = isHeader))
-        val contentEnd = line.range.start + line.content.length
-        return BlockNode.TableRow(
+        val contentEnd = lineIndex.contentEnd(row.lineIndex)
+        val rowId = previous?.id ?: ids.allocate(
+            "table-row",
+            rowStart,
+            table.depth + 1,
+            BlockIdentity.tableRowDiscriminator(isHeader = isHeader),
+            isFinal,
+        )
+        val node = BlockNode.TableRow(
             id = rowId,
-            range = line.range,
+            range = TextRange(start = rowStart, endExclusive = lineIndex.lineEnd(row.lineIndex)),
             lineRange = lineRange,
-            cells = List(columnCount) { index ->
+            cells = List(table.alignments.size) { index ->
                 val cell = row.cells.getOrNull(index)
                 val range = if (cell == null) {
                     TextRange(start = contentEnd, endExclusive = contentEnd)
                 } else {
                     TextRange(start = row.sourceStart + cell.start, endExclusive = row.sourceStart + cell.endExclusive)
                 }
+                val id = previous?.cells?.get(index)?.id ?: ids.allocate(
+                    "table-cell",
+                    range.start,
+                    table.depth + 2,
+                    BlockIdentity.tableCellDiscriminator(rowStart = rowStart, index = index),
+                    isFinal,
+                )
                 BlockNode.TableCell(
-                    id = allocateBlockId("table-cell", range.start, BlockIdentity.tableCellDiscriminator(rowStart = rowStart, index = index)),
+                    id = id,
                     range = range,
                     lineRange = lineRange,
-                    children = cell?.let { textNode(it.text, range) }.orEmpty(),
+                    children = if (cell == null || cell.text.isEmpty()) emptyList() else resolve(id, cell.text, range, rowLabels),
                 )
             },
             isHeader = isHeader,
         )
+        if (rowLabels !== labels) {
+            row.labels = rowLabels.orEmpty()
+            labels?.addAll(row.labels)
+        }
+        return node
     }
 
-    /** Joins content lines and drops trailing spaces and tabs, which never reach the rendered text. */
-    private fun inlineText(contentLines: List<ContentLine>): List<InlineNode> {
+    /** Joins content lines, drops trailing spaces and tabs (they never reach the rendered text) and resolves inline content. */
+    private fun inlineContent(
+        id: BlockId,
+        contentLines: List<ContentLine>,
+        labels: MutableSet<String>?,
+        joined: String = contentLines.joinToString(separator = "\n") { it.text },
+    ): List<InlineNode> {
         if (contentLines.isEmpty()) {
             return emptyList()
         }
-        val literal = contentLines.joinToString(separator = "\n") { it.text }.trimEnd(' ', '\t')
-        val last = contentLines.last()
-        val lastContentEnd = lines[last.lineIndex].let { it.range.start + it.content.length }
-        val start = contentLines.first().sourceStart
-        return textNode(literal, TextRange(start = start, endExclusive = maxOf(start, lastContentEnd)))
-    }
-
-    private fun textNode(literal: String, range: TextRange): List<InlineNode> {
+        val literal = joined.trimEnd(' ', '\t')
         if (literal.isEmpty()) {
             return emptyList()
         }
-        val raw = (range.start.toLong() shl 32) xor range.endExclusive.toLong() xor literal.hashCode().toLong()
-        return listOf(InlineNode.Text(id = InlineId(raw = raw and Long.MAX_VALUE), range = range, literal = literal))
+        val start = contentLines.first().sourceStart
+        val end = lineIndex.contentEnd(contentLines.last().lineIndex)
+        return resolve(id, literal, TextRange(start = start, endExclusive = maxOf(start, end)), labels)
     }
 
-    private fun allocate(kind: String, startLine: Int, discriminator: String): BlockId =
-        allocateBlockId(kind, lines[startLine].range.start, discriminator)
+    private fun resolve(id: BlockId, literal: String, range: TextRange, labels: MutableSet<String>?): List<InlineNode> {
+        val resolved = inline.resolve(id, literal, range)
+        labels?.addAll(resolved.labels)
+        return resolved.nodes
+    }
+
+    /** A final block that is rebuilt keeps its id; any other block asks for the id of its identity key. */
+    private fun idOf(block: OpenBlock, kind: String, discriminator: String, isFinal: Boolean, startLine: Int = block.startLine): BlockId {
+        if (isFinal) {
+            block.built?.let { return it.id }
+        }
+        return ids.allocate(kind, lineIndex.lineStart(startLine), block.depth, discriminator, isFinal)
+    }
 
     private fun rangeOf(startLine: Int, endLine: Int): TextRange =
-        TextRange(start = lines[startLine].range.start, endExclusive = lines[maxOf(startLine, endLine)].range.endExclusive)
+        TextRange(start = lineIndex.lineStart(startLine), endExclusive = lineIndex.lineEnd(maxOf(startLine, endLine)))
 
     private fun lineRangeOf(startLine: Int, endLine: Int): LineRange =
-        LineRange(startLine = lines[startLine].number, endLineExclusive = lines[maxOf(startLine, endLine)].number + 1)
+        LineRange(startLine = startLine, endLineExclusive = maxOf(startLine, endLine) + 1)
 }
+
+@Suppress("UNCHECKED_CAST")
+private fun List<BlockNode>.asItems(): List<BlockNode.ListItem> = this as List<BlockNode.ListItem>
 
 private fun ListMarker.toListType(): ListType =
     if (bulletChar != null) ListType.Bullet(bulletChar = bulletChar) else ListType.Ordered(startNumber = startNumber, delimiter = delimiter!!)
