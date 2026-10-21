@@ -4,21 +4,23 @@ on:
   push:
     branches:
       - main
-      - master
   pull_request:
 
 jobs:
   build:
+    name: Build (Linux)
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDKs
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: |
+            17
+            21
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -28,3 +30,30 @@ jobs:
 
       - name: Sample dry run
         run: ./gradlew :sample-chat:run --dry-run
+
+  ios:
+    name: Library iOS tests
+    # Compose Multiplatform 1.11 links against iOS 26 SDK symbols, so Xcode 26 is required.
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDKs
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: iOS compile and simulator tests
+        run: >-
+          ./gradlew
+          :markdown-core:compileKotlinIosArm64
+          :markdown-core:iosSimulatorArm64Test
+          :markdown-compose:compileKotlinIosArm64
+          :markdown-compose:iosSimulatorArm64Test

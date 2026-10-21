@@ -21,7 +21,8 @@ concurrency:
 jobs:
   publish:
     name: Publish To Maven Central
-    runs-on: macos-latest
+    # Compose Multiplatform 1.11 links against iOS 26 SDK symbols, so Xcode 26 is required.
+    runs-on: macos-26
     timeout-minutes: 60
     outputs:
       release_version: ${{ steps.version.outputs.release_version }}
@@ -32,11 +33,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDKs
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: |
+            17
+            21
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -84,8 +87,8 @@ jobs:
           echo "release_tag=${release_tag}" >> "${GITHUB_OUTPUT}"
           echo "prerelease=${prerelease}" >> "${GITHUB_OUTPUT}"
 
-      - name: Run CI checks
-        run: ./gradlew ciCheck
+      - name: Check published libraries
+        run: ./gradlew :markdown-core:check :markdown-compose:check
         env:
           ORG_GRADLE_PROJECT_releaseVersion: ${{ steps.version.outputs.release_version }}
 
