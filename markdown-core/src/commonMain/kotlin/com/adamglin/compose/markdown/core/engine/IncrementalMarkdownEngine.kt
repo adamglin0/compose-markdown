@@ -135,7 +135,7 @@ internal class IncrementalMarkdownEngine(
                 val previous = stable[index]
                 val current = stable.rebuild(index = index, labels = changedLabels, builder = builder)
                 rebuiltStableCount += 1
-                if (current != previous) {
+                if (current !== previous) {
                     changedBlocks += BlockChange(id = current.id, oldIndex = index, newIndex = index, block = current)
                 }
             }
@@ -143,10 +143,16 @@ internal class IncrementalMarkdownEngine(
             openBlock?.let { builder.invalidate(it, changedLabels) }
         }
 
+        // A block rebuilt equal to its previous version keeps that instance, so unchanged blocks are always
+        // the same instances across snapshots.
+        val previousIndexById = HashMap<BlockId, Int>(previousTail.size * 2)
+        previousTail.forEachIndexed { offset, block -> previousIndexById[block.id] = previousStableCount + offset }
+        fun BlockNode.orPrevious(): BlockNode =
+            previousIndexById[id]?.let { previousTail[it - previousStableCount] }?.takeIf { it == this } ?: this
         closedBlocks.forEach { block ->
-            builder.build(block)?.let { node -> stable.add(node = node, source = block) }
+            builder.build(block)?.let { node -> stable.add(node = node.orPrevious(), source = block) }
         }
-        tail = fork?.blocks()?.mapNotNull(builder::build).orEmpty()
+        tail = fork?.blocks()?.mapNotNull { block -> builder.build(block)?.orPrevious() }.orEmpty()
         val stablePrefixEnd = when {
             isFinal -> sourceLength
             openBlock != null -> lineIndex.lineStart(openBlock.startLine)
@@ -155,13 +161,11 @@ internal class IncrementalMarkdownEngine(
         val removedBlockIds = blockIds.endCall()
 
         // Only blocks from the previous tail onward can be new, moved, changed or removed.
-        val previousById = HashMap<BlockId, Int>(previousTail.size * 2)
-        previousTail.forEachIndexed { offset, block -> previousById[block.id] = previousStableCount + offset }
         val blocks = stable.followedBy(tail)
         for (index in previousStableCount until blocks.size) {
             val block = blocks[index]
-            val oldIndex = previousById[block.id]
-            if (oldIndex != index || previousTail[oldIndex - previousStableCount] != block) {
+            val oldIndex = previousIndexById[block.id]
+            if (oldIndex != index || previousTail[oldIndex - previousStableCount] !== block) {
                 changedBlocks += BlockChange(id = block.id, oldIndex = oldIndex, newIndex = index, block = block)
             }
         }
