@@ -22,12 +22,13 @@
 | Tables | Yes | No | Yes | Lightweight pipe-table implementation |
 | Thematic breaks | Yes | Yes | Yes | Dedicated block nodes |
 | Inline code | Yes | Yes | Yes | Shared inline parser |
-| Emphasis / strong | Yes | Yes | Yes | Common cases first |
-| Strikethrough | Yes | No | Yes | GFM-oriented extension |
-| Inline links | Yes | Yes | Yes | `[text](url)` |
+| Emphasis / strong | Yes | Yes | Yes | CommonMark delimiter algorithm |
+| Strikethrough | Yes | No | Yes | GFM `~` / `~~` |
+| Inline links | Yes | Yes | Yes | `[text](url "title")` |
 | Reference-style links | No | Yes | Yes | Uses dependency index and late-definition reprocessing |
 | Reference definitions | No | Yes | Yes | One-line definitions only in current checkpoint |
-| Autolinks / bare URLs | Yes | Yes | Yes | Conservative heuristics |
+| Autolinks (`<...>`) | Yes | Yes | Yes | Any scheme and email addresses |
+| GFM extended autolinks (bare URLs) | Yes | No | Yes | `www.`, `http(s)://`, `ftp://`, emails |
 | Images | Yes | Yes | Yes | Parsed in core; rendering remains minimal |
 | Raw HTML | No | No | No | Explicitly disabled |
 
