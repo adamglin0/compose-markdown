@@ -2,6 +2,7 @@ package com.adamglin.compose.markdown.core.inline
 
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
 import com.adamglin.compose.markdown.core.internal.LinkReferenceDefinition
+import com.adamglin.compose.markdown.core.internal.SharedArray
 import com.adamglin.compose.markdown.core.internal.normalizeReferenceLabel
 import com.adamglin.compose.markdown.core.model.InlineId
 import com.adamglin.compose.markdown.core.model.InlineNode
@@ -24,44 +25,122 @@ internal class InlineParser(
     private val dialect: MarkdownDialect,
     private val referenceDefinitions: Map<String, LinkReferenceDefinition>,
 ) {
-    fun parse(literal: String, range: TextRange): InlineParseResult {
+    /**
+     * Parses [literal], whose first character is at source offset `range.start`.
+     *
+     * With [resume], parsing continues at [InlineCheckpoint.offset] of a literal that starts with the same
+     * text up to that offset (the caller guarantees it), reusing the nodes before it. The result carries the
+     * last checkpoint of this literal: a line start where nothing before it can still change, whatever text
+     * follows, so a growing paragraph is parsed from its last such line instead of from its start.
+     */
+    fun parse(literal: String, range: TextRange, resume: InlineCheckpoint? = null): InlineParseResult {
         if (literal.isEmpty()) {
             return InlineParseResult(
                 nodes = emptyList(),
                 referenceLabels = emptySet(),
                 unresolvedReferenceLabels = emptySet(),
+                checkpoint = null,
             )
         }
-        return InlineRun(text = literal, baseOffset = range.start).parse()
+        return InlineRun(text = literal, baseOffset = range.start, resume = resume).parse()
     }
 
     private inner class InlineRun(
         private val text: String,
         private val baseOffset: Int,
+        resume: InlineCheckpoint?,
     ) {
         private val features = dialect.inlineFeatures
-        private val root = ContainerDraft(kind = ContainerKind.Root, start = 0, end = text.length)
-        private var pos = 0
+        private var root = ContainerDraft(kind = ContainerKind.Root, start = 0, end = text.length)
+        private var pos = resume?.offset ?: 0
         private var delimiters: Delimiter? = null
         private var brackets: Bracket? = null
         private var openBracketCount = 0
-        private val referenceLabels: MutableSet<String> = linkedSetOf()
-        private val unresolvedReferenceLabels: MutableSet<String> = linkedSetOf()
+        private val referenceLabels: MutableSet<String> = LinkedHashSet(resume?.referenceLabels.orEmpty())
+        private val unresolvedReferenceLabels: MutableSet<String> = LinkedHashSet(resume?.unresolvedReferenceLabels.orEmpty())
         private val urlAutolinks = if (features.bareAutolinks) ExtendedUrlAutolinkScanner(text) else null
-        private val backtickRuns by lazy(LazyThreadSafetyMode.NONE) { BacktickRunIndex(text) }
+        private val backtickRuns by lazy(LazyThreadSafetyMode.NONE) { BacktickRunIndex(text, from = pos) }
         private val dollarMathClosers = ForwardFinder(text.length, ::isDollarMathCloser)
         private val parenMathClosers = ForwardFinder(text.length, ::isParenMathCloser)
 
+        // Checkpoints: nodes before [committedEnd] are final.
+        private val committed: SharedArray<InlineNode> = resume?.continuableNodes() ?: SharedArray()
+        private var committedEnd = pos
+        private var committedReferenceLabels: Set<String> = referenceLabels.toSet()
+        private var committedUnresolvedLabels: Set<String> = unresolvedReferenceLabels.toSet()
+
+        /** Start of the line that the last line ending led to, or -1. */
+        private var lineStart = -1
+
+        /** Exclusive end of the text that forward scans (code span closers, link targets, ...) have read. */
+        private var readEnd = 0
+
+        /** Delimiters on the stack that can open emphasis; later closers can still match them. */
+        private var openerCount = 0
+
+        /** Whether a closer was pushed since emphasis was last processed at a line start. */
+        private var closerPending = false
+
+        /** `openers_bottom` of the emphasis passes at line starts; valid across them, as the stack only grows on top. */
+        private val lineOpenersBottom = HashMap<Int, Delimiter?>()
+
+        /** Top of the stack after the last emphasis pass at a line start: it and the delimiters below were processed. */
+        private var processedTop: Delimiter? = null
+
         fun parse(): InlineParseResult {
             while (pos < text.length) {
+                if (pos == lineStart) {
+                    commitIfFinal()
+                }
                 parseInline()
             }
             processEmphasis(stackBottom = null)
             return InlineParseResult(
-                nodes = convertChildren(root, insideLink = false, depth = 0),
+                nodes = committed.followedBy(convertChildren(root, insideLink = false, depth = 0)),
                 referenceLabels = referenceLabels,
                 unresolvedReferenceLabels = unresolvedReferenceLabels,
+                checkpoint = if (committedEnd == 0) {
+                    null
+                } else {
+                    InlineCheckpoint(
+                        offset = committedEnd,
+                        nodes = committed,
+                        nodeCount = committed.size,
+                        referenceLabels = committedReferenceLabels,
+                        unresolvedReferenceLabels = committedUnresolvedLabels,
+                    )
+                },
             )
+        }
+
+        /**
+         * At a line start, everything before it is final when no bracket is open, no delimiter that can
+         * open emphasis is waiting for a closer, and no forward scan read past it (a code span opener
+         * without a closer, for one, would pair with a closer appended later). Line endings then end in a
+         * break node, so the finished nodes never merge with later text: they are converted and committed.
+         */
+        private fun commitIfFinal() {
+            if (!features.softBreaks || brackets != null || readEnd > pos) {
+                return
+            }
+            // Closers before the line start match the same openers whenever emphasis is processed, so
+            // processing it now shows whether any opener is left for later closers.
+            if (openerCount > 0 && closerPending) {
+                closerPending = false
+                processEmphasis(stackBottom = null, openersBottom = lineOpenersBottom, keepUnmatched = true, closersAbove = processedTop)
+                processedTop = delimiters
+            }
+            if (openerCount > 0) {
+                return
+            }
+            convertChildren(root, insideLink = false, depth = 0).forEach(committed::add)
+            root = ContainerDraft(kind = ContainerKind.Root, start = 0, end = text.length)
+            delimiters = null
+            processedTop = null
+            lineOpenersBottom.clear()
+            committedEnd = pos
+            committedReferenceLabels = referenceLabels.toSet()
+            committedUnresolvedLabels = unresolvedReferenceLabels.toSet()
         }
 
         private fun parseInline() {
@@ -115,6 +194,7 @@ internal class InlineParser(
             val start = pos
             appendBreakOrNewline(start)
             pos = skipSpacesAndTabs(text, start + 1, text.length)
+            lineStart = pos
             return true
         }
 
@@ -137,6 +217,7 @@ internal class InlineParser(
                     ),
                 )
                 pos = skipSpacesAndTabs(text, runEnd + 1, text.length)
+                lineStart = pos
             } else {
                 pos = runEnd
             }
@@ -155,6 +236,7 @@ internal class InlineParser(
                         ),
                     )
                     pos = skipSpacesAndTabs(text, start + 2, text.length)
+                    lineStart = pos
                 }
 
                 next == '(' && features.inlineMath && parseParenMath() -> Unit
@@ -210,6 +292,7 @@ internal class InlineParser(
             }
             val length = openerEnd - start
             val closer = backtickRuns.nextRun(length = length, from = openerEnd)
+            readEnd = maxOf(readEnd, if (closer < 0) text.length else closer + length)
             if (closer < 0) {
                 pos = openerEnd
                 appendText(start, openerEnd, text.substring(start, openerEnd))
@@ -236,6 +319,7 @@ internal class InlineParser(
                 return false
             }
             val closer = dollarMathClosers.firstAtOrAfter(start + 2)
+            readEnd = maxOf(readEnd, if (closer < 0) text.length else closer + 2)
             if (closer < 0) {
                 return false
             }
@@ -247,6 +331,7 @@ internal class InlineParser(
         private fun parseParenMath(): Boolean {
             val start = pos
             val closer = parenMathClosers.firstAtOrAfter(start + 2)
+            readEnd = maxOf(readEnd, if (closer < 0) text.length else closer + 2)
             if (closer < 0) {
                 return false
             }
@@ -308,6 +393,7 @@ internal class InlineParser(
                 }
                 cursor += 1
             }
+            readEnd = maxOf(readEnd, cursor + 1)
             if (cursor >= text.length || text[cursor] != '>') {
                 return false
             }
@@ -393,20 +479,30 @@ internal class InlineParser(
                 delimiter.previous = delimiters
                 delimiters?.next = delimiter
                 delimiters = delimiter
+                if (canOpen) {
+                    openerCount += 1
+                }
+                if (canClose) {
+                    closerPending = true
+                }
             }
             return true
         }
 
         /** CommonMark "process emphasis", extended with GFM strikethrough (equal-length `~`/`~~` runs). */
-        private fun processEmphasis(stackBottom: Delimiter?) {
-            // stackBottom is always still on the stack; returning early when nothing lies above it keeps
+        private fun processEmphasis(
+            stackBottom: Delimiter?,
+            openersBottom: HashMap<Int, Delimiter?> = HashMap(),
+            keepUnmatched: Boolean = false,
+            closersAbove: Delimiter? = stackBottom,
+        ) {
+            // closersAbove is always still on the stack; returning early when nothing lies above it keeps
             // the walk below proportional to the delimiters it is about to consume.
-            if (delimiters == stackBottom) {
+            if (delimiters == closersAbove) {
                 return
             }
-            val openersBottom = HashMap<Int, Delimiter?>()
             var closer = delimiters
-            while (closer != null && closer.previous != stackBottom) {
+            while (closer != null && closer.previous != closersAbove) {
                 closer = closer.previous
             }
             while (closer != null) {
@@ -441,6 +537,9 @@ internal class InlineParser(
                         removeDelimiter(oldCloser)
                     }
                 }
+            }
+            if (keepUnmatched) {
+                return
             }
             while (delimiters != null && delimiters != stackBottom) {
                 removeDelimiter(delimiters!!)
@@ -525,11 +624,21 @@ internal class InlineParser(
         }
 
         private fun removeDelimitersBetween(opener: Delimiter, closer: Delimiter) {
+            var removed = opener.next
+            while (removed != null && removed !== closer) {
+                if (removed.canOpen) {
+                    openerCount -= 1
+                }
+                removed = removed.next
+            }
             opener.next = closer
             closer.previous = opener
         }
 
         private fun removeDelimiter(delimiter: Delimiter) {
+            if (delimiter.canOpen) {
+                openerCount -= 1
+            }
             delimiter.previous?.next = delimiter.next
             val next = delimiter.next
             if (next == null) {
@@ -577,7 +686,16 @@ internal class InlineParser(
                 appendText(closeStart, pos, "]")
                 return true
             }
-            val target = matchInlineLinkTarget(opener) ?: matchReferenceTarget(opener, closeStart)
+            val inlineTarget = matchInlineLinkTarget(opener)
+            val target = inlineTarget ?: matchReferenceTarget(opener, closeStart)
+            // A link target or a label after `]` may span lines, and a failed one may succeed with more text.
+            val after = text.getOrNull(closeStart + 1)
+            val scanEnd = when {
+                after != '(' && after != '[' -> closeStart + 2
+                inlineTarget != null || (after == '[' && target != null) -> pos
+                else -> text.length
+            }
+            readEnd = maxOf(readEnd, scanEnd)
             if (target == null) {
                 removeBracket()
                 pos = closeStart + 1
@@ -870,11 +988,38 @@ internal class InlineParser(
     }
 }
 
-internal data class InlineParseResult(
+internal class InlineParseResult(
     val nodes: List<InlineNode>,
     val referenceLabels: Set<String>,
     val unresolvedReferenceLabels: Set<String>,
+    /** The last point the parse of a longer literal with the same text before it can resume from. */
+    val checkpoint: InlineCheckpoint?,
 )
+
+/** Parse state at a line start of a literal: the first [nodeCount] nodes of [nodes] are final. */
+internal class InlineCheckpoint(
+    val offset: Int,
+    private val nodes: SharedArray<InlineNode>,
+    private val nodeCount: Int,
+    val referenceLabels: Set<String>,
+    val unresolvedReferenceLabels: Set<String>,
+) {
+    /**
+     * The final nodes, for a parse that appends after them. Published lists only see the slots filled
+     * before they were published, so the storage is shared unless a parse already appended past
+     * [nodeCount] (the checkpoint is resumed twice), which needs a copy.
+     */
+    fun continuableNodes(): SharedArray<InlineNode> {
+        if (nodes.size == nodeCount) {
+            return nodes
+        }
+        val copy = SharedArray<InlineNode>()
+        for (index in 0 until nodeCount) {
+            copy.add(nodes[index])
+        }
+        return copy
+    }
+}
 
 /** Code span content: line endings become spaces, and one surrounding space is stripped from both sides. */
 private fun normalizeCodeSpan(content: String): String {
@@ -982,12 +1127,12 @@ private class Bracket(
 }
 
 /** Maximal backtick runs by length, consumed by forward-only cursors (openers are visited left to right). */
-private class BacktickRunIndex(text: String) {
+private class BacktickRunIndex(text: String, from: Int) {
     private val startsByLength = HashMap<Int, MutableList<Int>>()
     private val cursorsByLength = HashMap<Int, Int>()
 
     init {
-        var index = 0
+        var index = from
         while (index < text.length) {
             if (text[index] != '`') {
                 index += 1

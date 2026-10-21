@@ -2,6 +2,7 @@ package com.adamglin.compose.markdown.core.engine
 
 import com.adamglin.compose.markdown.core.block.InlineResolver
 import com.adamglin.compose.markdown.core.block.ResolvedInline
+import com.adamglin.compose.markdown.core.inline.InlineCheckpoint
 import com.adamglin.compose.markdown.core.inline.InlineParser
 import com.adamglin.compose.markdown.core.model.BlockId
 import com.adamglin.compose.markdown.core.model.TextRange
@@ -10,6 +11,10 @@ import com.adamglin.compose.markdown.core.model.TextRange
  * Inline parse results of the leaves built in the previous call, reused while a leaf keeps its id, raw
  * text and range and the link reference definitions stay unchanged ([referenceRevision]). Leaves that are
  * not resolved in a call drop out of the cache.
+ *
+ * A growing open paragraph keeps its id and start, and its lines before the last one are complete, so its
+ * new text starts with the text of the previous call up to the parse's last checkpoint (a line start, see
+ * [InlineParser.parse]); it is parsed again from there only.
  */
 internal class InlineCache(
     private val inlineParser: InlineParser,
@@ -38,12 +43,16 @@ internal class InlineCache(
             cached
         } else {
             parsedCount += 1
-            val parsed = inlineParser.parse(literal = literal, range = range)
+            val resume = cached?.checkpoint?.takeIf {
+                cached.referenceRevision == referenceRevision && cached.range.start == range.start && it.offset < literal.length
+            }
+            val parsed = inlineParser.parse(literal = literal, range = range, resume = resume)
             Entry(
                 literal = literal,
                 range = range,
                 referenceRevision = referenceRevision,
                 resolved = ResolvedInline(nodes = parsed.nodes, labels = parsed.referenceLabels),
+                checkpoint = parsed.checkpoint,
             )
         }
         current[id.raw] = entry
@@ -75,5 +84,6 @@ internal class InlineCache(
         val range: TextRange,
         val referenceRevision: Int,
         val resolved: ResolvedInline,
+        val checkpoint: InlineCheckpoint?,
     )
 }
