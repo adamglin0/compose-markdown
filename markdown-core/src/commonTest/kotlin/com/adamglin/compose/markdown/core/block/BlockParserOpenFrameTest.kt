@@ -93,6 +93,16 @@ class BlockParserOpenFrameTest {
     }
 
     @Test
+    fun aLaterDefinitionRehydratesAStableParagraphWithoutReparsingItsBlockStructure() {
+        val engine = MarkdownEngine(dialect = MarkdownDialect.CommonMarkCore)
+        // The paragraph node starts at the indented line, which alone would be an indented code block.
+        engine.append("[x]: /x\n    see [a]\n\n")
+        engine.append("[a]: /a\n")
+
+        assertEquals("<p>see <a href=\"/a\">a</a></p>\n", SpecHtmlRenderer.render(engine.finish().snapshot.document.blocks))
+    }
+
+    @Test
     fun finishingAfterAWhitespaceOnlyBlankLineKeepsTheParsedBlocks() {
         val engine = MarkdownEngine(dialect = MarkdownDialect.CommonMarkCore)
         engine.append("[a]: /u\n     - w\n  \n")

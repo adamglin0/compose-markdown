@@ -61,6 +61,8 @@ internal data class LinkReferenceDefinition(
 
 internal data class CachedBlockRecord(
     val block: BlockNode,
+    /** [block] as the block parser produced it, before inline parsing; rehydrated when definitions change. */
+    val parsedBlock: BlockNode,
     val isStable: Boolean,
     val referenceLabels: Set<String>,
     val unresolvedReferenceLabels: Set<String>,

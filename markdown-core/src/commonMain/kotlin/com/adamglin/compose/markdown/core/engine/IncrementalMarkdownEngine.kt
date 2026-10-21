@@ -167,18 +167,19 @@ internal class IncrementalMarkdownEngine(
             .toSet()
         val rehydratedPreservedBlocks = preservedRecords.map { record ->
             if (record.block.id.raw in affectedPreservedBlockIds) {
-                reparseSingleBlock(
-                    block = record.block,
+                // Definitions only change inline content, so the block parser's output is hydrated again.
+                hydrateTopLevelBlock(
+                    block = record.parsedBlock,
                     inlineParser = inlineParser,
                     referenceRevision = referenceRevision,
                     stablePrefixEnd = stablePrefixEnd,
                     sourceLength = state.source.length,
                     inlineStats = inlineStats,
-                    blockIdLookup = blockIdLookup,
                 )
             } else {
                 HydratedTopLevelBlock(
                     block = record.block,
+                    parsedBlock = record.parsedBlock,
                     referenceLabels = record.referenceLabels,
                     unresolvedReferenceLabels = record.unresolvedReferenceLabels,
                 )
@@ -232,6 +233,7 @@ internal class IncrementalMarkdownEngine(
         state.cacheState.blockRecords += hydratedBlocks.map { hydrated ->
             CachedBlockRecord(
                 block = hydrated.block,
+                parsedBlock = hydrated.parsedBlock,
                 isStable = hydrated.block.range.endExclusive <= stablePrefixEnd,
                 referenceLabels = hydrated.referenceLabels,
                 unresolvedReferenceLabels = hydrated.unresolvedReferenceLabels,
@@ -328,10 +330,6 @@ internal class IncrementalMarkdownEngine(
         blocks.forEach { block -> collectFlattenedBlocks(block, this) }
     }
 
-    private fun flattenBlocks(block: BlockNode): List<BlockNode> = buildList {
-        collectFlattenedBlocks(block, this)
-    }
-
     private fun collectFlattenedBlocks(block: BlockNode, destination: MutableList<BlockNode>) {
         destination += block
         when (block) {
@@ -374,47 +372,9 @@ internal class IncrementalMarkdownEngine(
         )
         return HydratedTopLevelBlock(
             block = hydration.block,
+            parsedBlock = block,
             referenceLabels = hydration.referenceLabels,
             unresolvedReferenceLabels = hydration.unresolvedReferenceLabels,
-        )
-    }
-
-    private fun reparseSingleBlock(
-        block: BlockNode,
-        inlineParser: InlineParser,
-        referenceRevision: Int,
-        stablePrefixEnd: Int,
-        sourceLength: Int,
-        inlineStats: InlineResolutionStats,
-        blockIdLookup: Map<BlockIdentityKey, MutableList<Long>>,
-    ): HydratedTopLevelBlock {
-        val preservedBlockIdLookup = flattenBlocks(block)
-            .let(BlockIdentity::blockIdLookup)
-        val parser = BlockParser(
-            sourceBuffer = state.source,
-            lineIndex = state.lineIndex,
-            dialect = dialect,
-            allocateBlockId = { kind, start, discriminator ->
-                allocateBlockId(
-                    kind = kind,
-                    start = start,
-                    discriminator = discriminator,
-                    blockIdLookup = preservedBlockIdLookup,
-                )
-            },
-        )
-        val result = parser.parse(
-            isFinal = true,
-            range = block.range,
-        )
-        val reparsed = result.blocks.singleOrNull() ?: block
-        return hydrateTopLevelBlock(
-            block = reparsed,
-            inlineParser = inlineParser,
-            referenceRevision = referenceRevision,
-            stablePrefixEnd = stablePrefixEnd,
-            sourceLength = sourceLength,
-            inlineStats = inlineStats,
         )
     }
 
@@ -716,6 +676,7 @@ internal class IncrementalMarkdownEngine(
 
     private data class HydratedTopLevelBlock(
         val block: BlockNode,
+        val parsedBlock: BlockNode,
         val referenceLabels: Set<String>,
         val unresolvedReferenceLabels: Set<String>,
     )
