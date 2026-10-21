@@ -399,6 +399,11 @@ internal class InlineParser(
 
         /** CommonMark "process emphasis", extended with GFM strikethrough (equal-length `~`/`~~` runs). */
         private fun processEmphasis(stackBottom: Delimiter?) {
+            // stackBottom is always still on the stack; returning early when nothing lies above it keeps
+            // the walk below proportional to the delimiters it is about to consume.
+            if (delimiters == stackBottom) {
+                return
+            }
             val openersBottom = HashMap<Int, Delimiter?>()
             var closer = delimiters
             while (closer != null && closer.previous != stackBottom) {
@@ -543,10 +548,12 @@ internal class InlineParser(
             val start = pos
             pos += if (image) 2 else 1
             val node = appendText(start, pos, text.substring(start, pos))
-            brackets?.bracketAfter = true
+            val below = brackets
+            below?.bracketAfter = true
             brackets = Bracket(
                 node = node,
-                previous = brackets,
+                previous = below,
+                previousLink = if (below == null || !below.image) below else below.previousLink,
                 previousDelimiter = delimiters,
                 start = start,
                 labelStart = pos,
@@ -598,16 +605,11 @@ internal class InlineParser(
             opener.node.unlink()
             if (!opener.image) {
                 // Links may not contain links: deactivate earlier link openers. Openers below an
-                // already inactive one were deactivated together with it.
-                var earlier = brackets
-                while (earlier != null) {
-                    if (!earlier.image) {
-                        if (!earlier.active) {
-                            break
-                        }
-                        earlier.active = false
-                    }
-                    earlier = earlier.previous
+                // already inactive one were deactivated together with it, so each is visited once.
+                var earlier = opener.previousLink
+                while (earlier != null && earlier.active) {
+                    earlier.active = false
+                    earlier = earlier.previousLink
                 }
             }
             return true
@@ -969,6 +971,8 @@ private class Delimiter(
 private class Bracket(
     val node: TextDraft,
     val previous: Bracket?,
+    /** Nearest link (non-image) opener below this one; only link openers are ever deactivated. */
+    val previousLink: Bracket?,
     val previousDelimiter: Delimiter?,
     val start: Int,
     val labelStart: Int,
