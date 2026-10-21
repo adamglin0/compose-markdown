@@ -91,7 +91,6 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.Strikethrough -> node.children.inlineLiteral()
         is InlineNode.Strong -> node.children.inlineLiteral()
         is InlineNode.Text -> node.literal
-        is InlineNode.UnsupportedInline -> node.literal
         is InlineNode.MathSpan -> node.latex
     }
 }

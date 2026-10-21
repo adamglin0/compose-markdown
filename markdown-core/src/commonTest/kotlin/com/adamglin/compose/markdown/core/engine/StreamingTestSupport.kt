@@ -196,7 +196,6 @@ private fun StringBuilder.appendInline(node: InlineNode) {
     when (node) {
         is InlineNode.Text -> append("'${node.literal}'")
         is InlineNode.CodeSpan -> append("'${node.literal}'")
-        is InlineNode.UnsupportedInline -> append("'${node.literal}'")
         is InlineNode.MathSpan -> append("'${node.latex}' ${node.delimiter}")
         is InlineNode.Link -> append("[${node.destination} ${node.title} ${node.referenceLabel}]")
         is InlineNode.Image -> append("[${node.destination} ${node.title} ${node.referenceLabel}]")

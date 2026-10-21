@@ -62,13 +62,6 @@ public sealed interface InlineNode {
         val children: List<InlineNode>,
     ) : InlineNode
 
-    public data class UnsupportedInline(
-        override val id: InlineId,
-        override val range: TextRange,
-        val literal: String,
-        val reason: String? = null,
-    ) : InlineNode
-
     public data class MathSpan(
         override val id: InlineId,
         override val range: TextRange,

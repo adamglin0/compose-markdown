@@ -187,7 +187,6 @@ internal object SpecHtmlRenderer {
                 }
 
                 is InlineNode.MathSpan -> builder.append("<span class=\"math\">").append(escape(node.latex)).append("</span>")
-                is InlineNode.UnsupportedInline -> builder.append(escape(node.literal))
             }
         }
 
@@ -211,7 +210,6 @@ internal object SpecHtmlRenderer {
                 is InlineNode.Link -> append(plainText(node.children))
                 is InlineNode.Image -> append(plainText(node.alt))
                 is InlineNode.MathSpan -> append(node.latex)
-                is InlineNode.UnsupportedInline -> append(node.literal)
             }
         }
     }

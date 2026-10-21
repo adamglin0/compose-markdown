@@ -317,7 +317,6 @@ private fun List<InlineNode>.debugInline(): String = joinToString(separator = ""
         is InlineNode.Strikethrough -> "strike(${node.children.debugInline()})"
         is InlineNode.Strong -> "strong(${node.children.debugInline()})"
         is InlineNode.Text -> "text(${node.literal.replace("\n", "\\n")})"
-        is InlineNode.UnsupportedInline -> "unsupported(${node.literal})"
         is InlineNode.MathSpan -> "math(${node.latex})"
     }
 }
@@ -333,7 +332,6 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.Strikethrough -> node.children.inlineLiteral()
         is InlineNode.Strong -> node.children.inlineLiteral()
         is InlineNode.Text -> node.literal
-        is InlineNode.UnsupportedInline -> node.literal
         is InlineNode.MathSpan -> node.latex
     }
 }

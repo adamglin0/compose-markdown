@@ -617,28 +617,6 @@ sealed interface com.adamglin.compose.markdown.core.model/InlineNode { // com.ad
         final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.Text.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Text.toString|toString(){}[0]
     }
-
-    final class UnsupportedInline : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline|null[0]
-        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange, kotlin/String, kotlin/String? = ...) // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String;kotlin.String?){}[0]
-
-        final val id // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.id|{}id[0]
-            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.id.<get-id>|<get-id>(){}[0]
-        final val literal // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.literal|{}literal[0]
-            final fun <get-literal>(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.literal.<get-literal>|<get-literal>(){}[0]
-        final val range // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.range|{}range[0]
-            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.range.<get-range>|<get-range>(){}[0]
-        final val reason // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.reason|{}reason[0]
-            final fun <get-reason>(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.reason.<get-reason>|<get-reason>(){}[0]
-
-        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.component1|component1(){}[0]
-        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.component2|component2(){}[0]
-        final fun component3(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.component3|component3(){}[0]
-        final fun component4(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.component4|component4(){}[0]
-        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., kotlin/String = ..., kotlin/String? = ...): com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String;kotlin.String?){}[0]
-        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.equals|equals(kotlin.Any?){}[0]
-        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.hashCode|hashCode(){}[0]
-        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.toString|toString(){}[0]
-    }
 }
 
 sealed interface com.adamglin.compose.markdown.core.model/ListType { // com.adamglin.compose.markdown.core.model/ListType|null[0]
