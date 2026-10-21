@@ -6,18 +6,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionTracer
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.InternalComposeTracingApi
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.v2.runComposeUiTest
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
 import kotlin.test.Test
@@ -41,24 +37,18 @@ class MarkdownStreamingCostTest {
     }
 
     @Test
-    fun streamingAWholeLongDocumentIsLinear() {
-        val text = documentOfSize(200_000)
-        val chunks = text.chunked(TOKEN)
-        repeat(2) { MarkdownState(dialect).also { state -> chunks.forEach(state::append) } }
-        val start = TimeSource.Monotonic.markNow()
-        val state = MarkdownState(dialect)
-        chunks.forEach(state::append)
-        state.finish()
-        val elapsed = start.elapsedNow()
-        println("MarkdownState streams 200KB in ${chunks.size} appends: $elapsed (${elapsed.inWholeMicroseconds / chunks.size} us per append)")
-        assertTrue(elapsed.inWholeSeconds < 10, "streaming 200KB took $elapsed")
+    fun streamingAWholeDocumentCostsTheSamePerAppendAtAnySize() {
+        val small = streamNanosPerAppend(documentOfSize(25_000))
+        val large = streamNanosPerAppend(documentOfSize(200_000))
+        println("MarkdownState streams a whole document: 25KB ${small / 1000} us, 200KB ${large / 1000} us per append")
+        assertTrue(large < small * 3 + 5_000, "per-append cost of a whole stream grew with the document: $small ns -> $large ns")
     }
 
     @Test
     fun columnRecomposesOnlyTheTail() = documentSizes.forEach { size ->
         runComposeUiTest {
             val state = MarkdownState(dialect)
-            val math = CountingBlockMath()
+            val math = CountingMathRenderer()
             setContent { Markdown(state.document, mathRenderer = math) }
             state.append(documentOfSize(size))
             waitForIdle()
@@ -70,7 +60,7 @@ class MarkdownStreamingCostTest {
     fun lazyListRecomposesOnlyTheTail() = documentSizes.forEach { size ->
         runComposeUiTest {
             val state = MarkdownState(dialect)
-            val math = CountingBlockMath()
+            val math = CountingMathRenderer()
             val listState = LazyListState()
             setContent {
                 Box(Modifier.width(400.dp).height(800.dp)) {
@@ -93,9 +83,9 @@ class MarkdownStreamingCostTest {
      * Streams a tail into the document [state] holds, token by token, and checks that every append
      * composes the changed tail block (at most the two last top-level blocks) and never a closed formula.
      */
-    private fun ComposeUiTest.assertTailOnlyRecomposes(state: MarkdownState, math: CountingBlockMath, label: String) {
+    private fun ComposeUiTest.assertTailOnlyRecomposes(state: MarkdownState, math: CountingMathRenderer, label: String) {
         val blocks = state.document.blocks.size
-        val formulasBefore = math.compositions
+        val formulasBefore = math.blockCompositions
         val tail = "\n\nThe tail paragraph grows token by token, with *emphasis* and `code` spans.\n\nA second one starts here and keeps going."
         val counter = BlockCounter()
         var worst = 0
@@ -114,22 +104,38 @@ class MarkdownStreamingCostTest {
             }
         }
         println("$label, $blocks blocks: at most $worst blocks composed per append, ${nanos / chunks.size / 1000} us per append")
-        assertEquals(formulasBefore, math.compositions, "closed formulas recomposed")
+        assertEquals(formulasBefore, math.blockCompositions, "closed formulas recomposed")
         onNodeWithText("A second one starts here and keeps going.").assertExists()
         // Every chunk changes the tail paragraph, which must compose; nothing else may.
         assertTrue(fewest >= 1, "an append composed no block")
         assertTrue(worst <= 2, "an append composed $worst blocks")
     }
 
+    /** Mean cost of a token-sized append into [text] followed by a streamed tail paragraph. */
     private fun stateAppendNanos(text: String): Long {
         val tail = "Streaming tail paragraph with *emphasis*, `code` and plain words. ".repeat(40).chunked(TOKEN)
-        fun run(): Long {
+        return fastestOf {
             val state = MarkdownState(dialect)
             state.append(text)
             val start = TimeSource.Monotonic.markNow()
             tail.forEach(state::append)
-            return start.elapsedNow().inWholeNanoseconds / tail.size
+            start.elapsedNow().inWholeNanoseconds / tail.size
         }
+    }
+
+    /** Mean cost of an append while streaming all of [text] in token-sized chunks. */
+    private fun streamNanosPerAppend(text: String): Long {
+        val chunks = text.chunked(TOKEN)
+        return fastestOf {
+            val state = MarkdownState(dialect)
+            val start = TimeSource.Monotonic.markNow()
+            chunks.forEach(state::append)
+            state.finish()
+            start.elapsedNow().inWholeNanoseconds / chunks.size
+        }
+    }
+
+    private inline fun fastestOf(run: () -> Long): Long {
         repeat(3) { run() }
         return (1..5).minOf { run() }
     }
@@ -155,19 +161,6 @@ class MarkdownStreamingCostTest {
         } finally {
             Composer.setTracer(null)
         }
-    }
-
-    private class CountingBlockMath : MathRenderer {
-        var compositions = 0
-
-        @Composable
-        override fun BlockMath(latex: String, modifier: Modifier) {
-            SideEffect { compositions++ }
-            BasicText(latex, modifier)
-        }
-
-        @Composable
-        override fun InlineMath(latex: String, style: TextStyle) = Unit
     }
 
     private companion object {

@@ -36,6 +36,21 @@ class MarkdownHelpersTest {
     }
 
     @Test
+    fun lateDefinitionReplacesOnlyTheBlocksUsingIt() {
+        val state = MarkdownState(MarkdownDialect.CommonMarkCore)
+        state.append("see [r]\n\nother\n\n")
+        val user = state.document.blocks[0]
+        val other = state.document.blocks[1]
+
+        state.append("[r]: /u\n")
+
+        assertNotSame(user, state.document.blocks[0])
+        assertSame(other, state.document.blocks[1])
+        val link = (state.document.blocks[0] as BlockNode.Paragraph).children.filterIsInstance<InlineNode.Link>().single()
+        assertEquals("/u", link.destination)
+    }
+
+    @Test
     fun resetStartsAFreshDocument() {
         val state = MarkdownState()
         state.append("hello")
