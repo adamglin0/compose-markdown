@@ -130,6 +130,10 @@ kotlin {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 runtimeOnly(libs.ratex.native.darwin.aarch64)
+                runtimeOnly(libs.ratex.native.darwin.x64)
+                runtimeOnly(libs.ratex.native.linux.aarch64)
+                runtimeOnly(libs.ratex.native.linux.x64)
+                runtimeOnly(libs.ratex.native.windows.x64)
             }
         }
     }
