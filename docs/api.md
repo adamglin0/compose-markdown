@@ -82,7 +82,7 @@ public data class ParseStats internal constructor(
 )
 ```
 
-Only the engine creates snapshots, documents, deltas and stats (their constructors and `copy` are internal), so they always satisfy the guarantees below. Nodes, ranges and ids have public constructors so apps can build documents for previews and renderer tests.
+Only the engine creates the model: every constructor and `copy` of snapshots, documents, deltas, stats, nodes, ranges and ids is internal, so the values always satisfy the guarantees below. To get a document for a preview or a test, parse text with `MarkdownEngine` or `rememberMarkdownDocument`.
 
 - `changedBlocks` lists the top-level blocks that are new, moved or changed, in document order. `oldIndex` is `null` for an inserted block. Nested changes show up as a changed top-level block.
 - `removedBlockIds` lists the ids, at any depth, that were in the previous snapshot and are not in this one.
@@ -195,7 +195,7 @@ Renderer rules:
 - Highlighters run off the main thread for closed fences only; results are cached by code, language, colors and highlighter. Indented code renders as an unlabeled, unhighlighted code block.
 - Inline math and images are composed, measured at natural size (capped to the text width) and given exact placeholders; sizes are remembered by content, so streaming a paragraph does not re-measure embeds already laid out. Unclosed math blocks show source text and never reach `MathRenderer`.
 - The renderer does not add a `SelectionContainer`; wrap it when text should be selectable.
-- Lazy item keys are `"$key:${blockId}"`; `key` is required so every document in one list gets distinct item keys.
+- Lazy item keys are `"$key:${block.id.raw}"`; `key` is required so every document in one list gets distinct item keys.
 - `onLinkClick` and `imageContent` may be fresh lambdas on every call (only their presence is a remember key); `codeHighlighter` and `mathRenderer` should be long-lived instances, since a new instance rebuilds the render context and misses the highlight cache.
 - Tables scroll with a standard `horizontalScroll` (fling, mouse wheel, RTL and accessibility scroll actions); the grid reads the viewport width captured in front of the scroll.
 

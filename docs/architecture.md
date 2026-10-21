@@ -32,7 +32,7 @@ The guarantees this gives consumers are listed in [api.md](api.md#guarantees), a
 ## Renderer (`markdown-compose`)
 
 - Composables map snapshot nodes straight to UI, with no intermediate render model. Every block is keyed by its stable id, at the top level, inside quotes and lists, and as lazy items with `LazyListScope.markdown`.
-- `MarkdownState` publishes the engine's snapshot document for each chunk without copying it. The engine keeps every unchanged block as the same instance, and Compose compares core model values by identity, so it skips every block a chunk did not touch at no cost proportional to the document. `LazyListScope.markdown` composes only the visible changed blocks; `Markdown(document)` still measures and draws every top-level block per frame.
+- `MarkdownState` publishes the engine's snapshot document for each chunk without copying it. The engine keeps every unchanged block as the same instance, and Compose compares core model values by identity, so every block a chunk did not touch skips recomposition. `LazyListScope.markdown` composes only the visible changed blocks; `Markdown(document)` still checks, measures and draws every top-level block on each append (see [performance-notes.md](performance-notes.md#compose-streaming-cost)).
 - Code highlighting runs off the main thread with a shared cache. LaTeX and images go through app-supplied plug-ins (`MathRenderer`, `imageContent`), so the library ships no math engine and no image loader.
 
 ## Build and verification

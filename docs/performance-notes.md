@@ -79,7 +79,7 @@ renderers, counting composed `MarkdownBlock` calls with a composition tracer. Ap
   harness).
 - Inside a growing container, closed children are the engine's cached nodes, so they keep their instances too:
   streaming items into a 200-item list, alone or inside a quote, composes at most 4 blocks per append.
-- `Markdown(document)` is one `Column`, which checks, measures and draws every top-level block on each frame,
+- `Markdown(document)` is one `Column`, which checks, measures and draws every top-level block on each append,
   so its frame time grows with the number of blocks. Use `LazyListScope.markdown` for long documents.
 
 ## History
