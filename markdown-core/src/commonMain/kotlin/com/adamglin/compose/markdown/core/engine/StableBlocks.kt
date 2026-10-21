@@ -36,15 +36,20 @@ internal class StableBlocks {
         return labels.flatMapTo(HashSet()) { indexesByLabel[it].orEmpty() }.sorted()
     }
 
-    /** Builds the block at [index] again, resolving the inline content that uses [labels], and returns it. */
+    /**
+     * Builds the block at [index] again, resolving the inline content that uses [labels], and returns it.
+     * A rebuilt block equal to the current one keeps the current instance.
+     */
     fun rebuild(index: Int, labels: Set<String>, builder: BlockTreeBuilder): BlockNode {
         val source = checkNotNull(sourceByIndex[index]) { "block $index uses no reference labels" }
         source.labels.forEach { label -> indexesByLabel[label]?.remove(index) }
         builder.invalidate(source, labels)
         val node = checkNotNull(builder.build(source)) { "a block that used labels still builds to a node" }
         index(index = index, source = source)
-        nodes[index] = node
-        return node
+        if (node != nodes[index]) {
+            nodes[index] = node
+        }
+        return nodes[index]
     }
 
     fun clear() {

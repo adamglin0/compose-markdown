@@ -151,6 +151,42 @@ class IncrementalEngineTest {
         assertTrue(engine.snapshot().stablePrefixEnd > text.length - section.length)
     }
 
+    /**
+     * Snapshots share storage with the engine, which keeps writing to it: rebuilding blocks for late
+     * definitions (at the top level, in open and closed containers and in table rows), adding blocks,
+     * finishing and resetting must never change a snapshot published earlier.
+     */
+    @Test
+    fun publishedSnapshotsNeverChange() {
+        val text = buildString {
+            repeat(12) { section ->
+                append("Uses [a] and [b$section] here.\n\n")
+                append("- item [a]\n- item [b$section]\n\n  nested [a]\n\n")
+                append("> quote [b$section]\n> - [a]\n\n")
+                append("| h [a] |\n|---|\n| [b$section] |\n| plain |\n\n")
+                append("[b$section]: /b$section\n\n")
+            }
+            append("- open list [a]\n  > open quote [a]\n\n  | t |\n  |---|\n  | [a] |\n")
+            append("[a]: /late\n")
+        }
+        allDialects.forEach { dialect ->
+            val engine = MarkdownEngine(dialect = dialect)
+            val published = randomChunks(text, Random(3), minSize = 1, maxSize = 12).map { chunk ->
+                val snapshot = engine.append(chunk).snapshot
+                snapshot to snapshot.toString()
+            }
+            val finished = engine.finish().snapshot
+            val finishedText = finished.toString()
+            engine.reset()
+            engine.append("fresh [a]\n\n[a]: /other\n\n- [a]\n")
+
+            published.forEachIndexed { step, (snapshot, atPublication) ->
+                assertEquals(atPublication, snapshot.toString(), "$dialect snapshot of step $step changed")
+            }
+            assertEquals(finishedText, finished.toString(), "$dialect finished snapshot changed")
+        }
+    }
+
     private fun paragraphText(blocks: List<BlockNode>): String =
         assertIs<BlockNode.Paragraph>(blocks.single()).children.joinToString("") { (it as InlineNode.Text).literal }
 

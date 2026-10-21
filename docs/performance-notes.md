@@ -55,6 +55,33 @@ container reuses the nodes of its closed children, and a growing paragraph is in
 last final line start. The allocation of the open-fence and long-paragraph runs is the copy of the open leaf's
 text into its new node on every append (an immutable `String`), a memory copy rather than parsing work.
 
+## Compose Streaming Cost
+
+`MarkdownStreamingCostTest` (`./gradlew :markdown-compose:jvmTest`) streams 4-character chunks into a chat-like
+`GfmMath` document (headings, paragraphs, lists, formulas, quotes) through `MarkdownState` and through both
+renderers, counting composed `MarkdownBlock` calls with a composition tracer. Apple Silicon laptop, JDK 21:
+
+| Measure | Before | After |
+| --- | ---: | ---: |
+| `MarkdownState.append` into a 25KB document (850 blocks) | 52 us | 16 us |
+| `MarkdownState.append` into a 200KB document (6590 blocks) | 276 us | 17 us |
+| Streaming 200KB through `MarkdownState` (50015 appends) | 8.3 s | 0.10 s |
+| Blocks composed per append, either renderer | at most 2 | at most 2 |
+| Frame per append, `LazyListScope.markdown`, 25KB / 200KB | 1.8 / 2.0 ms | 1.6 / 2.0 ms |
+| Frame per append, `Markdown(document)`, 25KB / 200KB | 4.0 / 18.6 ms | 4.1 / 18.5 ms |
+
+- `MarkdownState` used to rebuild an id map over every top-level block and compare the whole block list on each
+  append. It now publishes the engine's snapshot document as is: the engine shares stable blocks between
+  snapshots and keeps every unchanged block as the same instance, so an append costs the engine's work on the
+  new text.
+- Unchanged blocks skip recomposition in both renderers. The lazy entry composes only the visible items whose
+  block changed; its frame time does not depend on the document length (the frame times above include the test
+  harness).
+- Inside a growing container, closed children are the engine's cached nodes, so they keep their instances too:
+  streaming items into a 200-item list, alone or inside a quote, composes at most 4 blocks per append.
+- `Markdown(document)` is one `Column`, which checks, measures and draws every top-level block on each frame,
+  so its frame time grows with the number of blocks. Use `LazyListScope.markdown` for long documents.
+
 ## History
 
 Same documents (GfmCompat) streamed in 4-10 character chunks, one run each, Apple Silicon laptop:

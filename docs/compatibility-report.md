@@ -160,7 +160,7 @@ Current curated sources:
 
 ## Renderer Audit
 
-- blocks (including nested quote/list children and lazy items) are keyed by stable block id; `MarkdownState` keeps unchanged block instances across appends so only touched blocks recompose
+- blocks (including nested quote/list children and lazy items) are keyed by stable block id; the engine keeps unchanged block instances across appends and `MarkdownState` publishes its snapshot as is, so only touched blocks recompose
 - `Markdown(text)` parses once per distinct text; `MarkdownState` publishes each append synchronously, so a new document never shows stale content
 - inline annotations preserve links, emphasis, strong, code (inheriting the surrounding font size), and strike text styling
 - links open through `LocalUriHandler` unless `onLinkClick` is supplied

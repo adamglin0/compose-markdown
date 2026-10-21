@@ -131,7 +131,7 @@ data class ParseStats(
 - `append()` after `finish()` fails with a clear error until `reset()` is called or a new engine is created.
 - block IDs stay stable while a block's identity is preserved across appends.
 - `dirtyRegion` is the source range the call parsed: from the start of the previous unterminated last line to the end of input.
-- top-level blocks not listed in `changedBlocks` are unchanged; `removedBlockIds` lists every block id, at any depth, that left the document.
+- top-level blocks not listed in `changedBlocks` are the same instances as in the previous snapshot; `removedBlockIds` lists every block id, at any depth, that left the document.
 - snapshots are safe for UI read access because they expose immutable values only.
 
 ### Stable Prefix Contract
@@ -217,7 +217,8 @@ data class MarkdownImage(val url: String, val altText: String, val title: String
 
 Renderer rules:
 
-- `MarkdownState` publishes every `append`/`finish` synchronously and keeps the previous instance of every block that did not change, so only touched blocks recompose. It only reads `ParseDelta.snapshot`.
+- `MarkdownState` publishes every `append`/`finish` synchronously as the engine's snapshot document, without copying or comparing it: the engine keeps every block that did not change as the same instance, so an append costs work proportional to the new text and only touched blocks recompose. `document` uses referential equality.
+- `LazyListScope.markdown` costs the changed blocks per append: the item list is the snapshot's shared block list, and lazy layout only composes the visible items whose block instance changed. `Markdown(document)` lays all blocks out in one `Column`, so each append also costs a skip check, a measure and a draw per top-level block; use the lazy entry for long documents.
 - `Markdown(text)` parses once per distinct `text`/`dialect` in `remember`; no engine is mutated during composition.
 - Without a `MarkdownTheme`, the renderer uses `MarkdownColors.Light`; dark mode is the app's choice (`MarkdownTheme(colors = MarkdownColors.Dark)`), never `isSystemInDarkTheme()`.
 - Typography styles normally leave `color` unspecified; `MarkdownColors.text` applies unless a style sets its own color. `MarkdownTypography.code.lineHeight` is the code block line height.

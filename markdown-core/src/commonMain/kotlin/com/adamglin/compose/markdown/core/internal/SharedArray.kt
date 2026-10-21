@@ -2,11 +2,14 @@ package com.adamglin.compose.markdown.core.internal
 
 /**
  * Append-only storage whose current elements are published as immutable lists without copying them.
- * A published list reads only the slots that were filled before it was published, and [set] copies the
- * storage before writing, so published lists never observe a change.
+ * A published list reads only the slots that were filled before it was published, and the first [set]
+ * after a publication copies the storage before writing, so published lists never observe a change.
  */
 internal class SharedArray<T> {
     private var storage = arrayOfNulls<Any?>(INITIAL_CAPACITY)
+
+    /** Whether a published list reads [storage]. */
+    private var published = false
 
     var size: Int = 0
         private set
@@ -17,23 +20,34 @@ internal class SharedArray<T> {
     fun add(element: T) {
         if (size == storage.size) {
             storage = storage.copyOf(newSize = size * 2)
+            published = false
         }
         storage[size] = element
         size += 1
     }
 
     operator fun set(index: Int, element: T) {
-        storage = storage.copyOf()
+        if (published) {
+            storage = storage.copyOf()
+            published = false
+        }
         storage[index] = element
     }
 
     fun clear() {
         storage = arrayOfNulls(INITIAL_CAPACITY)
+        published = false
         size = 0
     }
 
     /** The current elements followed by [tail], as an immutable list that shares the storage. */
-    fun followedBy(tail: List<T>): List<T> = if (size == 0) tail else PrefixList(storage = storage, prefixSize = size, tail = tail)
+    fun followedBy(tail: List<T>): List<T> {
+        if (size == 0) {
+            return tail
+        }
+        published = true
+        return PrefixList(storage = storage, prefixSize = size, tail = tail)
+    }
 
     private class PrefixList<T>(
         private val storage: Array<Any?>,

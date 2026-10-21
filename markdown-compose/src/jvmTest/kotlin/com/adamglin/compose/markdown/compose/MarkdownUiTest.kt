@@ -301,7 +301,7 @@ private object TextMathRenderer : MathRenderer {
 }
 
 /** Counts how often a block formula is composed. */
-private class CountingMathRenderer : MathRenderer {
+internal class CountingMathRenderer : MathRenderer {
     var blockCompositions = 0
 
     @Composable

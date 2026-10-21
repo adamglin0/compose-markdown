@@ -28,6 +28,26 @@ class MarkdownHelpersTest {
         assertSame(first, state.document.blocks[0])
         assertNotSame(second, state.document.blocks[1])
         assertEquals("second grows", (state.document.blocks[1] as BlockNode.Paragraph).children.plainText())
+
+        val grown = state.document.blocks[1]
+        state.finish()
+        assertSame(first, state.document.blocks[0])
+        assertSame(grown, state.document.blocks[1])
+    }
+
+    @Test
+    fun lateDefinitionReplacesOnlyTheBlocksUsingIt() {
+        val state = MarkdownState(MarkdownDialect.CommonMarkCore)
+        state.append("see [r]\n\nother\n\n")
+        val user = state.document.blocks[0]
+        val other = state.document.blocks[1]
+
+        state.append("[r]: /u\n")
+
+        assertNotSame(user, state.document.blocks[0])
+        assertSame(other, state.document.blocks[1])
+        val link = (state.document.blocks[0] as BlockNode.Paragraph).children.filterIsInstance<InlineNode.Link>().single()
+        assertEquals("/u", link.destination)
     }
 
     @Test
@@ -39,15 +59,6 @@ class MarkdownHelpersTest {
         assertTrue(state.document.blocks.isEmpty())
         state.append("again")
         assertEquals("again", (state.document.blocks.single() as BlockNode.Paragraph).children.plainText())
-    }
-
-    @Test
-    fun reuseUnchangedBlocksKeepsEqualBlocksOnly() {
-        val previous = parseMarkdown("a\n\nb", MarkdownDialect.ChatFast).blocks
-        val next = parseMarkdown("a\n\nc", MarkdownDialect.ChatFast).blocks
-        val merged = reuseUnchangedBlocks(previous, next)
-        assertSame(previous[0], merged[0])
-        assertSame(next[1], merged[1])
     }
 
     @Test

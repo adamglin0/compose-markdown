@@ -91,6 +91,9 @@ private fun stepViolation(previous: MarkdownSnapshot, delta: ParseDelta, expecte
         if (change == null && previous.document.blocks.indexOfFirst { it.id == block.id } != index) {
             return "block ${block.id.raw} moved without a change"
         }
+        if (change == null && applied !== block) {
+            return "unchanged block ${block.id.raw} is a new instance"
+        }
     }
     val currentIds = HashSet<BlockId>()
     snapshot.document.blocks.forEach { block -> block.forEachBlock { currentIds += it.id } }
