@@ -18,6 +18,7 @@ kotlinx-browser = { module = "org.jetbrains.kotlinx:kotlinx-browser", version.re
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose-multiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-multiplatform" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-multiplatform" }
+compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose-multiplatform" }
 huarangmeng-latex-base = { module = "io.github.huarangmeng:latex-base", version.ref = "huarangmeng-latex" }
 huarangmeng-latex-parser = { module = "io.github.huarangmeng:latex-parser", version.ref = "huarangmeng-latex" }
 huarangmeng-latex-renderer = { module = "io.github.huarangmeng:latex-renderer", version.ref = "huarangmeng-latex" }
