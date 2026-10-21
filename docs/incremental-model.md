@@ -76,7 +76,7 @@ For every `append(chunk)`:
 
 Two feature groups can reinterpret earlier content:
 
-- block-level retroactive cases: setext headings, tables, list/quote continuation;
+- block-level cases: setext headings, tables, list/quote continuation, which keep their blocks open (and so in the mutable tail) until no later line can change them;
 - reference-definition cases: a later definition can resolve earlier unresolved inline references.
 
 The current engine handles both explicitly and locally instead of falling back to whole-document reparsing.

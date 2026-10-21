@@ -75,7 +75,7 @@ internal class LineIndex {
             newlineIndex += 1
         }
 
-        if (lineStart < endExclusive || (endExclusive == source.length && source.endsWith('\n') && lineStart == endExclusive)) {
+        if (lineStart < endExclusive) {
             result += IndexedLine(
                 number = lineNumber,
                 range = TextRange(start = lineStart, endExclusive = endExclusive),
@@ -104,12 +104,14 @@ internal class LineIndex {
     }
 }
 
+/**
+ * One source line. [content] excludes the line ending; [hasTrailingNewline] is false only for an
+ * unterminated last line, which a streaming source may still extend. A final line ending does not start
+ * another (empty) line.
+ */
 internal data class IndexedLine(
     val number: Int,
     val range: TextRange,
     val content: String,
     val hasTrailingNewline: Boolean,
-) {
-    val isBlank: Boolean
-        get() = content.isBlank()
-}
+)

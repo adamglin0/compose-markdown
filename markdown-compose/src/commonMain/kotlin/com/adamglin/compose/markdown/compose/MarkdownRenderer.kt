@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.InlineNode
+import com.adamglin.compose.markdown.core.model.ListType
 import com.adamglin.compose.markdown.core.model.MarkdownDocument
 import com.adamglin.compose.markdown.core.model.MarkdownSnapshot
 import com.adamglin.compose.markdown.core.model.TaskState
@@ -245,9 +246,20 @@ private fun MarkdownBlock(
         }
 
         is BlockNode.FencedCodeBlock -> CodeBlock(
-            block = block,
+            code = rememberHighlightedCodeBlock(block = block, highlighter = codeHighlighter),
+            label = when {
+                !block.isClosed -> "${block.infoString ?: "code"}  streaming..."
+                !block.infoString.isNullOrBlank() -> block.infoString
+                else -> null
+            },
             styles = styles,
-            codeHighlighter = codeHighlighter,
+            modifier = modifier,
+        )
+
+        is BlockNode.IndentedCodeBlock -> CodeBlock(
+            code = remember(block.literal) { AnnotatedString(block.literal) },
+            label = null,
+            styles = styles,
             modifier = modifier,
         )
 
@@ -274,14 +286,20 @@ private fun MarkdownBlock(
             modifier = modifier,
         )
 
-        is BlockNode.ListItem -> ListItemBlock(
-            block = block,
-            styles = styles,
-            codeHighlighter = codeHighlighter,
-            mathRenderer = mathRenderer,
-            onLinkClick = onLinkClick,
-            modifier = modifier,
-        )
+        is BlockNode.ListItem -> Column(
+            modifier = modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            block.children.forEach { child ->
+                MarkdownBlock(
+                    block = child,
+                    styles = styles,
+                    codeHighlighter = codeHighlighter,
+                    mathRenderer = mathRenderer,
+                    onLinkClick = onLinkClick,
+                )
+            }
+        }
 
         is BlockNode.TableBlock -> TableBlock(
             block = block,
@@ -320,22 +338,10 @@ private fun MarkdownBlock(
             modifier = modifier,
         )
 
-        is BlockNode.RawTextBlock -> MarkdownText(
-            text = AnnotatedString(block.literal),
-            style = MarkdownTheme.typography.bodyLarge,
-            modifier = modifier,
-        )
-
         is BlockNode.ThematicBreak -> MarkdownDivider(
             modifier = modifier.padding(vertical = 4.dp),
             color = MarkdownTheme.colors.borderMuted,
             thickness = 1.dp,
-        )
-
-        is BlockNode.UnsupportedBlock -> MarkdownText(
-            text = AnnotatedString(block.literal),
-            style = MarkdownTheme.typography.bodyLarge,
-            modifier = modifier,
         )
     }
 }
@@ -390,16 +396,11 @@ private fun QuoteBlock(
 
 @Composable
 private fun CodeBlock(
-    block: BlockNode.FencedCodeBlock,
+    code: AnnotatedString,
+    label: String?,
     styles: MarkdownBlockStyles,
-    codeHighlighter: CodeHighlighter,
     modifier: Modifier = Modifier,
 ) {
-    val annotatedCode = rememberHighlightedCodeBlock(
-        block = block,
-        highlighter = codeHighlighter,
-    )
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -415,14 +416,9 @@ private fun CodeBlock(
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (!block.infoString.isNullOrBlank() || !block.isClosed) {
+        if (label != null) {
             MarkdownText(
-                text = buildString {
-                    append(block.infoString ?: "code")
-                    if (!block.isClosed) {
-                        append("  streaming...")
-                    }
-                },
+                text = label,
                 style = MarkdownTheme.typography.labelMedium.copy(
                     color = MarkdownTheme.colors.textSecondary,
                 ),
@@ -430,7 +426,7 @@ private fun CodeBlock(
         }
 
         MarkdownText(
-            text = annotatedCode,
+            text = code,
             style = styles.codeBlockTextStyle,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -473,9 +469,10 @@ private fun ListBlock(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(if (block.isLoose) 10.dp else 6.dp),
     ) {
-        block.items.forEach { item ->
+        block.items.forEachIndexed { index, item ->
             ListItemBlock(
                 block = item,
+                leadingMarker = block.leadingMarker(index),
                 styles = styles,
                 codeHighlighter = codeHighlighter,
                 mathRenderer = mathRenderer,
@@ -488,6 +485,7 @@ private fun ListBlock(
 @Composable
 private fun ListItemBlock(
     block: BlockNode.ListItem,
+    leadingMarker: ListItemLeadingMarker,
     styles: MarkdownBlockStyles,
     codeHighlighter: CodeHighlighter,
     mathRenderer: MathRenderer?,
@@ -499,7 +497,7 @@ private fun ListItemBlock(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        when (val leadingMarker = block.leadingMarker()) {
+        when (leadingMarker) {
             is ListItemLeadingMarker.Literal -> MarkdownText(
                 text = leadingMarker.value,
                 style = MarkdownTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -582,8 +580,14 @@ internal sealed interface ListItemLeadingMarker {
     data class Task(val taskState: TaskState) : ListItemLeadingMarker
 }
 
-internal fun BlockNode.ListItem.leadingMarker(): ListItemLeadingMarker =
-    taskState?.let(ListItemLeadingMarker::Task) ?: ListItemLeadingMarker.Literal(marker)
+/** Task items show a checkbox; other items show the bullet, or their number counted from the list start. */
+internal fun BlockNode.ListBlock.leadingMarker(index: Int): ListItemLeadingMarker {
+    items[index].taskState?.let { return ListItemLeadingMarker.Task(it) }
+    return when (val type = type) {
+        is ListType.Bullet -> ListItemLeadingMarker.Literal(type.bulletChar.toString())
+        is ListType.Ordered -> ListItemLeadingMarker.Literal("${type.startNumber + index}${type.delimiter}")
+    }
+}
 
 @Composable
 private fun MarkdownText(

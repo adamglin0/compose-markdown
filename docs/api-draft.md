@@ -132,7 +132,7 @@ data class ParseStats(
 )
 ```
 
-`BlockNode` currently covers: `Document`, `Paragraph`, `Heading`, `FencedCodeBlock`, `BlockQuote`, `ListBlock`, `ListItem`, `ThematicBreak`, `UnsupportedBlock`, and `RawTextBlock`.
+`BlockNode` currently covers: `Document`, `Paragraph`, `Heading`, `FencedCodeBlock`, `IndentedCodeBlock`, `BlockQuote`, `ListBlock` (with `ListType.Bullet(bulletChar)` or `ListType.Ordered(startNumber, delimiter)`), `ListItem`, `ThematicBreak`, `TableBlock` / `TableRow` / `TableCell`, and `MathBlock`.
 
 `InlineNode` currently exposes the planned public node set: `Text`, `Emphasis`, `Strong`, `CodeSpan`, `Link`, `SoftBreak`, `HardBreak`, `Strikethrough`, and `UnsupportedInline`.
 

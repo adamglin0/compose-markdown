@@ -8,8 +8,6 @@ sealed interface MarkdownDialect {
     val blockFeatures: MarkdownBlockFeatures
     val inlineFeatures: MarkdownInlineFeatures
 
-    fun supports(feature: MarkdownFeature): Boolean = feature in preset.featureSet
-
     data object ChatFast : MarkdownDialect {
         override val id: String = "chat-fast"
         override val preset: MarkdownPreset = MarkdownPreset.ChatFast
@@ -44,40 +42,11 @@ sealed class MarkdownPreset(
     val blockFeatures: MarkdownBlockFeatures,
     val inlineFeatures: MarkdownInlineFeatures,
 ) {
-    val featureSet: Set<MarkdownFeature> = buildSet {
-        add(MarkdownFeature.Paragraph)
-        if (blockFeatures.atxHeadings) add(MarkdownFeature.AtxHeading)
-        if (blockFeatures.setextHeadings) add(MarkdownFeature.SetextHeading)
-        if (blockFeatures.fencedCodeBlocks) add(MarkdownFeature.FencedCodeBlock)
-        if (blockFeatures.blockQuotes) add(MarkdownFeature.BlockQuote)
-        if (blockFeatures.lists) add(MarkdownFeature.ListBlock)
-        if (blockFeatures.taskListItems) add(MarkdownFeature.TaskListItem)
-        if (blockFeatures.tables) add(MarkdownFeature.Table)
-        if (inlineFeatures.inlineCode) add(MarkdownFeature.InlineCode)
-        if (inlineFeatures.emphasis) add(MarkdownFeature.Emphasis)
-        if (inlineFeatures.strong) add(MarkdownFeature.Strong)
-        if (inlineFeatures.inlineLinks) add(MarkdownFeature.Link)
-        if (inlineFeatures.referenceLinks) add(MarkdownFeature.ReferenceLink)
-        if (inlineFeatures.softBreaks) add(MarkdownFeature.SoftBreak)
-        if (inlineFeatures.hardBreaks) add(MarkdownFeature.HardBreak)
-        if (inlineFeatures.strikethrough) add(MarkdownFeature.Strikethrough)
-        if (inlineFeatures.images) add(MarkdownFeature.Image)
-        if (!blockFeatures.rawHtml) add(MarkdownFeature.RawHtmlDisabled)
-        if (blockFeatures.mathBlocks) add(MarkdownFeature.MathBlock)
-        if (inlineFeatures.inlineMath) add(MarkdownFeature.InlineMath)
-    }
-
     data object ChatFast : MarkdownPreset(
         id = "chat-fast",
         blockFeatures = MarkdownBlockFeatures(
-            atxHeadings = true,
-            setextHeadings = true,
-            fencedCodeBlocks = true,
-            blockQuotes = true,
-            lists = true,
             taskListItems = true,
             tables = true,
-            rawHtml = false,
         ),
         inlineFeatures = MarkdownInlineFeatures(
             inlineCode = true,
@@ -97,14 +66,8 @@ sealed class MarkdownPreset(
     data object CommonMarkCore : MarkdownPreset(
         id = "commonmark-core",
         blockFeatures = MarkdownBlockFeatures(
-            atxHeadings = true,
-            setextHeadings = true,
-            fencedCodeBlocks = true,
-            blockQuotes = true,
-            lists = true,
             taskListItems = false,
             tables = false,
-            rawHtml = false,
         ),
         inlineFeatures = MarkdownInlineFeatures(
             inlineCode = true,
@@ -124,14 +87,8 @@ sealed class MarkdownPreset(
     data object GfmCompat : MarkdownPreset(
         id = "gfm-compat",
         blockFeatures = MarkdownBlockFeatures(
-            atxHeadings = true,
-            setextHeadings = true,
-            fencedCodeBlocks = true,
-            blockQuotes = true,
-            lists = true,
             taskListItems = true,
             tables = true,
-            rawHtml = false,
         ),
         inlineFeatures = MarkdownInlineFeatures(
             inlineCode = true,
@@ -151,14 +108,8 @@ sealed class MarkdownPreset(
     data object GfmMath : MarkdownPreset(
         id = "gfm-math",
         blockFeatures = MarkdownBlockFeatures(
-            atxHeadings = true,
-            setextHeadings = true,
-            fencedCodeBlocks = true,
-            blockQuotes = true,
-            lists = true,
             taskListItems = true,
             tables = true,
-            rawHtml = false,
             mathBlocks = true,
         ),
         inlineFeatures = MarkdownInlineFeatures(
@@ -178,16 +129,14 @@ sealed class MarkdownPreset(
     )
 }
 
+/**
+ * Block constructs that differ between presets. Paragraphs, headings, code blocks, block quotes, lists and
+ * thematic breaks are part of every preset.
+ */
 @Immutable
 data class MarkdownBlockFeatures(
-    val atxHeadings: Boolean,
-    val setextHeadings: Boolean,
-    val fencedCodeBlocks: Boolean,
-    val blockQuotes: Boolean,
-    val lists: Boolean,
     val taskListItems: Boolean,
     val tables: Boolean,
-    val rawHtml: Boolean,
     val mathBlocks: Boolean = false,
 )
 
@@ -206,26 +155,3 @@ data class MarkdownInlineFeatures(
     val hardBreaks: Boolean,
     val inlineMath: Boolean = false,
 )
-
-enum class MarkdownFeature {
-    Paragraph,
-    AtxHeading,
-    SetextHeading,
-    FencedCodeBlock,
-    BlockQuote,
-    ListBlock,
-    TaskListItem,
-    Table,
-    InlineCode,
-    Emphasis,
-    Strong,
-    Link,
-    ReferenceLink,
-    SoftBreak,
-    HardBreak,
-    Strikethrough,
-    Image,
-    RawHtmlDisabled,
-    MathBlock,
-    InlineMath,
-}

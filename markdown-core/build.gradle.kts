@@ -26,11 +26,17 @@ kotlin {
     iosSimulatorArm64()
 
     js(compiler = IR) {
-        browser()
+        browser {
+            // Performance tests assert their own time bounds; mocha's 2 s default is too tight for CI browsers.
+            testTask { useMocha { timeout = "30s" } }
+        }
     }
 
     wasmJs {
-        browser()
+        browser {
+            // Performance tests assert their own time bounds; mocha's 2 s default is too tight for CI browsers.
+            testTask { useMocha { timeout = "30s" } }
+        }
     }
 
     sourceSets {

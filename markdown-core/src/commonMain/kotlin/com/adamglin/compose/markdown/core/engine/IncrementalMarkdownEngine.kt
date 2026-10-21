@@ -89,14 +89,13 @@ internal class IncrementalMarkdownEngine(
         val previousDefinitions = state.dependencyIndex.definitionsByLabel.toMap()
         val previousDependentByLabel = state.dependencyIndex.dependentBlocksByLabel.mapValues { it.value.toSet() }
         val previousUnresolvedByLabel = state.dependencyIndex.unresolvedBlocksByLabel.mapValues { it.value.toSet() }
-        val reparsePlan = createReparsePlan(
-            previousSnapshot = previousSnapshot,
-            previousRecords = previousRecords,
-        )
+        // The parser reports every block later input can still change as open, so the previous stable prefix
+        // ends at a top-level line boundary and everything before it keeps its interpretation.
+        val dirtyStart = previousSnapshot.stablePrefixEnd
         val preservedRecords = previousRecords
-            .takeWhile { it.block.range.endExclusive <= reparsePlan.dirtyStart }
+            .takeWhile { it.block.range.endExclusive <= dirtyStart }
         val blockIdLookup = previousFlatBlocks
-            .filter { it.range.endExclusive > reparsePlan.dirtyStart }
+            .filter { it.range.endExclusive > dirtyStart }
             .let(BlockIdentity::blockIdLookup)
         val parser = BlockParser(
             sourceBuffer = state.source,
@@ -111,7 +110,7 @@ internal class IncrementalMarkdownEngine(
                 )
             },
         )
-        val parseRange = TextRange(start = reparsePlan.dirtyStart, endExclusive = state.source.length)
+        val parseRange = TextRange(start = dirtyStart, endExclusive = state.source.length)
         val parseResult = if (parseRange.isEmpty) {
             BlockParseResult(
                 blocks = emptyList(),
@@ -129,9 +128,14 @@ internal class IncrementalMarkdownEngine(
         val effectiveDefinitions = linkedMapOf<String, LinkReferenceDefinition>().apply {
             previousDefinitions
                 .values
-                .filter { it.range.endExclusive <= reparsePlan.dirtyStart }
+                .filter { it.range.endExclusive <= dirtyStart }
                 .forEach { definition -> put(definition.label, definition) }
-            putAll(parseResult.parsedDefinitions)
+            // The first definition of a label wins, and preserved definitions precede the reparsed range.
+            parseResult.parsedDefinitions.forEach { (label, definition) ->
+                if (label !in this) {
+                    put(label, definition)
+                }
+            }
         }
         val inlineParser = InlineParser(
             dialect = dialect,
@@ -163,18 +167,19 @@ internal class IncrementalMarkdownEngine(
             .toSet()
         val rehydratedPreservedBlocks = preservedRecords.map { record ->
             if (record.block.id.raw in affectedPreservedBlockIds) {
-                reparseSingleBlock(
-                    block = record.block,
+                // Definitions only change inline content, so the block parser's output is hydrated again.
+                hydrateTopLevelBlock(
+                    block = record.parsedBlock,
                     inlineParser = inlineParser,
                     referenceRevision = referenceRevision,
                     stablePrefixEnd = stablePrefixEnd,
                     sourceLength = state.source.length,
                     inlineStats = inlineStats,
-                    blockIdLookup = blockIdLookup,
                 )
             } else {
                 HydratedTopLevelBlock(
                     block = record.block,
+                    parsedBlock = record.parsedBlock,
                     referenceLabels = record.referenceLabels,
                     unresolvedReferenceLabels = record.unresolvedReferenceLabels,
                 )
@@ -208,7 +213,7 @@ internal class IncrementalMarkdownEngine(
         val insertedBlockIds = changedBlocks.filter { it.oldIndex == null }.map { it.id }
         val updatedBlockIds = changedBlocks.filter { it.oldIndex != null }.map { it.id }
         val stablePrefixRange = TextRange(start = 0, endExclusive = stablePrefixEnd)
-        val dirtyRegion = TextRange(start = reparsePlan.dirtyStart, endExclusive = state.source.length)
+        val dirtyRegion = TextRange(start = dirtyStart, endExclusive = state.source.length)
         val snapshot = MarkdownSnapshot(
             version = state.version,
             dialect = dialect,
@@ -228,6 +233,7 @@ internal class IncrementalMarkdownEngine(
         state.cacheState.blockRecords += hydratedBlocks.map { hydrated ->
             CachedBlockRecord(
                 block = hydrated.block,
+                parsedBlock = hydrated.parsedBlock,
                 isStable = hydrated.block.range.endExclusive <= stablePrefixEnd,
                 referenceLabels = hydrated.referenceLabels,
                 unresolvedReferenceLabels = hydrated.unresolvedReferenceLabels,
@@ -281,49 +287,6 @@ internal class IncrementalMarkdownEngine(
         )
     }
 
-    private fun createReparsePlan(
-        previousSnapshot: MarkdownSnapshot,
-        previousRecords: List<CachedBlockRecord>,
-    ): ReparsePlan {
-        val previousLength = previousSnapshot.document.sourceLength
-        val mutableTailStart = previousSnapshot.stablePrefixEnd
-        if (previousLength == 0) {
-            return ReparsePlan(dirtyStart = 0)
-        }
-        if (mutableTailStart >= previousLength) {
-            val retroactiveStart = if (canRetroactivelyExtendPreviousBlock(previousLength)) {
-                previousRecords.lastOrNull()?.block?.takeIf(::shouldBackUpForRetroactiveInterpretation)?.range?.start
-            } else {
-                null
-            }
-            return ReparsePlan(dirtyStart = retroactiveStart ?: previousLength)
-        }
-
-        val boundary = previousRecords.firstOrNull { record ->
-            mutableTailStart >= record.block.range.start && mutableTailStart < record.block.range.endExclusive
-        }?.block?.range?.start
-        return ReparsePlan(dirtyStart = boundary ?: 0)
-    }
-
-    private fun shouldBackUpForRetroactiveInterpretation(block: BlockNode): Boolean = when (block) {
-        is BlockNode.Paragraph -> dialect.blockFeatures.setextHeadings || dialect.blockFeatures.tables
-        is BlockNode.TableBlock -> dialect.blockFeatures.tables
-        is BlockNode.BlockQuote,
-        is BlockNode.ListBlock,
-        -> true
-        else -> false
-    }
-
-    private fun canRetroactivelyExtendPreviousBlock(previousLength: Int): Boolean {
-        if (previousLength <= 0) {
-            return false
-        }
-        if (previousLength > state.source.length || state.source[previousLength - 1] != '\n') {
-            return false
-        }
-        return previousLength == 1 || state.source[previousLength - 2] != '\n'
-    }
-
     private fun normalizeChunk(chunk: String): String {
         var startIndex = 0
         if (state.suppressLeadingLineFeed && chunk.startsWith('\n')) {
@@ -367,10 +330,6 @@ internal class IncrementalMarkdownEngine(
         blocks.forEach { block -> collectFlattenedBlocks(block, this) }
     }
 
-    private fun flattenBlocks(block: BlockNode): List<BlockNode> = buildList {
-        collectFlattenedBlocks(block, this)
-    }
-
     private fun collectFlattenedBlocks(block: BlockNode, destination: MutableList<BlockNode>) {
         destination += block
         when (block) {
@@ -385,12 +344,11 @@ internal class IncrementalMarkdownEngine(
             is BlockNode.TableRow -> block.cells.forEach { cell -> collectFlattenedBlocks(cell, destination) }
             is BlockNode.TableCell,
             is BlockNode.FencedCodeBlock,
+            is BlockNode.IndentedCodeBlock,
             is BlockNode.Heading,
             is BlockNode.MathBlock,
             is BlockNode.Paragraph,
-            is BlockNode.RawTextBlock,
             is BlockNode.ThematicBreak,
-            is BlockNode.UnsupportedBlock,
             -> Unit
         }
     }
@@ -414,47 +372,9 @@ internal class IncrementalMarkdownEngine(
         )
         return HydratedTopLevelBlock(
             block = hydration.block,
+            parsedBlock = block,
             referenceLabels = hydration.referenceLabels,
             unresolvedReferenceLabels = hydration.unresolvedReferenceLabels,
-        )
-    }
-
-    private fun reparseSingleBlock(
-        block: BlockNode,
-        inlineParser: InlineParser,
-        referenceRevision: Int,
-        stablePrefixEnd: Int,
-        sourceLength: Int,
-        inlineStats: InlineResolutionStats,
-        blockIdLookup: Map<BlockIdentityKey, MutableList<Long>>,
-    ): HydratedTopLevelBlock {
-        val preservedBlockIdLookup = flattenBlocks(block)
-            .let(BlockIdentity::blockIdLookup)
-        val parser = BlockParser(
-            sourceBuffer = state.source,
-            lineIndex = state.lineIndex,
-            dialect = dialect,
-            allocateBlockId = { kind, start, discriminator ->
-                allocateBlockId(
-                    kind = kind,
-                    start = start,
-                    discriminator = discriminator,
-                    blockIdLookup = preservedBlockIdLookup,
-                )
-            },
-        )
-        val result = parser.parse(
-            isFinal = true,
-            range = block.range,
-        )
-        val reparsed = result.blocks.singleOrNull() ?: block
-        return hydrateTopLevelBlock(
-            block = reparsed,
-            inlineParser = inlineParser,
-            referenceRevision = referenceRevision,
-            stablePrefixEnd = stablePrefixEnd,
-            sourceLength = sourceLength,
-            inlineStats = inlineStats,
         )
     }
 
@@ -588,10 +508,9 @@ internal class IncrementalMarkdownEngine(
 
         is BlockNode.Document,
         is BlockNode.FencedCodeBlock,
+        is BlockNode.IndentedCodeBlock,
         is BlockNode.MathBlock,
-        is BlockNode.RawTextBlock,
         is BlockNode.ThematicBreak,
-        is BlockNode.UnsupportedBlock,
         -> InlineHydration(
             block = block,
             referenceLabels = emptySet(),
@@ -743,10 +662,6 @@ internal class IncrementalMarkdownEngine(
         var cacheHitBlockCount: Int = 0,
     )
 
-    private data class ReparsePlan(
-        val dirtyStart: Int,
-    )
-
     private data class ResolvedInline(
         val nodes: List<InlineNode>,
         val referenceLabels: Set<String>,
@@ -761,6 +676,7 @@ internal class IncrementalMarkdownEngine(
 
     private data class HydratedTopLevelBlock(
         val block: BlockNode,
+        val parsedBlock: BlockNode,
         val referenceLabels: Set<String>,
         val unresolvedReferenceLabels: Set<String>,
     )

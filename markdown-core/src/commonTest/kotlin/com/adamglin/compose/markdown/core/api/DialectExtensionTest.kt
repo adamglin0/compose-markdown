@@ -1,7 +1,6 @@
 package com.adamglin.compose.markdown.core.api
 
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
-import com.adamglin.compose.markdown.core.dialect.MarkdownFeature
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.HeadingStyle
 import com.adamglin.compose.markdown.core.model.InlineNode
@@ -185,12 +184,10 @@ class DialectExtensionTest {
     fun gfmMathEnablesMathFeaturesAndOthersDoNot() {
         assertTrue(MarkdownDialect.GfmMath.blockFeatures.mathBlocks)
         assertTrue(MarkdownDialect.GfmMath.inlineFeatures.inlineMath)
-        assertTrue(MarkdownDialect.GfmMath.supports(MarkdownFeature.MathBlock))
-        assertTrue(MarkdownDialect.GfmMath.supports(MarkdownFeature.InlineMath))
 
         assertFalse(MarkdownDialect.GfmCompat.blockFeatures.mathBlocks)
         assertFalse(MarkdownDialect.GfmCompat.inlineFeatures.inlineMath)
-        assertFalse(MarkdownDialect.ChatFast.supports(MarkdownFeature.MathBlock))
+        assertFalse(MarkdownDialect.ChatFast.blockFeatures.mathBlocks)
     }
 
     @Test

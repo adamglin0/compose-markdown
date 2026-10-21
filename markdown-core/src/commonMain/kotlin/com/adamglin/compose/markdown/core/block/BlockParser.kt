@@ -1,933 +1,77 @@
 package com.adamglin.compose.markdown.core.block
 
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
-import com.adamglin.compose.markdown.core.inline.scanLinkDestination
-import com.adamglin.compose.markdown.core.inline.scanLinkLabel
-import com.adamglin.compose.markdown.core.inline.scanLinkTitle
-import com.adamglin.compose.markdown.core.inline.skipSpacesAndTabs
 import com.adamglin.compose.markdown.core.inline.unescapeString
 import com.adamglin.compose.markdown.core.internal.LinkReferenceDefinition
 import com.adamglin.compose.markdown.core.internal.OpenBlockFrame
-import com.adamglin.compose.markdown.core.internal.BlockIdentity
-import com.adamglin.compose.markdown.core.internal.normalizeReferenceLabel
 import com.adamglin.compose.markdown.core.model.BlockId
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.MathBlockDelimiter
-import com.adamglin.compose.markdown.core.model.HeadingStyle
-import com.adamglin.compose.markdown.core.model.InlineId
-import com.adamglin.compose.markdown.core.model.InlineNode
-import com.adamglin.compose.markdown.core.model.LineRange
-import com.adamglin.compose.markdown.core.model.ListStyle
 import com.adamglin.compose.markdown.core.model.TableAlignment
 import com.adamglin.compose.markdown.core.model.TaskState
 import com.adamglin.compose.markdown.core.model.TextRange
+import com.adamglin.compose.markdown.core.source.IndexedLine
 import com.adamglin.compose.markdown.core.source.LineIndex
 import com.adamglin.compose.markdown.core.source.SourceBuffer
 
+/**
+ * Block structure parser following CommonMark 0.31.2, appendix "A parsing strategy" (the commonmark.js
+ * reference implementation): each line first walks the stack of open blocks to match their continuation
+ * markers, then looks for new block starts, and finally adds the remaining text to the innermost block,
+ * possibly as a lazy paragraph continuation. Tabs advance to the next multiple of four columns.
+ *
+ * GFM tables follow cmark-gfm's table extension; display math (`$$` / `\[`) is a fence-like leaf block.
+ * The result is turned into immutable [BlockNode]s by
+ * [BlockTreeBuilder]; inline content is left as a single text node for the inline parser.
+ */
 internal class BlockParser(
     private val sourceBuffer: SourceBuffer,
     private val lineIndex: LineIndex,
     private val dialect: MarkdownDialect,
     private val allocateBlockId: (kind: String, start: Int, discriminator: String) -> BlockId,
 ) {
+    /**
+     * Parses the lines of [range], which must start at a line boundary outside any container block.
+     * Unless [isFinal], the result reports the blocks that later input can still change as
+     * [BlockParseResult.openBlockStack], outermost first.
+     */
     fun parse(
         isFinal: Boolean,
         range: TextRange = TextRange(start = 0, endExclusive = sourceBuffer.length),
     ): BlockParseResult {
         val source = sourceBuffer.snapshot()
-        if (source.isEmpty() || range.isEmpty) {
-            return BlockParseResult(
-                blocks = emptyList(),
-                openBlockStack = emptyList(),
-                processedLineCount = 0,
-                parsedDefinitions = emptyMap(),
-            )
+        val lines = if (source.isEmpty() || range.isEmpty) {
+            emptyList()
+        } else {
+            lineIndex.lines(source = source, startOffset = range.start, endExclusive = range.endExclusive)
         }
-
-        val lines = lineIndex.lines(
-            source = source,
-            startOffset = range.start,
-            endExclusive = range.endExclusive,
-        ).map { indexedLine ->
-            ParserLine(
-                number = indexedLine.number,
-                range = indexedLine.range,
-                lineRange = lineIndex.lineRangeOf(range = indexedLine.range, sourceLength = source.length),
-                content = indexedLine.content,
-                contentRange = TextRange(
-                    start = indexedLine.range.start,
-                    endExclusive = indexedLine.range.start + indexedLine.content.length,
-                ),
-            )
+        val session = BlockParserSession(lines = lines, dialect = dialect)
+        // An unterminated last line may still grow into a different block start, so blocks it closed stay open.
+        val pendingLine = lines.lastOrNull()?.takeIf { !isFinal && !it.hasTrailingNewline }
+        val completeLineCount = if (pendingLine != null) lines.size - 1 else lines.size
+        for (index in 0 until completeLineCount) {
+            session.incorporateLine(index)
         }
-        val session = ParserSession(isFinal = isFinal)
-        val blocks = session.parseBlocks(lines = lines)
+        val openBlockStack = when {
+            isFinal -> emptyList()
+            pendingLine == null -> session.openBlockFrames()
+            else -> {
+                val beforePendingLine = session.openBlockFrames()
+                session.incorporateLine(lines.lastIndex)
+                val afterPendingLine = session.openBlockFrames()
+                val before = beforePendingLine.firstOrNull()?.startOffset
+                val after = afterPendingLine.firstOrNull()?.startOffset
+                if (before != null && (after == null || before < after)) beforePendingLine else afterPendingLine
+            }
+        }
+        val document = session.finish()
         return BlockParseResult(
-            blocks = blocks,
-            openBlockStack = session.openFrames.toList(),
+            blocks = BlockTreeBuilder(lines = lines, allocateBlockId = allocateBlockId).build(document),
+            openBlockStack = openBlockStack,
             processedLineCount = lines.size,
-            parsedDefinitions = session.parsedDefinitions,
+            parsedDefinitions = session.definitions,
         )
     }
-
-    private inner class ParserSession(
-        private val isFinal: Boolean,
-    ) {
-        private val frameStack: MutableList<OpenBlockFrame> = mutableListOf()
-        val openFrames: MutableList<OpenBlockFrame> = mutableListOf()
-        val parsedDefinitions: MutableMap<String, LinkReferenceDefinition> = linkedMapOf()
-
-        fun parseBlocks(lines: List<ParserLine>): List<BlockNode> {
-            val blocks = mutableListOf<BlockNode>()
-            var index = 0
-            while (index < lines.size) {
-                val line = lines[index]
-                if (line.isBlank) {
-                    index += 1
-                    continue
-                }
-
-                val fencedCode = parseFencedCodeBlock(lines = lines, startIndex = index)
-                if (fencedCode != null) {
-                    blocks += fencedCode.block
-                    index = fencedCode.nextIndex
-                    continue
-                }
-
-                val mathBlock = parseMathBlock(lines = lines, startIndex = index)
-                if (mathBlock != null) {
-                    blocks += mathBlock.block
-                    index = mathBlock.nextIndex
-                    continue
-                }
-
-                val blockQuote = parseBlockQuote(lines = lines, startIndex = index)
-                if (blockQuote != null) {
-                    blocks += blockQuote.block
-                    index = blockQuote.nextIndex
-                    continue
-                }
-
-                val listBlock = parseListBlock(lines = lines, startIndex = index)
-                if (listBlock != null) {
-                    blocks += listBlock.block
-                    index = listBlock.nextIndex
-                    continue
-                }
-
-                val trimmed = line.content.trimStart()
-                if (isThematicBreak(content = trimmed)) {
-                    blocks += BlockNode.ThematicBreak(
-                        id = allocateBlockId("thematic-break", line.range.start, trimmed.filterNot(Char::isWhitespace)),
-                        range = line.range,
-                        lineRange = line.lineRange,
-                        marker = trimmed,
-                    )
-                    index += 1
-                    continue
-                }
-
-                val heading = matchAtxHeading(content = trimmed)
-                if (heading != null) {
-                    blocks += BlockNode.Heading(
-                        id = allocateBlockId(
-                            "heading",
-                            line.range.start,
-                            BlockIdentity.headingDiscriminator(style = HeadingStyle.Atx, level = heading.level),
-                        ),
-                        range = line.range,
-                        lineRange = line.lineRange,
-                        level = heading.level,
-                        children = inlineTextNodes(
-                            literal = heading.content,
-                            range = heading.contentRange(line = line),
-                        ),
-                        style = HeadingStyle.Atx,
-                    )
-                    index += 1
-                    continue
-                }
-
-                val definition = parseReferenceDefinition(line)
-                if (definition != null) {
-                    if (definition.label !in parsedDefinitions) {
-                        parsedDefinitions[definition.label] = definition
-                    }
-                    index += 1
-                    continue
-                }
-
-                val tableBlock = parseTable(lines = lines, startIndex = index)
-                if (tableBlock != null) {
-                    blocks += tableBlock.block
-                    index = tableBlock.nextIndex
-                    continue
-                }
-
-                val setextHeading = parseSetextHeading(lines = lines, startIndex = index)
-                if (setextHeading != null) {
-                    blocks += setextHeading.block
-                    index = setextHeading.nextIndex
-                    continue
-                }
-
-                val paragraphEnd = parseParagraphEnd(lines = lines, startIndex = index)
-                val paragraphLines = lines.subList(index, paragraphEnd)
-                val paragraphRange = paragraphLines.combinedRange()
-                val paragraphLineRange = paragraphLines.combinedLineRange()
-                withFrame(marker = "paragraph", startOffset = paragraphRange.start) {
-                    if (!isFinal && paragraphEnd == lines.size) {
-                        rememberOpenFrames()
-                    }
-                    blocks += BlockNode.Paragraph(
-                        id = allocateBlockId("paragraph", paragraphRange.start, "paragraph"),
-                        range = paragraphRange,
-                        lineRange = paragraphLineRange,
-                        children = inlineTextNodes(
-                            literal = paragraphLines.joinToString(separator = "\n") { it.content },
-                            range = paragraphLines.combinedContentRange(),
-                        ),
-                    )
-                }
-                index = paragraphEnd
-            }
-            return blocks
-        }
-
-        private fun parseFencedCodeBlock(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
-            if (!dialect.blockFeatures.fencedCodeBlocks) {
-                return null
-            }
-            val opener = matchFence(content = lines[startIndex].content) ?: return null
-            var index = startIndex + 1
-            var isClosed = false
-            val bodyLines = mutableListOf<ParserLine>()
-
-            withFrame(marker = "fenced-code", startOffset = lines[startIndex].range.start) {
-                while (index < lines.size) {
-                    val line = lines[index]
-                    if (isClosingFence(content = line.content, opener = opener)) {
-                        index += 1
-                        isClosed = true
-                        break
-                    }
-                    bodyLines += line
-                    index += 1
-                }
-
-                if (!isClosed && !isFinal) {
-                    rememberOpenFrames()
-                }
-            }
-
-            val consumed = lines.subList(startIndex, index)
-            val infoString = opener.infoString.ifEmpty { null }
-            val literal = bodyLines.joinToString(separator = "\n") { it.content }
-            return ParsedBlock(
-                block = BlockNode.FencedCodeBlock(
-                    id = allocateBlockId("fenced-code", consumed.first().range.start, opener.infoString),
-                    range = consumed.combinedRange(),
-                    lineRange = consumed.combinedLineRange(),
-                    infoString = infoString,
-                    languageHint = normalizeFenceLanguageHint(infoString),
-                    literal = literal,
-                    isClosed = isClosed,
-                ),
-                nextIndex = index,
-            )
-        }
-
-        private fun matchMathBlockOpener(content: String): MathBlockOpener? {
-            val trimmed = content.trimStart()
-            return when {
-                trimmed.startsWith("$$") -> MathBlockOpener(MathBlockDelimiter.Dollar, "$$", "$$")
-                trimmed.startsWith("\\[") -> MathBlockOpener(MathBlockDelimiter.Bracket, "\\[", "\\]")
-                else -> null
-            }
-        }
-
-        private fun parseMathBlock(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
-            if (!dialect.blockFeatures.mathBlocks) {
-                return null
-            }
-            val opener = matchMathBlockOpener(lines[startIndex].content) ?: return null
-            val afterOpen = lines[startIndex].content.trimStart().removePrefix(opener.openMarker)
-
-            // Single line: "$$ ... $$"
-            val inlineClose = afterOpen.indexOf(opener.closeMarker)
-            if (inlineClose >= 0) {
-                val consumed = lines.subList(startIndex, startIndex + 1)
-                return ParsedBlock(
-                    block = BlockNode.MathBlock(
-                        id = allocateBlockId("math-block", consumed.first().range.start, opener.openMarker),
-                        range = consumed.combinedRange(),
-                        lineRange = consumed.combinedLineRange(),
-                        latex = afterOpen.substring(0, inlineClose).trim(),
-                        isClosed = true,
-                        delimiter = opener.delimiter,
-                    ),
-                    nextIndex = startIndex + 1,
-                )
-            }
-
-            var index = startIndex + 1
-            var isClosed = false
-            val bodyLines = mutableListOf<String>()
-            if (afterOpen.isNotBlank()) {
-                bodyLines += afterOpen
-            }
-
-            withFrame(marker = "math-block", startOffset = lines[startIndex].range.start) {
-                while (index < lines.size) {
-                    val lineContent = lines[index].content
-                    val embeddedClose = lineContent.indexOf(opener.closeMarker)
-                    if (embeddedClose >= 0) {
-                        val before = lineContent.substring(0, embeddedClose)
-                        if (before.isNotBlank()) {
-                            bodyLines += before
-                        }
-                        index += 1
-                        isClosed = true
-                        break
-                    }
-                    bodyLines += lineContent
-                    index += 1
-                }
-                if (!isClosed && !isFinal) {
-                    rememberOpenFrames()
-                }
-            }
-
-            val consumed = lines.subList(startIndex, index)
-            return ParsedBlock(
-                block = BlockNode.MathBlock(
-                    id = allocateBlockId("math-block", consumed.first().range.start, opener.openMarker),
-                    range = consumed.combinedRange(),
-                    lineRange = consumed.combinedLineRange(),
-                    latex = bodyLines.joinToString(separator = "\n").trim(),
-                    isClosed = isClosed,
-                    delimiter = opener.delimiter,
-                ),
-                nextIndex = index,
-            )
-        }
-
-        private fun parseBlockQuote(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
-            if (!dialect.blockFeatures.blockQuotes) {
-                return null
-            }
-            val first = stripBlockQuote(line = lines[startIndex]) ?: return null
-            val quoteLines = mutableListOf(first)
-            var index = startIndex + 1
-            var children = emptyList<BlockNode>()
-
-            withFrame(marker = "blockquote", startOffset = lines[startIndex].range.start) {
-                while (index < lines.size) {
-                    val current = lines[index]
-                    val stripped = stripBlockQuote(line = current)
-                    if (stripped != null) {
-                        quoteLines += stripped
-                        index += 1
-                        continue
-                    }
-                    if (current.isBlank) {
-                        quoteLines += current
-                        index += 1
-                        continue
-                    }
-                    break
-                }
-
-                children = parseBlocks(lines = quoteLines)
-                if (!isFinal && index == lines.size) {
-                    rememberOpenFrames()
-                }
-            }
-
-            val consumed = lines.subList(startIndex, index)
-            return ParsedBlock(
-                block = BlockNode.BlockQuote(
-                    id = allocateBlockId("blockquote", consumed.first().range.start, "container"),
-                    range = consumed.combinedRange(),
-                    lineRange = consumed.combinedLineRange(),
-                    children = children,
-                ),
-                nextIndex = index,
-            )
-        }
-
-        private fun parseListBlock(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
-            if (!dialect.blockFeatures.lists) {
-                return null
-            }
-            val firstMarker = matchListMarker(content = lines[startIndex].content) ?: return null
-            val items = mutableListOf<BlockNode.ListItem>()
-            var index = startIndex
-            var isLoose = false
-
-            withFrame(marker = "list-${firstMarker.style.name.lowercase()}", startOffset = lines[startIndex].range.start) {
-                while (index < lines.size) {
-                    val marker = matchListMarker(content = lines[index].content) ?: break
-                    if (marker.style != firstMarker.style || marker.indent != firstMarker.indent) {
-                        break
-                    }
-
-                    val itemStartLine = lines[index]
-                    val firstContent = lines[index].copy(
-                        content = marker.content,
-                        contentRange = TextRange(
-                            start = (lines[index].contentRange.start + marker.contentIndent).coerceAtMost(lines[index].contentRange.endExclusive),
-                            endExclusive = lines[index].contentRange.endExclusive,
-                        ),
-                    )
-                    val taskMatch = matchTaskMarker(firstContent)
-                    val normalizedFirstContent = taskMatch?.strippedLine ?: firstContent
-                    index += 1
-
-                    val itemLines = mutableListOf<ParserLine>()
-                    itemLines += normalizedFirstContent
-
-                    while (index < lines.size) {
-                        val current = lines[index]
-                        if (current.isBlank) {
-                            itemLines += current.copy(content = "", contentRange = TextRange(start = current.range.start, endExclusive = current.range.start))
-                            isLoose = true
-                            index += 1
-                            continue
-                        }
-
-                        val siblingMarker = matchListMarker(content = current.content)
-                        if (siblingMarker != null && siblingMarker.style == firstMarker.style && siblingMarker.indent == firstMarker.indent) {
-                            break
-                        }
-
-                        val continuationIndent = firstMarker.contentIndent + firstMarker.indent
-                        if (current.leadingSpaces >= continuationIndent) {
-                            itemLines += current.copy(
-                                content = current.content.drop(continuationIndent),
-                                contentRange = TextRange(
-                                    start = (current.contentRange.start + continuationIndent).coerceAtMost(current.contentRange.endExclusive),
-                                    endExclusive = current.contentRange.endExclusive,
-                                ),
-                            )
-                            index += 1
-                            continue
-                        }
-
-                        break
-                    }
-
-                    val meaningfulLines = itemLines.trimTrailingBlankLines()
-                    val children = parseBlocks(lines = meaningfulLines)
-                    if (!isFinal && index == lines.size) {
-                        rememberOpenFrames()
-                    }
-                    items += BlockNode.ListItem(
-                        id = allocateBlockId("list-item", itemStartLine.range.start, marker.marker),
-                        range = meaningfulLines.combinedRange(),
-                        lineRange = meaningfulLines.combinedLineRange(),
-                        marker = marker.marker,
-                        children = children,
-                        taskState = taskMatch?.state,
-                    )
-
-                    while (index < lines.size && lines[index].isBlank) {
-                        index += 1
-                    }
-                }
-
-                if (!isFinal && index == lines.size) {
-                    rememberOpenFrames()
-                }
-            }
-
-            if (items.isEmpty()) {
-                return null
-            }
-            val listRange = items.map { it.range }.reduce(TextRange::union)
-            val listLineRange = items.map { it.lineRange }.reduce { left, right ->
-                LineRange(
-                    startLine = minOf(left.startLine, right.startLine),
-                    endLineExclusive = maxOf(left.endLineExclusive, right.endLineExclusive),
-                )
-            }
-            return ParsedBlock(
-                block = BlockNode.ListBlock(
-                    id = allocateBlockId("list-block", items.first().range.start, firstMarker.style.name),
-                    range = listRange,
-                    lineRange = listLineRange,
-                    style = firstMarker.style,
-                    items = items,
-                    isLoose = isLoose,
-                ),
-                nextIndex = index,
-            )
-        }
-
-        private fun parseTable(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
-            if (!dialect.blockFeatures.tables || startIndex + 1 >= lines.size) {
-                return null
-            }
-            val headerLine = lines[startIndex]
-            val delimiterLine = lines[startIndex + 1]
-            val headerCells = splitTableCells(headerLine)
-            val alignments = parseTableAlignments(delimiterLine.content)
-            if (headerCells.isEmpty() || headerCells.size != alignments.size) {
-                return null
-            }
-            val normalizedColumnCount = headerCells.size
-            var index = startIndex + 2
-            val rows = mutableListOf<BlockNode.TableRow>()
-            while (index < lines.size) {
-                val line = lines[index]
-                if (line.isBlank || !looksLikeTableRow(line.content) || startsBlock(line.content)) {
-                    break
-                }
-                val cells = splitTableCells(line).padTo(normalizedColumnCount, line)
-                rows += createTableRow(line = line, cells = cells, isHeader = false)
-                index += 1
-            }
-
-            val consumed = lines.subList(startIndex, index)
-            return ParsedBlock(
-                block = BlockNode.TableBlock(
-                    id = allocateBlockId(
-                        "table",
-                        headerLine.range.start,
-                        BlockIdentity.tableDiscriminator(alignments = alignments.padTo(normalizedColumnCount, TableAlignment.Default)),
-                    ),
-                    range = consumed.combinedRange(),
-                    lineRange = consumed.combinedLineRange(),
-                    header = createTableRow(
-                        line = headerLine,
-                        cells = headerCells.padTo(normalizedColumnCount, headerLine),
-                        isHeader = true,
-                    ),
-                    alignments = alignments.padTo(normalizedColumnCount, TableAlignment.Default),
-                    rows = rows,
-                ),
-                nextIndex = index,
-            )
-        }
-
-        private fun parseSetextHeading(lines: List<ParserLine>, startIndex: Int): ParsedBlock? {
-            if (!dialect.blockFeatures.setextHeadings || startIndex + 1 >= lines.size) {
-                return null
-            }
-            var index = startIndex
-            while (index + 1 < lines.size) {
-                val line = lines[index]
-                if (line.isBlank) {
-                    return null
-                }
-                if (index > startIndex && startsBlock(line.content)) {
-                    return null
-                }
-                if (
-                    dialect.blockFeatures.tables &&
-                    index == startIndex &&
-                    looksLikeTableRow(lines[startIndex].content) &&
-                    isTableDelimiterRow(lines[index + 1].content)
-                ) {
-                    return null
-                }
-                val underline = matchSetextUnderline(lines[index + 1].content)
-                if (underline != null) {
-                    val contentLines = lines.subList(startIndex, index + 1)
-                    if (startsBlock(contentLines.first().content)) {
-                        return null
-                    }
-                    val content = trimLiteralWithRange(
-                        literal = contentLines.joinToString(separator = "\n") { it.content },
-                        range = contentLines.combinedContentRange(),
-                    )
-                    val consumed = lines.subList(startIndex, index + 2)
-                    return ParsedBlock(
-                        block = BlockNode.Heading(
-                            id = allocateBlockId(
-                                "heading",
-                                contentLines.first().range.start,
-                                BlockIdentity.headingDiscriminator(style = HeadingStyle.Setext, level = underline.level),
-                            ),
-                            range = consumed.combinedRange(),
-                            lineRange = consumed.combinedLineRange(),
-                            level = underline.level,
-                            children = inlineTextNodes(content.literal, content.range),
-                            style = HeadingStyle.Setext,
-                        ),
-                        nextIndex = index + 2,
-                    )
-                }
-                index += 1
-            }
-            return null
-        }
-
-        private fun parseParagraphEnd(lines: List<ParserLine>, startIndex: Int): Int {
-            var index = startIndex
-            while (index < lines.size) {
-                val current = lines[index]
-                if (current.isBlank) {
-                    break
-                }
-                if (index > startIndex && startsBlock(content = current.content)) {
-                    break
-                }
-                if (isTableStart(lines = lines, index = index)) {
-                    break
-                }
-                index += 1
-            }
-            return index
-        }
-
-        private fun isTableStart(lines: List<ParserLine>, index: Int): Boolean =
-            tableStartColumnCount(lines = lines, index = index) != null
-
-        private fun tableStartColumnCount(lines: List<ParserLine>, index: Int): Int? {
-            if (!dialect.blockFeatures.tables || index + 1 >= lines.size) {
-                return null
-            }
-            val headerCells = splitTableCells(lines[index])
-            val alignments = parseTableAlignments(lines[index + 1].content)
-            return headerCells.size.takeIf { it > 0 && it == alignments.size }
-        }
-
-        private fun startsBlock(content: String): Boolean {
-            val trimmed = content.trimStart()
-            return (dialect.blockFeatures.fencedCodeBlocks && matchFence(content = trimmed) != null) ||
-                (dialect.blockFeatures.blockQuotes && stripBlockQuote(line = ParserLine.empty(content = content)) != null) ||
-                (dialect.blockFeatures.lists && matchListMarker(content = content) != null) ||
-                matchAtxHeading(content = trimmed) != null ||
-                isThematicBreak(content = trimmed)
-        }
-
-        private fun inlineTextNodes(literal: String, range: TextRange): List<InlineNode> {
-            if (literal.isEmpty()) {
-                return emptyList()
-            }
-            return listOf(
-                InlineNode.Text(
-                    id = inlineId(range = range, salt = literal.hashCode().toLong()),
-                    range = range,
-                    literal = literal,
-                ),
-            )
-        }
-
-        private fun createTableRow(line: ParserLine, cells: List<TableCellDraft>, isHeader: Boolean): BlockNode.TableRow {
-            return BlockNode.TableRow(
-                id = allocateBlockId(
-                    "table-row",
-                    line.range.start,
-                    BlockIdentity.tableRowDiscriminator(isHeader = isHeader),
-                ),
-                range = line.range,
-                lineRange = line.lineRange,
-                cells = cells.mapIndexed { index, cell ->
-                    BlockNode.TableCell(
-                        id = allocateBlockId(
-                            "table-cell",
-                            cell.range.start,
-                            BlockIdentity.tableCellDiscriminator(rowStart = line.range.start, index = index),
-                        ),
-                        range = cell.range,
-                        lineRange = line.lineRange,
-                        children = inlineTextNodes(cell.literal, cell.range),
-                    )
-                },
-                isHeader = isHeader,
-            )
-        }
-
-        private fun splitTableCells(line: ParserLine): List<TableCellDraft> {
-            val content = line.content
-            val contentStart = content.indexOfFirst { !it.isWhitespace() }
-            if (contentStart == -1) {
-                return emptyList()
-            }
-            val contentEndExclusive = content.indexOfLast { !it.isWhitespace() } + 1
-            if (content.indexOf('|', startIndex = contentStart) !in contentStart until contentEndExclusive) {
-                return emptyList()
-            }
-            val rawStart = contentStart + if (content[contentStart] == '|') 1 else 0
-            val rawEndExclusive = contentEndExclusive - if (content[contentEndExclusive - 1] == '|') 1 else 0
-            if (rawEndExclusive < rawStart) {
-                return emptyList()
-            }
-            val cells = mutableListOf<TableCellDraft>()
-            var cellStart = rawStart
-            var cursor = rawStart
-            while (cursor <= rawEndExclusive) {
-                if (cursor == rawEndExclusive || content[cursor] == '|') {
-                    var literalStart = cellStart
-                    while (literalStart < cursor && content[literalStart].isWhitespace()) {
-                        literalStart += 1
-                    }
-                    var literalEndExclusive = cursor
-                    while (literalEndExclusive > literalStart && content[literalEndExclusive - 1].isWhitespace()) {
-                        literalEndExclusive -= 1
-                    }
-                    val start = (line.contentRange.start + literalStart).coerceAtMost(line.contentRange.endExclusive)
-                    val end = (line.contentRange.start + literalEndExclusive).coerceIn(start, line.contentRange.endExclusive)
-                    cells += TableCellDraft(
-                        literal = if (literalStart >= literalEndExclusive) "" else content.substring(literalStart, literalEndExclusive),
-                        range = TextRange(start = start, endExclusive = end),
-                    )
-                    cellStart = cursor + 1
-                }
-                cursor += 1
-            }
-            return cells
-        }
-
-        private fun looksLikeTableRow(content: String): Boolean = content.contains('|') && !content.trim().startsWith('>')
-
-        private fun isTableDelimiterRow(content: String): Boolean {
-            val compact = content.trim().removePrefix("|").removeSuffix("|")
-            val parts = if (compact.contains('|')) {
-                compact.split('|')
-            } else {
-                listOf(compact)
-            }
-            return parts.isNotEmpty() && parts.all { parseTableAlignmentCell(it.trim()) != null }
-        }
-
-        private fun parseTableAlignments(content: String): List<TableAlignment> {
-            val compact = content.trim().removePrefix("|").removeSuffix("|")
-            val parts = if (compact.contains('|')) {
-                compact.split('|')
-            } else {
-                listOf(compact)
-            }
-            return parts.mapNotNull { parseTableAlignmentCell(it.trim()) }
-        }
-
-        /**
-         * GFM delimiter cells are one or more hyphens, optionally wrapped by alignment colons.
-         * GitHub docs often show three hyphens, but the GFM tables extension accepts a single `-`.
-         */
-        private fun parseTableAlignmentCell(trimmed: String): TableAlignment? {
-            if (trimmed.isEmpty() || trimmed.any { it != '-' && it != ':' }) {
-                return null
-            }
-            val core = trimmed
-                .removePrefix(":")
-                .removeSuffix(":")
-            if (core.isEmpty() || core.any { it != '-' }) {
-                return null
-            }
-            return when {
-                trimmed.startsWith(':') && trimmed.endsWith(':') -> TableAlignment.Center
-                trimmed.startsWith(':') -> TableAlignment.Left
-                trimmed.endsWith(':') -> TableAlignment.Right
-                else -> TableAlignment.Default
-            }
-        }
-
-        private fun parseReferenceDefinition(line: ParserLine): LinkReferenceDefinition? {
-            if (!dialect.inlineFeatures.referenceLinks) {
-                return null
-            }
-            val content = line.content
-            val labelStart = skipSpacesAndTabs(content, 0, content.length)
-            val labelEnd = scanLinkLabel(content, labelStart, content.length) ?: return null
-            if (content.getOrNull(labelEnd) != ':') {
-                return null
-            }
-            val label = normalizeReferenceLabel(content.substring(labelStart + 1, labelEnd - 1)) ?: return null
-            val destinationStart = skipSpacesAndTabs(content, labelEnd + 1, content.length)
-            val destination = scanLinkDestination(content, destinationStart, content.length, allowEmptyBare = false) ?: return null
-            val titleStart = skipSpacesAndTabs(content, destination.endExclusive, content.length)
-            val title = if (titleStart > destination.endExclusive) scanLinkTitle(content, titleStart, content.length) else null
-            val end = title?.endExclusive ?: destination.endExclusive
-            if (skipSpacesAndTabs(content, end, content.length) != content.length) {
-                return null
-            }
-            return LinkReferenceDefinition(
-                label = label,
-                destination = destination.value,
-                title = title?.value,
-                range = line.range,
-            )
-        }
-
-        private fun matchSetextUnderline(content: String): SetextUnderlineMatch? {
-            val trimmed = content.trim()
-            if (trimmed.length < 3) {
-                return null
-            }
-            return when {
-                trimmed.all { it == '=' } -> SetextUnderlineMatch(level = 1)
-                trimmed.all { it == '-' } -> SetextUnderlineMatch(level = 2)
-                else -> null
-            }
-        }
-
-        private fun matchTaskMarker(line: ParserLine): TaskMarkerMatch? {
-            if (!dialect.blockFeatures.taskListItems) {
-                return null
-            }
-            val content = line.content
-            if (content.length < 4 || content[0] != '[' || content[2] != ']' || content[3] != ' ') {
-                return null
-            }
-            val state = when (content[1]) {
-                ' ', '\t' -> TaskState.Unchecked
-                'x', 'X' -> TaskState.Checked
-                else -> return null
-            }
-            val contentStart = (line.contentRange.start + 4).coerceAtMost(line.contentRange.endExclusive)
-            return TaskMarkerMatch(
-                state = state,
-                strippedLine = line.copy(
-                    content = content.drop(4),
-                    contentRange = TextRange(start = contentStart, endExclusive = line.contentRange.endExclusive),
-                ),
-            )
-        }
-
-        private fun <T> withFrame(marker: String, startOffset: Int, block: () -> T): T {
-            frameStack += OpenBlockFrame(marker = marker, startOffset = startOffset)
-            try {
-                return block()
-            } finally {
-                frameStack.removeAt(frameStack.lastIndex)
-            }
-        }
-
-        private fun rememberOpenFrames() {
-            if (frameStack.size >= openFrames.size) {
-                openFrames.clear()
-                openFrames += frameStack
-            }
-        }
-    }
-
-    private fun inlineId(range: TextRange, salt: Long): InlineId {
-        val raw = (range.start.toLong() shl 32) xor range.endExclusive.toLong() xor salt
-        return InlineId(raw = raw and Long.MAX_VALUE)
-    }
-
-    private fun stripBlockQuote(line: ParserLine): ParserLine? {
-        val indent = line.content.takeWhile { it == ' ' }.length
-        if (indent > 3) {
-            return null
-        }
-        val remainder = line.content.drop(indent)
-        if (!remainder.startsWith('>')) {
-            return null
-        }
-        val markerWidth = if (remainder.startsWith("> ")) 2 else 1
-        val contentStart = (line.contentRange.start + indent + markerWidth).coerceAtMost(line.contentRange.endExclusive)
-        return line.copy(
-            content = remainder.drop(markerWidth),
-            contentRange = TextRange(start = contentStart, endExclusive = line.contentRange.endExclusive),
-        )
-    }
-
-    private fun matchFence(content: String): FenceMatch? {
-        val trimmed = content.trimStart()
-        if (trimmed.length < 3) {
-            return null
-        }
-        val marker = trimmed.first()
-        if (marker != '`' && marker != '~') {
-            return null
-        }
-        val fenceLength = trimmed.takeWhile { it == marker }.length
-        if (fenceLength < 3) {
-            return null
-        }
-        val rawInfo = trimmed.drop(fenceLength).trim()
-        // The info string of a backtick fence may not contain backticks (otherwise ```foo`` is inline code).
-        if (marker == '`' && '`' in rawInfo) {
-            return null
-        }
-        return FenceMatch(
-            fenceChar = marker,
-            fenceLength = fenceLength,
-            infoString = unescapeString(rawInfo),
-        )
-    }
-
-    private fun isClosingFence(content: String, opener: FenceMatch): Boolean {
-        val trimmed = content.trimStart()
-        if (trimmed.isEmpty() || trimmed.first() != opener.fenceChar) {
-            return false
-        }
-        val fenceLength = trimmed.takeWhile { it == opener.fenceChar }.length
-        if (fenceLength < opener.fenceLength) {
-            return false
-        }
-        return trimmed.drop(fenceLength).isBlank()
-    }
-
-    private fun matchListMarker(content: String): ListMarkerMatch? {
-        val indent = content.takeWhile { it == ' ' }.length
-        if (indent > 3) {
-            return null
-        }
-        val trimmed = content.drop(indent)
-        if (trimmed.length < 2) {
-            return null
-        }
-
-        if (trimmed[0] in charArrayOf('-', '*', '+') && trimmed.getOrNull(1) == ' ') {
-            return ListMarkerMatch(
-                style = ListStyle.Unordered,
-                marker = trimmed.substring(0, 1),
-                content = trimmed.drop(2),
-                contentIndent = 2,
-                indent = indent,
-            )
-        }
-
-        var digitsEnd = 0
-        while (digitsEnd < trimmed.length && trimmed[digitsEnd].isDigit()) {
-            digitsEnd += 1
-        }
-        if (digitsEnd == 0 || digitsEnd >= trimmed.length) {
-            return null
-        }
-        val delimiter = trimmed[digitsEnd]
-        if (delimiter != '.' && delimiter != ')') {
-            return null
-        }
-        if (trimmed.getOrNull(digitsEnd + 1) != ' ') {
-            return null
-        }
-        return ListMarkerMatch(
-            style = ListStyle.Ordered,
-            marker = trimmed.substring(0, digitsEnd + 1),
-            content = trimmed.drop(digitsEnd + 2),
-            contentIndent = digitsEnd + 2,
-            indent = indent,
-        )
-    }
-
-    private fun matchAtxHeading(content: String): HeadingMatch? {
-        if (!dialect.blockFeatures.atxHeadings) {
-            return null
-        }
-        val markerLength = content.takeWhile { it == '#' }.length
-        if (markerLength !in 1..6 || content.getOrNull(markerLength) != ' ') {
-            return null
-        }
-        return HeadingMatch(
-            level = markerLength,
-            content = content.drop(markerLength + 1).trimEnd().trimEnd('#').trimEnd(),
-        )
-    }
-
-    private fun isThematicBreak(content: String): Boolean {
-        val compact = content.filterNot(Char::isWhitespace)
-        if (compact.length < 3) {
-            return false
-        }
-        return compact.all { it == compact.first() } && compact.first() in charArrayOf('-', '*', '_')
-    }
-
 }
 
 internal data class BlockParseResult(
@@ -937,176 +81,803 @@ internal data class BlockParseResult(
     val parsedDefinitions: Map<String, LinkReferenceDefinition>,
 )
 
-internal data class ParserLine(
-    val number: Int,
-    val range: TextRange,
-    val lineRange: LineRange,
-    val content: String,
-    val contentRange: TextRange,
+/** One line of leaf content: [text] from the line's current offset, starting at source offset [sourceStart]. */
+internal class ContentLine(
+    val lineIndex: Int,
+    val text: String,
+    val sourceStart: Int,
+)
+
+/** Mutable block tree built while lines are incorporated; see [BlockTreeBuilder] for the public model. */
+internal sealed class OpenBlock(val startLine: Int) {
+    var parent: OpenBlock? = null
+    val children: MutableList<OpenBlock> = mutableListOf()
+    var isOpen: Boolean = true
+    var endLine: Int = startLine
+
+    /** Number of ancestors; the document is at depth 0. */
+    var depth: Int = 0
+
+    class Document : OpenBlock(startLine = 0)
+
+    class BlockQuote(startLine: Int) : OpenBlock(startLine)
+
+    class ListContainer(startLine: Int, val marker: ListMarker) : OpenBlock(startLine) {
+        var isTight: Boolean = true
+    }
+
+    class Item(startLine: Int, val markerOffset: Int, val padding: Int) : OpenBlock(startLine) {
+        var taskState: TaskState? = null
+    }
+
+    class Paragraph(startLine: Int) : OpenBlock(startLine) {
+        val lines: MutableList<ContentLine> = mutableListOf()
+
+        /** Leading lines that held link reference definitions; they are not paragraph content. */
+        var definitionLineCount: Int = 0
+
+        /** cmark-gfm only tries to turn a paragraph into a table header once. */
+        var triedTableHeader: Boolean = false
+    }
+
+    class Heading(startLine: Int, val level: Int, val isSetext: Boolean, val lines: List<ContentLine>) : OpenBlock(startLine)
+
+    class ThematicBreak(startLine: Int, val marker: String) : OpenBlock(startLine)
+
+    class FencedCode(startLine: Int, val fence: FenceOpener, val fenceOffset: Int, val info: String) : OpenBlock(startLine) {
+        val lines: MutableList<ContentLine> = mutableListOf()
+        var isClosed: Boolean = false
+    }
+
+    class IndentedCode(startLine: Int) : OpenBlock(startLine) {
+        val lines: MutableList<ContentLine> = mutableListOf()
+    }
+
+    /** Display math; a single-line block (`$$x$$`) is complete as soon as it starts. */
+    class Math(startLine: Int, val delimiter: MathBlockDelimiter, val fenceOffset: Int, val isSingleLine: Boolean) : OpenBlock(startLine) {
+        val lines: MutableList<ContentLine> = mutableListOf()
+        var isClosed: Boolean = isSingleLine
+    }
+
+    /**
+     * A table whose header was the last line of the paragraph starting at [paragraphStartLine]; reparsing
+     * must restart there, because the header line alone may parse differently (as a paragraph's first line).
+     */
+    class Table(
+        startLine: Int,
+        val paragraphStartLine: Int,
+        val alignments: List<TableAlignment>,
+        val header: TableRowDraft,
+    ) : OpenBlock(startLine) {
+        val rows: MutableList<TableRowDraft> = mutableListOf()
+    }
+
+    fun canContain(child: OpenBlock): Boolean = when (this) {
+        is Document, is BlockQuote, is Item -> child !is Item
+        is ListContainer -> child is Item
+        else -> false
+    }
+
+    /** Whether the final step of a line may add text (or a table row) to this block. */
+    val acceptsLines: Boolean
+        get() = this is Paragraph || this is FencedCode || this is IndentedCode || (this is Math && !isSingleLine) || this is Table
+
+    /** Whether a later line can still change this block while it is open. */
+    val canGrow: Boolean
+        get() = this !is Heading && this !is ThematicBreak && !(this is Math && isSingleLine)
+}
+
+internal class TableRowDraft(
+    val lineIndex: Int,
+    val sourceStart: Int,
+    val cells: List<TableCellSpan>,
+)
+
+private enum class Continuation {
+    Matched,
+    Failed,
+
+    /** The line was fully handled (a closing fence); go to the next line. */
+    LineConsumed,
+}
+
+private enum class BlockStart {
+    None,
+
+    /** The line is paragraph text; no other block start applies. */
+    Text,
+
+    /** A container started; keep looking for block starts inside it. */
+    Container,
+
+    /** A leaf that takes the rest of the line as content started. */
+    Leaf,
+
+    /** A leaf started and consumed the whole line. */
+    LeafConsumedLine,
+}
+
+internal class BlockParserSession(
+    private val lines: List<IndexedLine>,
+    private val dialect: MarkdownDialect,
 ) {
-    val isBlank: Boolean
-        get() = content.isBlank()
+    private val document = OpenBlock.Document()
+    private var tip: OpenBlock = document
+    private var oldTip: OpenBlock = document
+    private var lastMatchedContainer: OpenBlock = document
+    private var allClosed = true
 
-    val leadingSpaces: Int
-        get() = content.takeWhile { it == ' ' }.length
+    val definitions: MutableMap<String, LinkReferenceDefinition> = linkedMapOf()
 
-    companion object {
-        fun empty(content: String): ParserLine = ParserLine(
-            number = 0,
-            range = TextRange.Empty,
-            lineRange = LineRange.Empty,
-            content = content,
-            contentRange = TextRange.Empty,
+    // State of the line being incorporated, as in commonmark.js.
+    private var lineNumber = 0
+    private var line = ""
+    private var lineStart = 0
+    private var offset = 0
+    private var column = 0
+    private var nextNonspace = 0
+    private var nextNonspaceColumn = 0
+    private var indent = 0
+    private var indented = false
+    private var blank = false
+    private var partiallyConsumedTab = false
+
+    fun incorporateLine(index: Int) {
+        lineNumber = index
+        line = lines[index].content.replace('\u0000', '\uFFFD')
+        lineStart = lines[index].range.start
+        offset = 0
+        column = 0
+        blank = false
+        partiallyConsumedTab = false
+        oldTip = tip
+
+        // Match the continuation markers of the open blocks; `container` ends at the last matched one.
+        var container: OpenBlock = document
+        matching@ while (true) {
+            val lastChild = container.children.lastOrNull()?.takeIf { it.isOpen } ?: break
+            findNextNonspace()
+            when (continueBlock(lastChild)) {
+                Continuation.Matched -> container = lastChild
+                Continuation.Failed -> break@matching
+                Continuation.LineConsumed -> return
+            }
+        }
+
+        allClosed = container === oldTip
+        lastMatchedContainer = container
+
+        // Unless a leaf that takes raw lines matched, look for new block starts inside the container.
+        var matchedLeaf = container !is OpenBlock.Paragraph && container.acceptsLines && container !is OpenBlock.Table
+        while (!matchedLeaf) {
+            findNextNonspace()
+            if (container is OpenBlock.Item && dialect.blockFeatures.taskListItems && startsTaskMarker(container)) {
+                advanceNextNonspace()
+                break
+            }
+            when (startBlock(container)) {
+                BlockStart.None, BlockStart.Text -> {
+                    advanceNextNonspace()
+                    break
+                }
+
+                BlockStart.Container -> container = tip
+                BlockStart.Leaf -> {
+                    container = tip
+                    matchedLeaf = true
+                }
+
+                BlockStart.LeafConsumedLine -> return
+            }
+        }
+
+        // The rest of the line is text: a lazy paragraph continuation, content of the container, or a new paragraph.
+        if (!allClosed && !blank && tip is OpenBlock.Paragraph) {
+            addLine()
+            return
+        }
+        closeUnmatchedBlocks()
+        when {
+            container is OpenBlock.Table -> addTableRow(container)
+            container.acceptsLines -> addLine()
+            offset < line.length && !blank -> {
+                addChild(OpenBlock.Paragraph(startLine = lineNumber))
+                advanceNextNonspace()
+                addLine()
+            }
+        }
+    }
+
+    /** Frames of the open blocks that later lines can still change, outermost first. */
+    fun openBlockFrames(): List<OpenBlockFrame> = buildList {
+        var block = document.children.lastOrNull()
+        while (block != null && block.isOpen && block.canGrow) {
+            val startLine = if (block is OpenBlock.Table) block.paragraphStartLine else block.startLine
+            add(OpenBlockFrame(marker = block.frameMarker(), startOffset = lines[startLine].range.start))
+            block = block.children.lastOrNull()
+        }
+    }
+
+    /** Closes every open block and returns the finished tree. */
+    fun finish(): OpenBlock.Document {
+        while (tip !== document) {
+            finalize(tip, lines.lastIndex)
+        }
+        document.isOpen = false
+        return document
+    }
+
+    // region Continuation
+
+    private fun continueBlock(block: OpenBlock): Continuation = when (block) {
+        is OpenBlock.Document, is OpenBlock.ListContainer -> Continuation.Matched
+        is OpenBlock.BlockQuote -> if (!indented && charAt(nextNonspace) == '>') {
+            advanceNextNonspace()
+            advanceOffset(1, columns = false)
+            if (charAt(offset)?.isSpaceOrTab() == true) {
+                advanceOffset(1, columns = true)
+            }
+            Continuation.Matched
+        } else {
+            Continuation.Failed
+        }
+
+        is OpenBlock.Item -> when {
+            // A blank line continues an item, except right after an empty first line.
+            blank -> if (block.children.isNotEmpty()) {
+                advanceNextNonspace()
+                Continuation.Matched
+            } else {
+                Continuation.Failed
+            }
+
+            indent >= block.markerOffset + block.padding -> {
+                advanceOffset(block.markerOffset + block.padding, columns = true)
+                Continuation.Matched
+            }
+
+            else -> Continuation.Failed
+        }
+
+        is OpenBlock.Heading, is OpenBlock.ThematicBreak -> Continuation.Failed
+        is OpenBlock.Paragraph -> if (blank) Continuation.Failed else Continuation.Matched
+        // A line without cells (such as a lone `|`) ends the table, as in cmark-gfm.
+        is OpenBlock.Table -> if (blank || scanTableRow(line, nextNonspace) == null) Continuation.Failed else Continuation.Matched
+        is OpenBlock.IndentedCode -> when {
+            indent >= CODE_INDENT -> {
+                advanceOffset(CODE_INDENT, columns = true)
+                Continuation.Matched
+            }
+
+            blank -> {
+                advanceNextNonspace()
+                Continuation.Matched
+            }
+
+            else -> Continuation.Failed
+        }
+
+        is OpenBlock.FencedCode -> if (
+            indent <= 3 &&
+            charAt(nextNonspace) == block.fence.fenceChar &&
+            isClosingFence(line, nextNonspace, block.fence.fenceChar, block.fence.fenceLength)
+        ) {
+            block.isClosed = true
+            finalize(block, lineNumber)
+            Continuation.LineConsumed
+        } else {
+            skipFenceOffset(block.fenceOffset)
+            Continuation.Matched
+        }
+
+        is OpenBlock.Math -> continueMath(block)
+    }
+
+    private fun continueMath(block: OpenBlock.Math): Continuation {
+        if (block.isSingleLine) {
+            return Continuation.Failed
+        }
+        val closer = block.delimiter.closer
+        val contentEnd = trimmedEnd(line, nextNonspace) - closer.length
+        if (contentEnd >= nextNonspace && line.startsWith(closer, contentEnd)) {
+            if (!isBlankFrom(line.substring(0, contentEnd), nextNonspace)) {
+                block.lines += ContentLine(
+                    lineIndex = lineNumber,
+                    text = line.substring(nextNonspace, contentEnd),
+                    sourceStart = lineStart + nextNonspace,
+                )
+            }
+            block.isClosed = true
+            finalize(block, lineNumber)
+            return Continuation.LineConsumed
+        }
+        skipFenceOffset(block.fenceOffset)
+        return Continuation.Matched
+    }
+
+    private fun skipFenceOffset(fenceOffset: Int) {
+        var remaining = fenceOffset
+        while (remaining > 0 && charAt(offset)?.isSpaceOrTab() == true) {
+            advanceOffset(1, columns = true)
+            remaining -= 1
+        }
+    }
+
+    // endregion
+
+    // region Block starts
+
+    private fun startBlock(container: OpenBlock): BlockStart {
+        if (indented) {
+            return startIndentedCode()
+        }
+        return startBlockQuote(container)
+            .orElse { startAtxHeading() }
+            .orElse { startFencedCode() }
+            .orElse { startMath() }
+            .orElse { startSetextHeading(container) }
+            .orElse { startThematicBreak() }
+            .orElse { startListItem(container) }
+            .orElse { startTable(container) }
+    }
+
+    private inline fun BlockStart.orElse(next: () -> BlockStart): BlockStart = if (this == BlockStart.None) next() else this
+
+    private fun startBlockQuote(container: OpenBlock): BlockStart {
+        if (charAt(nextNonspace) != '>' || container.depth >= MAX_CONTAINER_DEPTH) {
+            return BlockStart.None
+        }
+        advanceNextNonspace()
+        advanceOffset(1, columns = false)
+        if (charAt(offset)?.isSpaceOrTab() == true) {
+            advanceOffset(1, columns = true)
+        }
+        closeUnmatchedBlocks()
+        addChild(OpenBlock.BlockQuote(startLine = lineNumber))
+        return BlockStart.Container
+    }
+
+    private fun startAtxHeading(): BlockStart {
+        val level = atxHeadingMarkerLength(line, nextNonspace) ?: return BlockStart.None
+        val content = atxHeadingContent(line, nextNonspace + level)
+        closeUnmatchedBlocks()
+        addChild(
+            OpenBlock.Heading(
+                startLine = lineNumber,
+                level = level,
+                isSetext = false,
+                lines = listOf(
+                    ContentLine(
+                        lineIndex = lineNumber,
+                        text = line.substring(content.first, content.last + 1),
+                        sourceStart = lineStart + content.first,
+                    ),
+                ),
+            ),
         )
+        return BlockStart.LeafConsumedLine
     }
-}
 
-private data class ParsedBlock(
-    val block: BlockNode,
-    val nextIndex: Int,
-)
-
-private data class FenceMatch(
-    val fenceChar: Char,
-    val fenceLength: Int,
-    val infoString: String,
-)
-
-private data class MathBlockOpener(
-    val delimiter: MathBlockDelimiter,
-    val openMarker: String,
-    val closeMarker: String,
-)
-
-private data class ListMarkerMatch(
-    val style: ListStyle,
-    val marker: String,
-    val content: String,
-    val contentIndent: Int,
-    val indent: Int,
-)
-
-private data class HeadingMatch(
-    val level: Int,
-    val content: String,
-) {
-    fun contentRange(line: ParserLine): TextRange {
-        val indent = line.content.length - line.content.trimStart().length
-        val contentStart = (line.contentRange.start + indent + level + 1).coerceAtMost(line.contentRange.endExclusive)
-        val contentEnd = (contentStart + content.length).coerceAtMost(line.contentRange.endExclusive)
-        return TextRange(start = contentStart, endExclusive = contentEnd)
-    }
-}
-
-private data class SetextUnderlineMatch(
-    val level: Int,
-)
-
-private data class TaskMarkerMatch(
-    val state: TaskState,
-    val strippedLine: ParserLine,
-)
-
-private data class TableCellDraft(
-    val literal: String,
-    val range: TextRange,
-)
-
-private data class LiteralWithRange(
-    val literal: String,
-    val range: TextRange,
-)
-
-private fun normalizeFenceLanguageHint(infoString: String?): String? {
-    val raw = infoString
-        ?.trim()
-        ?.takeIf(String::isNotEmpty)
-        ?: return null
-    val separatorIndex = raw.indexOfFirst { it.isWhitespace() || it == '{' }
-    val firstToken = raw
-        .let { if (separatorIndex == -1) it else it.substring(0, separatorIndex) }
-        .removePrefix("language-")
-        .removePrefix("lang-")
-        .trim()
-        .lowercase()
-    if (firstToken.isEmpty()) {
-        return null
-    }
-    return when (firstToken) {
-        "kt", "kts" -> "kotlin"
-        "js", "mjs", "cjs" -> "javascript"
-        "ts" -> "typescript"
-        "py" -> "python"
-        "rb" -> "ruby"
-        "sh", "bash", "zsh" -> "shell"
-        "c++", "cc", "cxx" -> "cpp"
-        "cs", "c#" -> "csharp"
-        "rs" -> "rust"
-        "golang" -> "go"
-        "coffee" -> "coffeescript"
-        else -> firstToken
-    }
-}
-
-private fun List<ParserLine>.trimTrailingBlankLines(): List<ParserLine> {
-    var endExclusive = size
-    while (endExclusive > 0 && this[endExclusive - 1].isBlank) {
-        endExclusive -= 1
-    }
-    return if (endExclusive == 0) listOf(first()) else subList(0, endExclusive)
-}
-
-private fun List<ParserLine>.combinedRange(): TextRange = TextRange(
-    start = first().range.start,
-    endExclusive = last().range.endExclusive,
-)
-
-private fun List<ParserLine>.combinedLineRange(): LineRange = LineRange(
-    startLine = first().lineRange.startLine,
-    endLineExclusive = last().lineRange.endLineExclusive,
-)
-
-private fun List<ParserLine>.combinedContentRange(): TextRange = TextRange(
-    start = first().contentRange.start,
-    endExclusive = last().contentRange.endExclusive,
-)
-
-private fun trimLiteralWithRange(literal: String, range: TextRange): LiteralWithRange {
-    if (literal.isEmpty()) {
-        return LiteralWithRange(literal = literal, range = range)
-    }
-    val firstContentIndex = literal.indexOfFirst { !it.isWhitespace() }
-    if (firstContentIndex == -1) {
-        return LiteralWithRange(
-            literal = "",
-            range = TextRange(start = range.endExclusive, endExclusive = range.endExclusive),
+    private fun startFencedCode(): BlockStart {
+        val fence = scanFenceOpener(line, nextNonspace) ?: return BlockStart.None
+        closeUnmatchedBlocks()
+        addChild(
+            OpenBlock.FencedCode(
+                startLine = lineNumber,
+                fence = fence,
+                fenceOffset = indent,
+                info = unescapeString(line, nextNonspace + fence.fenceLength, line.length).trim(),
+            ),
         )
+        return BlockStart.LeafConsumedLine
     }
-    val lastContentIndex = literal.indexOfLast { !it.isWhitespace() }
-    return LiteralWithRange(
-        literal = literal.substring(firstContentIndex, lastContentIndex + 1),
-        range = TextRange(
-            start = range.start + firstContentIndex,
-            endExclusive = range.start + lastContentIndex + 1,
-        ),
-    )
-}
 
-private fun List<TableCellDraft>.padTo(size: Int, line: ParserLine): List<TableCellDraft> {
-    if (this.size >= size) {
-        return this
-    }
-    return this + List(size - this.size) {
-        TableCellDraft(
-            literal = "",
-            range = TextRange(start = line.contentRange.endExclusive, endExclusive = line.contentRange.endExclusive),
+    /**
+     * Display math: a line that is exactly `$$` or `\[` opens a block closed by a line ending in `$$` or `\]`;
+     * a line that starts with the opener and whose first closer ends the line is a single-line block. Any
+     * other line stays paragraph text, where inline math applies.
+     */
+    private fun startMath(): BlockStart {
+        if (!dialect.blockFeatures.mathBlocks) {
+            return BlockStart.None
+        }
+        val delimiter = MathBlockDelimiter.entries.firstOrNull { line.startsWith(it.opener, nextNonspace) } ?: return BlockStart.None
+        val end = trimmedEnd(line, nextNonspace)
+        val contentStart = nextNonspace + delimiter.opener.length
+        val isMultiLine = end == contentStart
+        val closerIndex = line.indexOf(delimiter.closer, contentStart)
+        val isSingleLine = closerIndex >= 0 && closerIndex == end - delimiter.closer.length
+        if (!isMultiLine && !isSingleLine) {
+            return BlockStart.None
+        }
+        val fenceOffset = indent
+        closeUnmatchedBlocks()
+        val math = OpenBlock.Math(
+            startLine = lineNumber,
+            delimiter = delimiter,
+            fenceOffset = fenceOffset,
+            isSingleLine = isSingleLine,
         )
+        if (isSingleLine) {
+            math.lines += ContentLine(lineIndex = lineNumber, text = line.substring(contentStart, closerIndex), sourceStart = lineStart + contentStart)
+        }
+        addChild(math)
+        return BlockStart.LeafConsumedLine
+    }
+
+    private fun startSetextHeading(container: OpenBlock): BlockStart {
+        if (container !is OpenBlock.Paragraph) {
+            return BlockStart.None
+        }
+        val level = setextUnderlineLevel(line, nextNonspace) ?: return BlockStart.None
+        closeUnmatchedBlocks()
+        val definitionLines = leadingDefinitionLineCount(container.lines)
+        // As in cmark, an underline below link reference definitions alone is paragraph text, never a
+        // thematic break, list item or table delimiter row.
+        if (definitionLines == container.lines.size) {
+            return BlockStart.Text
+        }
+        val parent = container.parent!!
+        val heading = OpenBlock.Heading(
+            startLine = container.lines[definitionLines].lineIndex,
+            level = level,
+            isSetext = true,
+            lines = container.lines.drop(definitionLines),
+        )
+        if (definitionLines > 0) {
+            repeat(container.lines.size - definitionLines) { container.lines.removeAt(container.lines.lastIndex) }
+            finalize(container, container.lines.last().lineIndex)
+        } else {
+            parent.children.removeAt(parent.children.lastIndex)
+        }
+        heading.parent = parent
+        parent.children += heading
+        tip = heading
+        return BlockStart.LeafConsumedLine
+    }
+
+    private fun startThematicBreak(): BlockStart {
+        if (!isThematicBreak(line, nextNonspace)) {
+            return BlockStart.None
+        }
+        closeUnmatchedBlocks()
+        addChild(OpenBlock.ThematicBreak(startLine = lineNumber, marker = line.substring(nextNonspace, trimmedEnd(line, nextNonspace))))
+        return BlockStart.LeafConsumedLine
+    }
+
+    private fun startListItem(container: OpenBlock): BlockStart {
+        if (container.depth >= MAX_CONTAINER_DEPTH) {
+            return BlockStart.None
+        }
+        val marker = scanListMarker(line, nextNonspace) ?: return BlockStart.None
+        val afterMarker = nextNonspace + marker.length
+        if (charAt(afterMarker)?.isSpaceOrTab() == false) {
+            return BlockStart.None
+        }
+        // An item interrupting a paragraph must have content, and an ordered one must start at 1.
+        if (container is OpenBlock.Paragraph && (isBlankFrom(line, afterMarker) || (marker.bulletChar == null && marker.startNumber != 1))) {
+            return BlockStart.None
+        }
+        val markerOffset = indent
+        advanceNextNonspace()
+        advanceOffset(marker.length, columns = true)
+        val spacesStartColumn = column
+        val spacesStartOffset = offset
+        do {
+            advanceOffset(1, columns = true)
+        } while (column - spacesStartColumn < 5 && charAt(offset)?.isSpaceOrTab() == true)
+        val isBlankItem = offset >= line.length
+        val spacesAfterMarker = column - spacesStartColumn
+        val padding = if (spacesAfterMarker >= 5 || spacesAfterMarker < 1 || isBlankItem) {
+            // Content starts one space after the marker; further spaces belong to the content (indented code).
+            column = spacesStartColumn
+            offset = spacesStartOffset
+            if (charAt(offset)?.isSpaceOrTab() == true) {
+                advanceOffset(1, columns = true)
+            }
+            marker.length + 1
+        } else {
+            marker.length + spacesAfterMarker
+        }
+
+        closeUnmatchedBlocks()
+        val currentList = tip as? OpenBlock.ListContainer
+        if (currentList == null || !currentList.marker.continuesListOf(marker)) {
+            addChild(OpenBlock.ListContainer(startLine = lineNumber, marker = marker))
+        }
+        addChild(OpenBlock.Item(startLine = lineNumber, markerOffset = markerOffset, padding = padding))
+        return BlockStart.Container
+    }
+
+    private fun ListMarker.continuesListOf(item: ListMarker): Boolean = bulletChar == item.bulletChar && delimiter == item.delimiter
+
+    /** GFM task list item: `[ ]`, `[x]` or `[X]` followed by a space, tab or line end, first on the item's line. */
+    private fun startsTaskMarker(item: OpenBlock.Item): Boolean {
+        if (item.startLine != lineNumber || item.children.isNotEmpty() || item.taskState != null || indented) {
+            return false
+        }
+        if (charAt(nextNonspace) != '[' || charAt(nextNonspace + 2) != ']' || charAt(nextNonspace + 3)?.isSpaceOrTab() == false) {
+            return false
+        }
+        item.taskState = when (charAt(nextNonspace + 1)) {
+            ' ' -> TaskState.Unchecked
+            'x', 'X' -> TaskState.Checked
+            else -> return false
+        }
+        advanceNextNonspace()
+        advanceOffset(3, columns = false)
+        findNextNonspace()
+        return true
+    }
+
+    private fun startIndentedCode(): BlockStart {
+        if (tip is OpenBlock.Paragraph || blank) {
+            return BlockStart.None
+        }
+        advanceOffset(CODE_INDENT, columns = true)
+        closeUnmatchedBlocks()
+        addChild(OpenBlock.IndentedCode(startLine = lineNumber))
+        return BlockStart.Leaf
+    }
+
+    /** cmark-gfm: a delimiter row turns the last line of the paragraph above into a table header. */
+    private fun startTable(container: OpenBlock): BlockStart {
+        if (!dialect.blockFeatures.tables || container !is OpenBlock.Paragraph || container.triedTableHeader) {
+            return BlockStart.None
+        }
+        val alignments = scanTableDelimiterRow(line, nextNonspace) ?: return BlockStart.None
+        val headerLine = container.lines.last()
+        val headerCells = scanTableRow(headerLine.text, 0)
+        if (headerCells == null || headerCells.size != alignments.size) {
+            container.triedTableHeader = true
+            return BlockStart.None
+        }
+        closeUnmatchedBlocks()
+        val parent = container.parent!!
+        val table = OpenBlock.Table(
+            startLine = headerLine.lineIndex,
+            paragraphStartLine = container.startLine,
+            alignments = alignments,
+            header = TableRowDraft(lineIndex = headerLine.lineIndex, sourceStart = headerLine.sourceStart, cells = headerCells),
+        )
+        if (container.lines.size > 1) {
+            container.lines.removeAt(container.lines.lastIndex)
+            finalize(container, container.lines.last().lineIndex)
+        } else {
+            parent.children.removeAt(parent.children.lastIndex)
+        }
+        table.parent = parent
+        parent.children += table
+        tip = table
+        return BlockStart.LeafConsumedLine
+    }
+
+    // endregion
+
+    // region Tree operations
+
+    private fun addChild(block: OpenBlock) {
+        while (!tip.canContain(block)) {
+            finalize(tip, lineNumber - 1)
+        }
+        block.parent = tip
+        block.depth = tip.depth + 1
+        tip.children += block
+        tip = block
+    }
+
+    private fun closeUnmatchedBlocks() {
+        if (allClosed) {
+            return
+        }
+        while (oldTip !== lastMatchedContainer) {
+            val parent = oldTip.parent!!
+            finalize(oldTip, lineNumber - 1)
+            oldTip = parent
+        }
+        allClosed = true
+    }
+
+    private fun finalize(block: OpenBlock, endLine: Int) {
+        block.isOpen = false
+        block.endLine = endLine
+        when (block) {
+            is OpenBlock.Paragraph -> finalizeParagraph(block)
+            is OpenBlock.Item -> block.endLine = block.children.lastOrNull()?.endLine ?: block.startLine
+            is OpenBlock.ListContainer -> finalizeList(block)
+            is OpenBlock.IndentedCode -> {
+                while (block.lines.isNotEmpty() && isBlankFrom(block.lines.last().text, 0)) {
+                    block.lines.removeAt(block.lines.lastIndex)
+                }
+                block.endLine = block.lines.lastOrNull()?.lineIndex ?: block.startLine
+            }
+
+            else -> Unit
+        }
+        tip = block.parent ?: document
+    }
+
+    /** Leading link reference definitions become [definitions] (the first one per label wins); they are not paragraph content. */
+    private fun finalizeParagraph(paragraph: OpenBlock.Paragraph) {
+        var consumedLines = 0
+        scanLeadingDefinitions(paragraph.lines).forEach { (definition, lineCount) ->
+            val firstLine = paragraph.lines[consumedLines]
+            val lastLine = paragraph.lines[consumedLines + lineCount - 1]
+            if (definition.label !in definitions) {
+                definitions[definition.label] = LinkReferenceDefinition(
+                    label = definition.label,
+                    destination = definition.destination,
+                    title = definition.title,
+                    range = TextRange(
+                        start = lines[firstLine.lineIndex].range.start,
+                        endExclusive = lines[lastLine.lineIndex].range.endExclusive,
+                    ),
+                )
+            }
+            consumedLines += lineCount
+        }
+        paragraph.definitionLineCount = consumedLines
+    }
+
+    /** Number of leading paragraph lines that hold link reference definitions. */
+    private fun leadingDefinitionLineCount(paragraphLines: List<ContentLine>): Int =
+        scanLeadingDefinitions(paragraphLines).sumOf { (_, lineCount) -> lineCount }
+
+    /** Link reference definitions at the start of a paragraph, each with the number of lines it spans. */
+    private fun scanLeadingDefinitions(paragraphLines: List<ContentLine>): List<Pair<ScannedDefinition, Int>> {
+        if (!dialect.inlineFeatures.referenceLinks) {
+            return emptyList()
+        }
+        val text = paragraphLines.joinToString(separator = "\n") { it.text }
+        val scanned = mutableListOf<Pair<ScannedDefinition, Int>>()
+        var position = 0
+        while (position < text.length && text[position] == '[') {
+            val definition = scanLinkReferenceDefinition(text, position) ?: break
+            scanned += definition to text.lineCountBetween(position, definition.endExclusive)
+            position = definition.endExclusive
+        }
+        return scanned
+    }
+
+    /**
+     * A list is loose when an item is followed by a blank line before the next item, or when an item
+     * holds two children separated by a blank line (commonmark.js compares source line positions).
+     */
+    private fun finalizeList(list: OpenBlock.ListContainer) {
+        list.endLine = list.children.last().endLine
+        list.isTight = list.children.withIndex().none { (index, item) ->
+            val nextItem = list.children.getOrNull(index + 1)
+            (nextItem != null && nextItem.startLine != item.endLine + 1) ||
+                item.children.zipWithNext().any { (child, nextChild) -> nextChild.startLine != child.endLine + 1 }
+        }
+    }
+
+    // endregion
+
+    // region Line content
+
+    private fun addLine() {
+        val block = tip
+        var padding = ""
+        if (partiallyConsumedTab) {
+            offset += 1
+            padding = " ".repeat(4 - column % 4)
+        }
+        val contentLine = ContentLine(lineIndex = lineNumber, text = padding + line.substring(offset), sourceStart = lineStart + offset)
+        when (block) {
+            is OpenBlock.Paragraph -> block.lines += contentLine
+            is OpenBlock.FencedCode -> block.lines += contentLine
+            is OpenBlock.IndentedCode -> block.lines += contentLine
+            is OpenBlock.Math -> block.lines += contentLine
+            else -> error("${block::class.simpleName} does not accept lines")
+        }
+    }
+
+    private fun addTableRow(table: OpenBlock.Table) {
+        val cells = checkNotNull(scanTableRow(line, offset)) { "A table only continues on a line with cells" }
+        table.rows += TableRowDraft(lineIndex = lineNumber, sourceStart = lineStart, cells = cells)
+    }
+
+    private fun charAt(index: Int): Char? = line.getOrNull(index)
+
+    private fun findNextNonspace() {
+        var index = offset
+        var columns = column
+        while (index < line.length) {
+            when (line[index]) {
+                ' ' -> columns += 1
+                '\t' -> columns += 4 - columns % 4
+                else -> break
+            }
+            index += 1
+        }
+        blank = index == line.length
+        nextNonspace = index
+        nextNonspaceColumn = columns
+        indent = nextNonspaceColumn - column
+        indented = indent >= CODE_INDENT
+    }
+
+    private fun advanceNextNonspace() {
+        offset = nextNonspace
+        column = nextNonspaceColumn
+        partiallyConsumedTab = false
+    }
+
+    /** Advances [count] characters, or [count] columns when [columns] is set (possibly splitting a tab). */
+    private fun advanceOffset(count: Int, columns: Boolean) {
+        var remaining = count
+        while (remaining > 0 && offset < line.length) {
+            if (line[offset] == '\t') {
+                val charsToTab = 4 - column % 4
+                if (columns) {
+                    partiallyConsumedTab = charsToTab > remaining
+                    val charsToAdvance = minOf(charsToTab, remaining)
+                    column += charsToAdvance
+                    offset += if (partiallyConsumedTab) 0 else 1
+                    remaining -= charsToAdvance
+                } else {
+                    partiallyConsumedTab = false
+                    column += charsToTab
+                    offset += 1
+                    remaining -= 1
+                }
+            } else {
+                partiallyConsumedTab = false
+                offset += 1
+                column += 1
+                remaining -= 1
+            }
+        }
+    }
+
+    // endregion
+
+    private fun OpenBlock.frameMarker(): String = when (this) {
+        is OpenBlock.Document -> "document"
+        is OpenBlock.BlockQuote -> "blockquote"
+        is OpenBlock.ListContainer -> "list"
+        is OpenBlock.Item -> "list-item"
+        is OpenBlock.Paragraph -> "paragraph"
+        is OpenBlock.Heading -> "heading"
+        is OpenBlock.ThematicBreak -> "thematic-break"
+        is OpenBlock.FencedCode -> "fenced-code"
+        is OpenBlock.IndentedCode -> "indented-code"
+        is OpenBlock.Math -> "math-block"
+        is OpenBlock.Table -> "table"
+    }
+
+    private companion object {
+        const val CODE_INDENT = 4
+
+        /**
+         * Block quotes and list items do not open below this depth (a list item counts twice, with its list);
+         * deeper markers stay paragraph text. This bounds the work per line and the depth of the block tree,
+         * which every consumer walks recursively.
+         */
+        const val MAX_CONTAINER_DEPTH = 64
     }
 }
 
-private fun <T> List<T>.padTo(size: Int, element: T): List<T> {
-    if (this.size >= size) {
-        return this
+private val MathBlockDelimiter.opener: String
+    get() = when (this) {
+        MathBlockDelimiter.Dollar -> "$$"
+        MathBlockDelimiter.Bracket -> "\\["
     }
-    return this + List(size - this.size) { element }
+
+private val MathBlockDelimiter.closer: String
+    get() = when (this) {
+        MathBlockDelimiter.Dollar -> "$$"
+        MathBlockDelimiter.Bracket -> "\\]"
+    }
+
+/** Lines spanned by `text[start, endExclusive)`, where a final `\n` ends the last line. */
+private fun String.lineCountBetween(start: Int, endExclusive: Int): Int {
+    var count = 1
+    for (index in start until endExclusive) {
+        if (this[index] == '\n' && index != endExclusive - 1) {
+            count += 1
+        }
+    }
+    return count
 }

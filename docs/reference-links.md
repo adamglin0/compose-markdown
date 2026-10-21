@@ -11,7 +11,7 @@ Definitions are normalized case-insensitively with collapsed internal whitespace
 
 ## Resolution Flow
 
-1. block parsing collects one-line link reference definitions and keeps them out of the public block list
+1. block parsing collects link reference definitions (which may span several lines) from the start of paragraphs and keeps them out of the public block list
 2. inline parsing resolves reference-style links when the active preset enables them
 3. unresolved labels are recorded against the current top-level block
 4. when a later append introduces a new definition, only the dependent preserved blocks are reparsed
@@ -25,6 +25,5 @@ Definitions are normalized case-insensitively with collapsed internal whitespace
 
 ## Current Limits
 
-- raw HTML remains disabled and unrelated to link-definition handling
-- multi-line reference definitions are not implemented in this stage
-- unsupported definition forms degrade to plain text instead of partial parsing
+- raw HTML stays literal text and is unrelated to link-definition handling
+- text that is not a valid definition stays paragraph text

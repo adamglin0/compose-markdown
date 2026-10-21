@@ -2,7 +2,7 @@ package com.adamglin.compose.markdown.core.api
 
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.InlineNode
-import com.adamglin.compose.markdown.core.model.ListStyle
+import com.adamglin.compose.markdown.core.model.ListType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -84,7 +84,7 @@ class BlockParserStreamingTest {
 
         val firstList = assertIs<BlockNode.ListBlock>(first.snapshot.document.blocks.single())
         val secondList = assertIs<BlockNode.ListBlock>(second.snapshot.document.blocks.single())
-        assertEquals(ListStyle.Unordered, secondList.style)
+        assertEquals(ListType.Bullet(bulletChar = '-'), secondList.type)
         assertEquals(firstList.id, secondList.id)
 
         val item = secondList.items.single()

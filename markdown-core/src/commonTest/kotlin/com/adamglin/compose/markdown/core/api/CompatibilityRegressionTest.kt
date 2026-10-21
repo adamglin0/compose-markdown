@@ -1,10 +1,12 @@
 package com.adamglin.compose.markdown.core.api
 
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
+import com.adamglin.compose.markdown.core.itemMarker
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.InlineNode
 import com.adamglin.compose.markdown.core.model.TableAlignment
 import com.adamglin.compose.markdown.core.model.TaskState
+import com.adamglin.compose.markdown.core.styleName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -284,26 +286,25 @@ private fun List<BlockNode>.debugShape(): String = joinToString(separator = "\n"
         is BlockNode.Document -> "document(${block.children.debugShape()})"
         is BlockNode.FencedCodeBlock -> "fence(${block.infoString ?: "-"},${if (block.isClosed) "closed" else "open"},${block.literal.replace("\n", "\\n")})"
         is BlockNode.Heading -> "heading(${block.level},${block.style.name.lowercase()},${block.children.debugInline()})"
-        is BlockNode.ListBlock -> "list(${block.style.name.lowercase()},${if (block.isLoose) "loose" else "tight"},${block.items.debugItems()})"
-        is BlockNode.ListItem -> "item(${block.marker},${block.children.debugShape()})"
+        is BlockNode.ListBlock -> "list(${block.styleName},${if (block.isLoose) "loose" else "tight"},${block.debugItems()})"
+        is BlockNode.ListItem -> "item(${block.children.debugShape()})"
         is BlockNode.Paragraph -> "paragraph(${block.children.debugInline()})"
-        is BlockNode.RawTextBlock -> "raw(${block.literal.replace("\n", "\\n")})"
+        is BlockNode.IndentedCodeBlock -> "code(${block.literal.replace("\n", "\\n")})"
         is BlockNode.TableBlock -> "table(header=${block.header.cells.debugCells()};rows=${block.rows.joinToString(separator = ";") { it.cells.debugCells() }})"
         is BlockNode.TableCell -> "cell(${block.children.debugInline()})"
         is BlockNode.TableRow -> "row(${block.cells.debugCells()})"
         is BlockNode.ThematicBreak -> "break(${block.marker})"
-        is BlockNode.UnsupportedBlock -> "unsupported(${block.literal.replace("\n", "\\n")})"
         is BlockNode.MathBlock -> "math(${block.latex.replace("\n", "\\n")})"
     }
 }
 
-private fun List<BlockNode.ListItem>.debugItems(): String = joinToString(separator = ";") { item ->
+private fun BlockNode.ListBlock.debugItems(): String = items.withIndex().joinToString(separator = ";") { (index, item) ->
     val taskPrefix = when (item.taskState) {
         null -> ""
         TaskState.Checked -> "task:checked,"
         TaskState.Unchecked -> "task:unchecked,"
     }
-    "item(${item.marker},${taskPrefix}${item.children.debugShape()})"
+    "item(${itemMarker(index)},${taskPrefix}${item.children.debugShape()})"
 }
 
 private fun List<BlockNode.TableCell>.debugCells(): String = joinToString(separator = "|") { cell ->

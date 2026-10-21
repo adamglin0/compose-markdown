@@ -80,7 +80,7 @@ Inline nodes nested deeper than 32 levels (emphasis, links, images) are kept as 
 
 ## Known Limitations
 
-- Raw inline HTML is not parsed (by design, every preset has `rawHtml = false`); tags stay literal text.
+- Raw inline HTML is not parsed (by design, in every preset); tags stay literal text.
 - GFM extended `www.` / URL autolinks are not recognized while a `[` or `![` bracket is open, matching cmark-gfm; this keeps `[www.example.com](url)` a single link but also leaves URLs inside unmatched brackets as text.
 - Flanking checks classify UTF-16 code units, so characters outside the Basic Multilingual Plane (for example emoji) next to a delimiter count as neither whitespace nor punctuation.
 - Unicode case folding of reference labels is approximated by lowercase-then-uppercase.

@@ -7,14 +7,16 @@
 
 ## Spec Coverage
 
-- raw HTML is disabled for every preset
-- indented code blocks, footnotes, and HTML export are not implemented
-- inline parsing follows the CommonMark 0.31.2 reference algorithm and passes every inline spec section except examples that need raw HTML or block-level constructs the block parser does not produce yet (see `docs/compatibility-report.md`)
+- raw HTML is not parsed in any preset: HTML blocks and inline tags stay literal text
+- footnotes and HTML export are not implemented
+- block and inline parsing follow the CommonMark 0.31.2 reference algorithms and pass every spec section except examples that need raw HTML; GFM tables pass in full (see `docs/compatibility-report.md`)
 - GFM extended `www.` / URL autolinks are not recognized while a `[` or `![` bracket is open (cmark-gfm behaviour), so URLs inside unmatched brackets stay text
 - inline nodes nested deeper than 32 levels are kept as literal text to bound tree depth
+- block quotes and list items nested deeper than 64 container levels (a list item counts twice) are kept as paragraph text for the same reason
 - delimiter flanking classifies UTF-16 code units, so astral characters such as emoji next to `*`/`_` count as neither whitespace nor punctuation
-- reference definitions are single-line only
-- tables implement the common pipe-table subset rather than full GFM edge behavior; delimiter cells do accept one or more hyphens (`|-|`, `|--|`, `|---|`)
+- code block literals drop the final line ending, so a fenced block holding one empty line has the same `literal` as an empty one
+- inline node ranges inside block quotes and list items are approximate: container markers between lines are not part of a paragraph's literal
+- display math blocks (`GfmMath`) open only on a line that is exactly `$$` / `\[`, or on a single line such as `$$x$$`; other lines starting with `$$` or `\[` stay paragraph text
 
 ## Incremental Model And Performance
 
