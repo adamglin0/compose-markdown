@@ -2,6 +2,7 @@ package com.adamglin.compose.markdown.core.api
 
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
 import com.adamglin.compose.markdown.core.itemMarker
+import com.adamglin.compose.markdown.core.model.BlockChange
 import com.adamglin.compose.markdown.core.model.BlockId
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.InlineNode
@@ -11,7 +12,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MarkdownEngineTest {
@@ -22,10 +22,8 @@ class MarkdownEngineTest {
         val delta = engine.append("hello\nworld")
 
         assertEquals(1L, delta.version)
-        assertEquals(0, delta.stablePrefixEnd)
-        assertEquals(1, delta.changedBlocks.size)
-        assertEquals(listOf(delta.snapshot.document.blocks.single().id), delta.insertedBlockIds)
-        assertTrue(delta.updatedBlockIds.isEmpty())
+        assertEquals(0, delta.snapshot.stablePrefixEnd)
+        assertEquals(listOf(BlockChange(delta.snapshot.document.blocks.single().id, null, 0, delta.snapshot.document.blocks.single())), delta.changedBlocks)
         assertEquals(MarkdownDialect.ChatFast, delta.snapshot.dialect)
 
         val block = assertIs<BlockNode.Paragraph>(delta.snapshot.document.blocks.single())
@@ -46,9 +44,8 @@ class MarkdownEngineTest {
         assertTrue(delta.snapshot.isFinal)
         assertEquals(5, delta.snapshot.stablePrefixEnd)
         assertEquals(0, delta.changedBlocks.size)
-        assertEquals(0, delta.stats.reparsedBlocks)
+        assertEquals(0, delta.stats.builtBlocks)
         assertEquals(0, delta.stats.processedLines)
-        assertFalse(delta.isNoOp)
     }
 
     @Test
@@ -93,9 +90,8 @@ class MarkdownEngineTest {
         assertEquals(8, delta.dirtyRegion.start)
         assertEquals(delta.snapshot.document.sourceLength, delta.dirtyRegion.endExclusive)
         assertEquals(1, delta.stats.preservedBlocks)
-        assertEquals(1, delta.stats.reparsedBlocks)
+        assertEquals(1, delta.stats.builtBlocks)
         assertEquals(1, delta.stats.processedLines)
-        assertEquals(0, delta.stats.fallbackCount)
     }
 
     @Test
@@ -108,8 +104,7 @@ class MarkdownEngineTest {
         val firstBlock = assertIs<BlockNode.Paragraph>(first.snapshot.document.blocks.single())
         val secondBlock = assertIs<BlockNode.Paragraph>(second.snapshot.document.blocks.single())
         assertEquals(firstBlock.id, secondBlock.id)
-        assertTrue(second.insertedBlockIds.isEmpty())
-        assertEquals(listOf(firstBlock.id), second.updatedBlockIds)
+        assertEquals(listOf(BlockChange(firstBlock.id, 0, 0, secondBlock)), second.changedBlocks)
     }
 
     @Test
@@ -123,8 +118,7 @@ class MarkdownEngineTest {
         val secondHeading = assertIs<BlockNode.Heading>(second.snapshot.document.blocks.single())
 
         assertEquals(firstHeading.id, secondHeading.id)
-        assertEquals(listOf(firstHeading.id), second.updatedBlockIds)
-        assertTrue(second.insertedBlockIds.isEmpty())
+        assertEquals(listOf(BlockChange(firstHeading.id, 0, 0, secondHeading)), second.changedBlocks)
     }
 
     @Test
@@ -155,7 +149,8 @@ class MarkdownEngineTest {
         assertEquals(5, delta.snapshot.stablePrefixEnd)
         assertEquals(0, delta.snapshot.stablePrefixRange.start)
         assertEquals(0, delta.stats.preservedBlocks)
-        assertEquals(2, delta.stats.reparsedBlocks)
+        // The heading, the block quote and its fence.
+        assertEquals(3, delta.stats.builtBlocks)
     }
 
     @Test
@@ -170,7 +165,7 @@ class MarkdownEngineTest {
     }
 
     @Test
-    fun deltaTracksInsertedAndUpdatedBlocksSeparately() {
+    fun deltaReportsUpdatedAndInsertedBlocksWithTheirIndexes() {
         val engine = MarkdownEngine()
 
         val first = engine.append("stable")
@@ -179,8 +174,7 @@ class MarkdownEngineTest {
         val updatedId = first.snapshot.document.blocks.single().id
         val insertedId = second.snapshot.document.blocks.last().id
 
-        assertEquals(listOf(updatedId), second.updatedBlockIds)
-        assertEquals(listOf(insertedId), second.insertedBlockIds)
+        assertEquals(listOf(updatedId to 0, insertedId to null), second.changedBlocks.map { it.id to it.oldIndex })
         assertTrue(second.removedBlockIds.isEmpty())
     }
 
@@ -189,18 +183,14 @@ class MarkdownEngineTest {
         val incremental = MarkdownEngine()
         val normalized = MarkdownEngine()
 
-        val deltas = listOf(
-            incremental.append("# title\r"),
-            incremental.append("\nplain\r\n> quote\r"),
-            incremental.append("tail"),
-        )
+        incremental.append("# title\r")
+        incremental.append("\nplain\r\n> quote\r")
+        incremental.append("tail")
         normalized.append("# title\nplain\n> quote\ntail")
 
         val incrementalSnapshot = incremental.finish().snapshot
         val normalizedSnapshot = normalized.finish().snapshot
 
-        assertEquals(0, deltas.sumOf { it.stats.fallbackCount })
-        assertTrue(deltas.all { it.stats.fallbackReason == null })
         assertEquals(4, incrementalSnapshot.document.lineCount)
         assertEquals(normalizedSnapshot.document.sourceLength, incrementalSnapshot.document.sourceLength)
         assertEquals(normalizedSnapshot.document.blocks.debugShape(), incrementalSnapshot.document.blocks.debugShape())
@@ -215,8 +205,10 @@ class MarkdownEngineTest {
         val snapshot = engine.finish().snapshot
 
         assertEquals(2, first.snapshot.document.lineCount)
-        assertFalse(first.isNoOp)
-        assertTrue(second.isNoOp)
+        assertEquals(1, first.version)
+        assertEquals(1, second.version)
+        assertTrue(second.changedBlocks.isEmpty())
+        assertTrue(second.dirtyRegion.isEmpty)
         assertEquals(1, snapshot.document.sourceLength)
         assertEquals(2, snapshot.document.lineCount)
         assertTrue(snapshot.document.blocks.isEmpty())
@@ -233,17 +225,6 @@ class MarkdownEngineTest {
         }
 
         assertTrue(lastRemoved.isEmpty())
-    }
-
-    @Test
-    fun statsExposeNullFallbackReasonWhenIncrementalPathSucceeds() {
-        val engine = MarkdownEngine()
-
-        engine.append("stable\n\n")
-        val delta = engine.append("tail")
-
-        assertNull(delta.stats.fallbackReason)
-        assertEquals(0, delta.stats.fallbackCount)
     }
 }
 

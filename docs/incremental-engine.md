@@ -1,78 +1,95 @@
 # Incremental Engine Notes
 
-This document records the Stage 5 append-only engine behavior as implemented in `markdown-core`.
+This document records the append-only engine as implemented in `markdown-core`
+(`core/engine/IncrementalMarkdownEngine.kt`). The mental model is in `incremental-model.md`.
 
-## Working State Model
+## Working State
 
-- `stable prefix`: cached top-level blocks whose interpretation is frozen for the current snapshot.
-- `mutable tail`: the suffix starting at `snapshot.stablePrefixEnd`.
-- `dirty region`: the actual source range reparsed for the latest update.
-- `block cache`: cached top-level block records reused before the dirty start.
-- `inline cache`: per-block inline payload cache keyed by block ID plus text hash.
+- `BlockParser`: a resumable block parser. Every complete source line is incorporated into it exactly once;
+  it keeps the open blocks (always the rightmost path of the block tree) between calls.
+- `stable prefix`: the top-level blocks the parser closed. Closed blocks are final; `StableBlocks` holds their
+  nodes, built once.
+- `mutable tail`: the open top-level block plus whatever the unterminated last line adds, built on every call
+  from a throw-away fork of the parser.
+- `ReferenceDefinitions`: the definitions in effect; definitions of closed paragraphs are final, definitions of
+  open ones are replaced on every call.
+- `InlineCache`: inline parse results of the leaves built in the previous call, keyed by block id and checked
+  against the raw text, its range and the definition revision, with a checkpoint to resume a growing paragraph.
+- `BlockIdAllocator`: identity keys (kind, start offset, depth, discriminator) of the blocks built in the
+  previous call, with their ids.
+
+## Block Parser
+
+`BlockParser` follows the commonmark.js parsing strategy (`block-parser.md`). A line only ever changes the
+open blocks; once closed, a block never changes again. Two properties make it resumable:
+
+1. **Lines are incorporated for good.** `incorporate(line)` takes complete lines only. Headings, thematic breaks
+   and single-line math are closed right after their line, so every open block can still change.
+2. **Forks are cheap and isolated.** `fork()` copies only the open path; children, paragraph lines and table
+   rows of a copy are `ForkedList`s over the original, and code text is a `JoinedLines` that a fork appends to
+   past the original's length. The engine parses the unterminated last line in the fork and `finish()`es it
+   there, as if the input ended; the original never sees that line until it is complete.
+
+`takeClosedBlocks()` hands out the top-level blocks that closed and forgets them, so the parser holds only the
+open top-level block. `takeDefinitions()` hands out the link reference definitions of the paragraphs it
+finalized.
+
+## Building Nodes
+
+`BlockTreeBuilder` turns `OpenBlock`s into `BlockNode`s with resolved inline content:
+
+- a closed block that is not speculative (not created or copied by a fork) is final: it is built once and its
+  node, the reference labels it uses and its id are cached on the block;
+- an open container keeps the cached nodes of its leading closed children in a `SharedArray`, and an open table
+  those of its rows; building the container appends the newly closed ones and builds only the rest, and the
+  published list shares the array, so rebuilding a 6000-item list costs the same as a 2-item list;
+- fenced code and math text is appended in place (`JoinedLines`), and so is paragraph text; the node then copies
+  the text once;
+- inline content goes through `InlineCache`: an unchanged leaf is a cache hit, and a growing paragraph is parsed
+  again only from the last checkpoint of its previous parse (`InlineParser.parse(resume = ...)`): a line start
+  where no bracket is open, no emphasis opener waits for a closer and no scan read further, so nothing before it
+  can change whatever text follows.
 
 ## Append Path
 
-For a normal `append(chunk)`:
+For `append(chunk)`:
 
-1. append text into `SourceBuffer`;
-2. normalize chunk newlines to `\n` before they reach `SourceBuffer`, `LineIndex`, or `BlockParser` (including CRLF pairs split across append boundaries);
-3. append newline offsets into `LineIndex` only for the normalized chunk;
-4. start `dirtyRegion` at the previous stable prefix end (the start of the earliest open top-level block);
-5. preserve cached blocks whose `range.endExclusive <= dirtyRegion.start`;
-6. reparse only `dirtyRegion` with `BlockParser(range = dirtyRegion)`;
-7. rehydrate inline nodes only for reparsed blocks, with inline cache reuse when block ID and text are unchanged;
-8. publish a new immutable `MarkdownSnapshot` and `ParseDelta`.
+1. `ChunkNormalizer` turns `\r\n` and `\r` into `\n` (also across chunk boundaries) and holds back a high
+   surrogate that ends a chunk until its low surrogate arrives;
+2. the text is appended to `SourceBuffer` and `LineIndex`;
+3. the lines completed by this chunk are incorporated into the parser;
+4. the parser hands out the top-level blocks that closed and the definitions it finalized;
+5. a fork of the parser takes the unterminated last line and is finished; its top-level blocks are the tail,
+   and its definitions are the tail definitions, except those on the unterminated last line, which take effect
+   once the line ends so dependent blocks do not churn per character;
+6. if the definition in effect for a label changed, the cached nodes that use the label are marked stale and
+   rebuilt (stable blocks through the label index of `StableBlocks`, closed children of open blocks through the
+   builder), keeping their ids, and the inline cache revision moves on;
+7. the closed top-level blocks are built and move into `StableBlocks`; the tail is built from the fork;
+8. a new immutable `MarkdownSnapshot` and a `ParseDelta` are published. The stable prefix ends where the open
+   top-level block starts, or at the start of the unterminated last line.
 
-The engine does not default to whole-document reparsing on ordinary append traffic.
+`finish()` flushes a held-back surrogate, incorporates the last line and closes everything; all blocks become
+stable.
 
-## Stable Prefix Rules
+## Cost Per Call
 
-- Open containers (`fence`, `list`, `quote`, trailing paragraph) pull the stable-prefix boundary back to the earliest open frame.
-- If no open frame exists but the source does not end in `\n`, the final physical line remains mutable and is reparsed on the next append.
-- `finish()` promotes the stable prefix to the full source length without exposing parser cursor state publicly.
+Every step is proportional to the new text, the unterminated last line and the depth of the open path, plus
+copying the text of the open leaf (a code block or paragraph) into its node, which the immutable `String` model
+requires. There is no whole-source copy, no re-parse of earlier lines, no rebuild of closed blocks, no
+flattening of the tree and no deep snapshot comparison. 100KB streamed in 4-10 character chunks takes 20-35 ms
+whether it is a mixed document or one open list, paragraph, block quote, table or fence; see
+`performance-notes.md`.
 
-## Cache Behavior
+## Delta
 
-### Block Cache
+- `changedBlocks`: top-level blocks that are new, moved or changed, in document order, with old and new index;
+- `removedBlockIds`: ids (at any depth) built in the previous call and not built again; final blocks keep
+  their ids for good;
+- `dirtyRegion`: the range whose lines this call parsed, from the start of the previous unterminated last line;
+- every top-level block not listed in `changedBlocks` is the same as in the previous snapshot.
 
-- stores cached top-level block records from the last snapshot;
-- is used to preserve unchanged prefix blocks without reparsing them;
-- is also used as the source of stable block IDs for reparsed tail blocks.
-
-### Inline Cache
-
-- stores parsed inline children by block ID;
-- is reused when a reparsed block keeps the same ID and the same literal text;
-- is pruned when blocks disappear.
-
-## Newline Semantics
-
-- the engine stores normalized source text only, with `\r` and `\r\n` collapsed to `\n` before indexing or parsing;
-- a chunk ending in `\r` is normalized immediately and suppresses one leading `\n` on the next append so split CRLF input still becomes exactly one logical newline;
-- block ranges, line ranges, and `lineCount` therefore always describe the normalized source, not the raw transport bytes.
-
-## Bookkeeping Cost
-
-- Stage 5 localizes block reparsing to the mutable tail, but it still rebuilds the immutable snapshot, delta classification, and cache tables in O(n) over the current top-level block list;
-- `ParseStats` is a diagnostics surface, not a guarantee that every internal step is sublinear.
-
-## Delta And Stats
-
-`ParseDelta` now reports:
-
-- `insertedBlockIds`
-- `updatedBlockIds`
-- `removedBlockIds`
-
-`ParseStats` now reports:
-
-- `appendedChars`
-- `processedLines`
-- `reparsedBlocks`
-- `preservedBlocks`
-- `fallbackCount`
-- `fallbackReason`
-
-`fallbackCount` and `fallbackReason` remain reserved diagnostic fields; the current Stage 5 implementation does not use a full-reparse fallback path after newline normalization.
-
-These metrics are intended for diagnostics and for the sample debug surface, not as a hard performance API.
+`ParseStats` reports `appendedChars`, `processedLines` (lines completed by the call plus the unterminated last
+line), `builtBlocks` (blocks at any depth built by the call instead of taken from a cache), `preservedBlocks`
+(stable blocks carried over untouched), `inlineParsedBlockCount` and `inlineCacheHitBlockCount`. They are
+diagnostics for the sample debug view and the benchmarks.

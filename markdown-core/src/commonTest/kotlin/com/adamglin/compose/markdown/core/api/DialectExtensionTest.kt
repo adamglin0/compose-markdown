@@ -24,7 +24,8 @@ class DialectExtensionTest {
         assertEquals(HeadingStyle.Setext, heading.style)
         assertEquals(2, heading.level)
         assertEquals("Title", heading.children.inlineLiteral())
-        assertEquals(0, delta.dirtyRegion.start)
+        // Only the new line is parsed; the paragraph it turns into a heading was open.
+        assertEquals(6, delta.dirtyRegion.start)
     }
 
     @Test
@@ -38,7 +39,7 @@ class DialectExtensionTest {
         assertEquals(2, table.header.cells.size)
         assertEquals("Name", table.header.cells[0].children.inlineLiteral())
         assertEquals("Ada", table.rows.single().cells[0].children.inlineLiteral())
-        assertEquals(0, delta.dirtyRegion.start)
+        assertEquals(13, delta.dirtyRegion.start)
     }
 
     @Test
@@ -54,9 +55,9 @@ class DialectExtensionTest {
         val paragraph = assertIs<BlockNode.Paragraph>(delta.snapshot.document.blocks.single())
         val link = paragraph.children.filterIsInstance<InlineNode.Link>().single()
         assertEquals("https://example.com/guide", link.destination)
-        assertTrue(delta.updatedBlockIds.contains(firstBlockId))
+        assertEquals(listOf(firstBlockId), delta.changedBlocks.map { it.id })
         assertEquals(1, delta.snapshot.document.blocks.size)
-        assertTrue(delta.stats.reparsedBlocks in 1..2)
+        assertTrue(delta.stats.builtBlocks in 1..2)
     }
 
     @Test
@@ -70,10 +71,11 @@ class DialectExtensionTest {
 
         val delta = engine.append("\n[docs]: https://example.com/guide\n")
 
-        assertEquals(listOf(dependentBlockId), delta.updatedBlockIds)
-        assertFalse(delta.updatedBlockIds.contains(stableTailBlockId))
+        assertEquals(listOf(dependentBlockId), delta.changedBlocks.map { it.id })
+        assertEquals(stableTailBlockId, delta.snapshot.document.blocks.last().id)
         assertEquals(2, delta.snapshot.document.blocks.size)
-        assertEquals(2, delta.stats.reparsedBlocks)
+        // The closed "Stable tail" paragraph, the dependent paragraph again, and the open definition paragraph.
+        assertEquals(3, delta.stats.builtBlocks)
 
         val paragraph = assertIs<BlockNode.Paragraph>(delta.snapshot.document.blocks.first())
         val link = paragraph.children.filterIsInstance<InlineNode.Link>().single()
@@ -89,7 +91,7 @@ class DialectExtensionTest {
         val preservedLeadId = first.snapshot.document.blocks.first().id
         val delta = engine.append("-----\n")
 
-        assertEquals(8, delta.dirtyRegion.start)
+        assertEquals(26, delta.dirtyRegion.start)
         assertEquals(preservedLeadId, delta.snapshot.document.blocks.first().id)
         assertEquals(2, delta.snapshot.document.blocks.size)
 
@@ -151,8 +153,10 @@ class DialectExtensionTest {
         val gfm = MarkdownEngine(dialect = MarkdownDialect.GfmCompat)
         val markdown = "See [guide][docs]\n\n[docs]: https://example.com/guide"
 
-        val commonMarkSnapshot = commonMark.append(markdown).snapshot
-        val gfmSnapshot = gfm.append(markdown).snapshot
+        commonMark.append(markdown)
+        gfm.append(markdown)
+        val commonMarkSnapshot = commonMark.finish().snapshot
+        val gfmSnapshot = gfm.finish().snapshot
 
         assertEquals(1, commonMarkSnapshot.document.blocks.size)
         assertEquals(1, gfmSnapshot.document.blocks.size)
@@ -161,21 +165,24 @@ class DialectExtensionTest {
     }
 
     @Test
-    fun streamingReferenceDefinitionCanExtendDestinationAcrossChunks() {
+    fun streamingReferenceDefinitionTakesEffectOnceItsLineIsComplete() {
         val engine = MarkdownEngine(dialect = MarkdownDialect.CommonMarkCore)
 
         val first = engine.append("See [guide][docs]\n")
         val firstBlockId = first.snapshot.document.blocks.single().id
         engine.append("\n[docs]: ")
-        engine.append("https://example.")
-        val delta = engine.append("com/guide")
+        val partial = engine.append("https://example.")
+        val pending = engine.append("com/guide")
 
-        val paragraph = assertIs<BlockNode.Paragraph>(delta.snapshot.document.blocks.single())
-        val link = paragraph.children.filterIsInstance<InlineNode.Link>().single()
-        assertEquals("https://example.com/guide", link.destination)
-        assertTrue(delta.updatedBlockIds.contains(firstBlockId))
+        // A definition on the unterminated last line is not resolved yet, so dependent blocks do not churn.
+        assertTrue(partial.changedBlocks.isEmpty())
+        assertTrue(pending.changedBlocks.isEmpty())
+        val pendingParagraph = assertIs<BlockNode.Paragraph>(pending.snapshot.document.blocks.single())
+        assertFalse(pendingParagraph.children.any { it is InlineNode.Link })
 
-        val finalParagraph = assertIs<BlockNode.Paragraph>(engine.finish().snapshot.document.blocks.single())
+        val finished = engine.finish()
+        assertEquals(listOf(firstBlockId), finished.changedBlocks.map { it.id })
+        val finalParagraph = assertIs<BlockNode.Paragraph>(finished.snapshot.document.blocks.single())
         val finalLink = finalParagraph.children.filterIsInstance<InlineNode.Link>().single()
         assertEquals("https://example.com/guide", finalLink.destination)
     }

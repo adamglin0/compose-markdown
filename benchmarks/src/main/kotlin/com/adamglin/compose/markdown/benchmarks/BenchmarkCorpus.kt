@@ -68,4 +68,73 @@ internal object BenchmarkCorpus {
         }
         return chunks
     }
+
+    /** A mixed document cut to exactly [chars] characters. */
+    fun mixedDocumentOfSize(chars: Int): String {
+        val section = mixedDocument(sections = 1)
+        return buildString(chars + section.length) {
+            while (length < chars) {
+                append(section)
+            }
+        }.take(chars)
+    }
+
+    /** One fenced code block that never closes, about [chars] characters long. */
+    fun unclosedFenceDocument(chars: Int): String = buildString(chars + 32) {
+        append("```kotlin\n")
+        var line = 0
+        while (length < chars) {
+            append("val value")
+            append(line++)
+            append(" = compute(input)\n")
+        }
+    }
+
+    /** One bullet list with many short items, about [chars] characters long. */
+    fun longListDocument(chars: Int): String = buildString(chars + 32) {
+        var item = 0
+        while (length < chars) {
+            append("- list item ")
+            append(item++)
+            append(" with *emphasis*\n")
+        }
+    }
+
+    /** One paragraph of many lines with inline markup, about [chars] characters long. */
+    fun longParagraphDocument(chars: Int): String = buildString(chars + 80) {
+        var line = 0
+        while (length < chars) {
+            append("Line ")
+            append(line++)
+            append(" of one paragraph with **strong**, `code` and a [link](https://example.com).\n")
+        }
+    }
+
+    /** One block quote holding one long paragraph, about [chars] characters long. */
+    fun longQuoteDocument(chars: Int): String = buildString(chars + 80) {
+        var line = 0
+        while (length < chars) {
+            append("> quoted line ")
+            append(line++)
+            append(" with _emphasis_ and more text\n")
+        }
+    }
+
+    /**
+     * Splits [document] into 4 to 10 character chunks, the size of the tokens an LLM streams. The sizes come
+     * from a fixed seed so every run appends the same chunks.
+     */
+    fun tokenChunks(document: String): List<String> {
+        val random = java.util.Random(TOKEN_SEED)
+        val chunks = ArrayList<String>(document.length / 6)
+        var start = 0
+        while (start < document.length) {
+            val end = minOf(document.length, start + 4 + random.nextInt(7))
+            chunks += document.substring(start, end)
+            start = end
+        }
+        return chunks
+    }
+
+    private const val TOKEN_SEED = 42L
 }

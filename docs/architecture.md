@@ -56,27 +56,26 @@ markdown-core <- benchmarks
 ### 1. `SourceBuffer` and `LineIndex`
 
 - `SourceBuffer` stores normalized append-only text;
-- `LineIndex` tracks newline offsets so block parsing can rescan only the requested range;
-- Stage 8 adds cached snapshots plus direct tail inspection helpers to avoid redundant whole-buffer copies.
+- `LineIndex` tracks newline offsets, so line ranges are O(1) and only new lines are copied out of the source.
 
 ### 2. `BlockParser`
 
 - parses line-oriented blocks: paragraphs, headings, lists, quotes, fenced code blocks, tables, thematic breaks;
-- assigns stable block IDs through an engine-supplied allocator;
-- keeps parsing range-based and leaves inline resolution for a later phase.
+- is resumable: each complete line is incorporated once, and an unterminated last line is parsed in a cheap fork;
+- `BlockTreeBuilder` builds nodes, caching closed blocks, and asks an engine-supplied allocator for stable block IDs.
 
 ### 3. `InlineParser`
 
 - resolves inline syntax inside block-local text ranges;
 - supports links, emphasis, strong, strikethrough, code spans, images, autolinks, and line breaks;
-- caches inline results per block ID + literal hash so preserved blocks do not reparse inline payloads.
+- results are cached per block ID and literal, and a growing paragraph resumes from its last final line start.
 
 ### 4. Incremental Engine
 
 - appends normalized text into the source buffer;
-- computes the earliest safe dirty start from the previous mutable tail;
-- preserves prefix block records and reparses only the dirty region;
-- rehydrates inline content only where needed;
+- feeds completed lines to the block parser and the unterminated last line to a fork of it;
+- moves closed top-level blocks into the stable prefix, built once;
+- rebuilds only blocks that use a link reference definition that changed;
 - rebuilds immutable `MarkdownSnapshot` / `ParseDelta` for consumers.
 
 ### 5. Compose Renderer
@@ -89,8 +88,8 @@ markdown-core <- benchmarks
 
 - `stable prefix`: source range known to keep its interpretation;
 - `mutable tail`: suffix that may still change meaning after more input;
-- `dirty region`: the actual range reparsed for the latest append;
-- `block cache`: preserved top-level blocks plus unresolved reference metadata;
+- `dirty region`: the range whose lines the latest append parsed;
+- `block cache`: built nodes of closed blocks, plus the reference labels they use;
 - `inline cache`: per-block inline parse results.
 
 See `docs/incremental-model.md` for the detailed rules.

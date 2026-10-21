@@ -69,7 +69,7 @@ internal fun parseMarkdown(text: String, dialect: MarkdownDialect): MarkdownDocu
 /**
  * Returns [next] with every block that is equal to the previous block of the same id replaced by
  * that previous instance. Preserved blocks are usually the same instance already, so the equality
- * check short-circuits; only re-parsed tail blocks are compared structurally.
+ * check short-circuits; only rebuilt tail blocks are compared structurally.
  */
 internal fun reuseUnchangedBlocks(previous: List<BlockNode>, next: List<BlockNode>): List<BlockNode> {
     if (previous.isEmpty()) return next

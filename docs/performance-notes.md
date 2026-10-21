@@ -1,68 +1,86 @@
 # Performance Notes
 
-Stage 8 introduces a real JVM benchmark runner in `benchmarks` and records measured results for the current incremental parser implementation.
+The JVM benchmark runner in `benchmarks` measures one-shot parsing and streaming appends with
+`MarkdownDialect.GfmCompat`.
 
 ## Benchmark Command
 
 ```bash
 ./gradlew :benchmarks:run
+./gradlew :benchmarks:run --args="--smoke"
 ```
-
-Measured on this repository with the built-in runner and `MarkdownDialect.GfmCompat`.
 
 ## Scenarios
 
 | Scenario | Coverage |
 | --- | --- |
 | `one-shot-large-paragraph` | large paragraph-heavy document parsed in a single append |
-| `chunked-mixed-append` | 240 small appends over paragraph/list/quote/code/table content |
+| `chunked-mixed-append` | 240 appends of about 90 characters over paragraph/list/quote/code/table content |
 | `one-shot-mixed-document` | mixed block document parsed in a single append |
+| `token-stream-{25,50,100,200}kb` | mixed document streamed in 4-10 character chunks, the size of LLM tokens |
+| `token-stream-{open-fence,long-list,long-paragraph,long-quote}-100kb` | one open 100KB top-level block streamed in 4-10 character chunks |
+
+Smoke mode (used by `ciCheck`) runs the first three scenarios with smaller inputs and only `token-stream-25kb`.
 
 ## Metric Definitions
 
-- `append total ms`: sum of all `append()` call durations in one scenario run, excluding `finish()`.
-- `avg append us`: `append total ms / appendCount`, in microseconds; the average cost of a single `append()`.
-- `finish ms`: duration of the single `finish()` call, reported separately so it does not skew the append average.
+- `append total ms`: time of all `append()` calls of one run, without `finish()`.
+- `avg append us`: `append total ms / appendCount`.
+- `finish ms`: time of the single `finish()` call.
 - `total ms`: `append total ms + finish ms`.
-- `alloc bytes`: bytes allocated on the benchmark thread during the run.
+- `built blocks per call`: `ParseStats.builtBlocks` averaged over all calls: blocks built instead of taken from
+  the cache of closed blocks.
 
 ## Latest Measured Results
 
-Each value is the average of 8 measured iterations after 3 warmup iterations (`./gradlew :benchmarks:run`), from a single local JVM run. Treat the numbers as relative indicators for this repository, not as cross-machine baselines.
+Full mode (3 warmup and 8 measured iterations), Apple Silicon laptop, JDK 17.
 
-| Scenario | Append total ms | Avg append us | Finish ms | Total ms | Alloc bytes |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| `one-shot-large-paragraph` | 12.257 | 12256.844 | 1.094 | 13.350 | 3027493 |
-| `chunked-mixed-append` | 87.132 | 363.052 | 0.747 | 87.879 | 155578030 |
-| `one-shot-mixed-document` | 1.500 | 1499.521 | 0.458 | 1.957 | 2882048 |
+| Scenario | Appends | Append total ms | Avg append us | Total ms | Built blocks per call | Alloc bytes |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `one-shot-large-paragraph` | 1 | 3.310 | 3310.422 | 3.318 | 250.0 | 3124115 |
+| `chunked-mixed-append` | 240 | 3.726 | 15.523 | 3.728 | 5.7 | 3722780 |
+| `one-shot-mixed-document` | 1 | 0.876 | 875.943 | 0.877 | 320.0 | 1643432 |
+| `token-stream-25kb` | 3594 | 8.240 | 2.293 | 8.246 | 2.3 | 20937828 |
+| `token-stream-50kb` | 7148 | 10.101 | 1.413 | 10.108 | 2.3 | 41120314 |
+| `token-stream-100kb` | 14316 | 19.603 | 1.369 | 19.610 | 2.3 | 81273984 |
+| `token-stream-200kb` | 28658 | 29.977 | 1.046 | 29.983 | 2.3 | 162606856 |
+| `token-stream-open-fence-100kb` | 14319 | 19.947 | 1.393 | 19.959 | 1.0 | 749754856 |
+| `token-stream-long-list-100kb` | 14316 | 14.630 | 1.022 | 14.854 | 5.3 | 97566784 |
+| `token-stream-long-paragraph-100kb` | 14319 | 30.457 | 2.127 | 30.470 | 1.0 | 878704744 |
+| `token-stream-long-quote-100kb` | 14319 | 27.689 | 1.934 | 27.703 | 2.0 | 860536192 |
 
-## Preserved vs Reparses
+Streaming costs time proportional to the new text, whether the document is made of many blocks or of one huge
+open block: every line is parsed once by the resumable block parser, closed blocks are built once, an open
+container reuses the nodes of its closed children, and a growing paragraph is inline-parsed again only from its
+last final line start. The allocation of the open-fence and long-paragraph runs is the copy of the open leaf's
+text into its new node on every append (an immutable `String`), a memory copy rather than parsing work.
 
-| Scenario | Preserved ratio | Reparsed ratio | Notes |
-| --- | ---: | ---: | --- |
-| `one-shot-large-paragraph` | 0.500 | 0.500 | ratio aggregates every emitted delta, including the final `finish()` delta |
-| `chunked-mixed-append` | 0.974 | 0.026 | ratio aggregates all 240 appends plus the final `finish()` delta |
-| `one-shot-mixed-document` | 0.492 | 0.508 | ratio also includes the single `finish()` delta after the one-shot append |
+## History
 
-The `chunked-mixed-append` run is the main proof point that the append-only model preserves most previously parsed blocks while new chunks extend the mutable tail.
+Same documents (GfmCompat) streamed in 4-10 character chunks, one run each, Apple Silicon laptop:
 
-## Targeted Optimizations Applied
+| Document | Original engine | Exact stable prefix | Resumable block parser | One-shot |
+| --- | ---: | ---: | ---: | ---: |
+| 25KB mixed | 3303 ms | 31 ms | 8 ms | 3 ms |
+| 100KB mixed | 17806 ms | 84 ms | 20 ms | 10 ms |
+| 200KB mixed | 75120 ms | 110 ms | 30 ms | 17 ms |
+| 100KB unclosed fence | 1788 ms | 1711 ms | 20 ms | <1 ms |
+| 100KB single list | 37786 ms | 8830 ms | 17 ms | 4 ms |
+| 100KB single paragraph | 5144 ms | 8590 ms | 34 ms | 2 ms |
+| 100KB single block quote | - | 7486 ms | 29 ms | 1 ms |
+| 100KB single table | - | 11846 ms | 18 ms | 3 ms |
+| 100KB nested list | - | 12254 ms | 19 ms | 3 ms |
 
-1. `SourceBuffer` now caches `snapshot()` and exposes direct tail inspection helpers so newline checks no longer allocate extra full-source strings.
-2. `IncrementalMarkdownEngine.normalizeChunk()` avoids an intermediate substring before CR/CRLF normalization.
-3. block-tree flattening now uses an accumulator instead of recursive `buildList { addAll(...) }` chains, reducing temporary list churn during delta classification and cache refresh.
-4. reference-label normalization moved to a shared manual normalizer instead of regex `split/join` in both block and inline parsers.
-5. table cell splitting now scans the line directly instead of building intermediate `compact`, `raw`, and `split('|')` strings.
+- The original engine re-parsed from an inexact boundary and rebuilt document-wide state on every append
+  (flattened trees, an id lookup of every block, the dependency index, a whole-source copy and a deep snapshot
+  comparison).
+- With an exact stable prefix, each append re-parsed the open top-level block from its start, so one huge open
+  block still cost time proportional to its size per append.
+- The resumable block parser parses each line once and parses the unterminated last line in a fork that copies
+  only the open path.
 
-## Hotspots Observed
+## Remaining Hotspots
 
-- the biggest remaining allocation hotspot is still append-heavy tree rebuilding around immutable block snapshots and delta bookkeeping;
-- substring-heavy paths remain in line slicing and inline literal extraction, but the worst no-op copies were removed in Stage 8;
-- the large drop in `chunked-mixed-append` allocated bytes points mainly to the flattening and table-splitting changes;
-- one-shot mixed latency stays close to noise-level variance, so Stage 8 should be read mostly as an allocation and append-path cleanup, not a dramatic whole-parser rewrite.
-
-## Remaining Opportunities
-
-- reduce per-line substring creation in `LineIndex.lines()` / `ParserLine` if future benchmarks show line slicing dominating;
-- avoid rebuilding unchanged top-level metadata structures when no block order changed;
-- add JVM profiling snapshots or async-profiler integration only if the lightweight runner stops being enough.
+- Each append copies the text of the open code block or paragraph into its node (see above).
+- A paragraph with an emphasis opener, bracket or code span that never closes is inline-parsed again from that
+  point on every append.

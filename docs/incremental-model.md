@@ -1,95 +1,66 @@
 # Append-Only Incremental Model
 
-This document defines the mental model used by `MarkdownEngine`. The engine is optimized for appended text, not arbitrary edits.
+This document defines the mental model used by `MarkdownEngine`. The engine is optimized for appended text, not
+arbitrary edits. Implementation details are in `incremental-engine.md`.
+
+## Guarantee
+
+Streaming is invisible: after every `append`, the snapshot equals what a fresh engine produces for the same
+source in one `append`, and after `finish()` it equals a one-shot parse followed by `finish()`, in every
+dialect and for every way of splitting the input into chunks.
 
 ## Core Terms
 
 ### Stable Prefix
 
-The longest prefix of the normalized source buffer whose interpretation is frozen for the current snapshot.
+The source prefix `[0, stablePrefixEnd)` whose top-level blocks are final.
 
-- never reparsed for the current update;
-- safe to reuse from the block cache;
-- grows when syntax closes cleanly;
-- may stop before the physical end when the tail is still syntactically open.
+- it ends where the first top-level block that later input can change begins;
+- it never moves backward within a session and covers the whole source after `finish()`;
+- its blocks keep their index, id, structure and ranges, and are never parsed or built again;
+- their inline content can still change, but only when a link reference definition later in the document
+  defines a label they use (CommonMark resolves references document-wide).
+
+In CommonMark only the last top-level block can be open, so the stable prefix is everything before the last
+top-level block while that block is open, and everything up to the last complete line once it is closed.
+The block parser is resumable and never closes a block because of the unterminated last line, so a closed
+block is final.
 
 ### Mutable Tail
 
-The suffix after the stable prefix.
+The top-level blocks after the stable prefix. Typical reasons a block stays in the tail:
 
-Typical reasons a tail stays mutable:
-
-- an unfinished paragraph without a trailing newline;
-- an open fenced code block;
-- list or quote continuation that may still absorb future lines;
-- features with retroactive interpretation such as setext headings or pipe tables.
+- a paragraph, which can still gain lines, become a setext heading or a table header, or turn out to be link
+  reference definitions;
+- an open fenced code or math block;
+- a list, list item, block quote or table, which can absorb further lines;
+- any block closed only by the unterminated last line, which may still turn into something else.
 
 ### Dirty Region
 
-The smallest safe source range that must be reparsed for the latest append.
-
-- ordinary appends start at the previous mutable-tail boundary;
-- quote/list/table/setext logic may widen the start backward to a safe block boundary;
-- late reference definitions can rehydrate preserved blocks without reparsing the entire document.
-
-### Block Cache
-
-Cached top-level block records from the previous snapshot.
-
-Each record retains:
-
-- block identity;
-- range and line range;
-- unresolved reference labels;
-- stable/provisional status.
-
-### Inline Cache
-
-Per-block inline parse results keyed by:
-
-- block ID;
-- text range;
-- literal hash;
-- reference-definition revision.
+The source range parsed by the latest call: from the start of the previous unterminated last line to the end
+of input. Lines before it are never parsed again.
 
 ## Incremental Flow
 
 For every `append(chunk)`:
 
-1. normalize `\r` / `\r\n` into `\n` before storing or indexing;
-2. append the normalized chunk into `SourceBuffer` and `LineIndex`;
-3. derive the dirty start from the previous stable-prefix / mutable-tail state;
-4. preserve cached blocks before that boundary;
-5. reparse only the dirty range with `BlockParser(range = dirtyRegion)`;
-6. resolve inline content only for reparsed or dependency-invalidated blocks;
-7. compute a new stable prefix;
-8. emit a new immutable `MarkdownSnapshot` and `ParseDelta`.
+1. normalize line endings and hold back a split surrogate pair;
+2. append the text to the source buffer and line index;
+3. add the completed lines to the resumable block parser, and parse the unterminated last line in a fork;
+4. move the top-level blocks the parser closed into the stable prefix;
+5. update the link reference definitions in effect and rebuild cached blocks that use a changed label;
+6. build the tail from the fork, reusing the cached nodes of closed blocks and cached inline results;
+7. emit a new immutable `MarkdownSnapshot` and `ParseDelta`.
 
 ## Stable ID Rules
 
-- unchanged blocks keep the same `BlockId`;
-- reparsed blocks try to reuse IDs through structural identity keys;
-- unaffected prefix blocks never receive fresh IDs during append-only updates;
-- split/merge scenarios allocate new IDs only inside the affected region.
-
-## Dependency-Driven Reprocessing
-
-Two feature groups can reinterpret earlier content:
-
-- block-level cases: setext headings, tables, list/quote continuation, which keep their blocks open (and so in the mutable tail) until no later line can change them;
-- reference-definition cases: a later definition can resolve earlier unresolved inline references.
-
-The current engine handles both explicitly and locally instead of falling back to whole-document reparsing.
-
-## Stage 8 Notes
-
-- benchmark reporting now aggregates `ParseStats.reparsedBlocks` and `ParseStats.preservedBlocks` to track reuse quality;
-- source-tail inspection no longer requires extra whole-buffer `snapshot()` copies for newline checks;
-- block-tree flattening was rewritten to avoid repeated recursive list creation during delta classification and cache refresh.
+- closed blocks keep their ids for good, also when they are rebuilt for a changed definition;
+- a block of the tail keeps its id when it has the same identity key (kind, start offset, depth and a
+  discriminator such as heading level or list marker type) as a block built in the previous call;
+- ids are unique within a snapshot; ids of the previous tail that are not built again are reported as removed.
 
 ## Non-Goals
 
 - arbitrary insertion or deletion inside the source;
-- editor-grade token streaming for every character;
-- HTML DOM diffing;
-- hidden full rescans as a default recovery path.
+- HTML DOM diffing.

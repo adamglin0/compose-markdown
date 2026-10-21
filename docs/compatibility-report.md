@@ -154,7 +154,7 @@ Current curated sources:
 - CommonMark 0.31.2 representative examples for paragraphs, thematic breaks, setext headings, fenced code blocks, lists, block quotes, and reference links
 - `BlockStructureRegressionTest` for block-structure regressions across presets (lists, laziness, indented code, tabs, tables, math)
 - `BlockParserPerformanceTest` for pathological block inputs (deep nesting, long tables, lists and definition runs)
-- `StreamingFuzzTest`, a seeded fuzz over block-heavy documents and random chunkings in every preset: each streamed snapshot must equal a one-shot parse of the same prefix, and the stable prefix must never move backward or change its blocks
+- `StreamingFuzzTest` (JVM only, too slow for browser test runners), a seeded fuzz over block-heavy documents and random chunkings in every preset: each streamed snapshot must equal a one-shot parse of the same prefix, and the stable prefix must never move backward or change its blocks
 - GFM 0.29-gfm representative examples for tables, task list items, and strikethrough
 - local streaming splits for plain text, quote, list, fenced code, table, and reference-link upgrade paths
 

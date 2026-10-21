@@ -27,12 +27,7 @@ private class MarkdownBenchmarkRunner(
     private val allocationTracker = AllocationTracker.currentThread()
 
     fun run(): BenchmarkReport {
-        val scenarios = listOf(
-            BenchmarkScenario.OneShotLargeParagraph,
-            BenchmarkScenario.ChunkedMixedAppend,
-            BenchmarkScenario.OneShotMixedDocument,
-        )
-        val results = scenarios.map(::measureScenario)
+        val results = BenchmarkScenario.all(smoke = options.smoke).map(::measureScenario)
         return BenchmarkReport(
             generatedAt = java.time.Instant.now().toString(),
             mode = if (options.smoke) "smoke" else "full",
@@ -60,57 +55,31 @@ private class MarkdownBenchmarkRunner(
             finishTimeMillis = measurements.averageBy { it.finishTimeNanos.toMillis() },
             totalParseTimeMillis = measurements.averageBy { it.totalParseTimeNanos.toMillis() },
             averageAppendMicros = measurements.averageBy { it.averageAppendNanos.toMicros() },
-            preservedBlockRatio = measurements.averageBy { it.preservedBlockRatio },
-            reparsedBlockRatio = measurements.averageBy { it.reparsedBlockRatio },
+            builtBlocksPerCall = measurements.averageBy { it.builtBlocksPerCall },
             allocatedBytes = measurements.averageBy { it.allocatedBytes.toDouble() }.roundToLong(),
         )
     }
 
     private fun executeScenario(scenario: BenchmarkScenario): ScenarioMeasurement {
         val engine = MarkdownEngine(dialect = MarkdownDialect.GfmCompat)
-        val input = scenario.createInput(smoke = options.smoke)
+        val input = scenario.input
         var appendTotalTimeNanos = 0L
         var finishTimeNanos = 0L
-        var appendCount = 0
-        var preservedBlocks = 0L
-        var reparsedBlocks = 0L
+        var builtBlocks = 0L
         val allocatedBytes = allocationTracker.measureAllocatedBytes {
-            when (scenario) {
-                BenchmarkScenario.OneShotLargeParagraph -> {
-                    val delta = timedAppend(engine = engine, chunk = input.document)
-                    appendTotalTimeNanos += delta.elapsedNanos
-                    appendCount += 1
-                    preservedBlocks += delta.delta.stats.preservedBlocks.toLong()
-                    reparsedBlocks += delta.delta.stats.reparsedBlocks.toLong()
-                }
-
-                BenchmarkScenario.ChunkedMixedAppend -> {
-                    input.chunks.forEach { chunk ->
-                        val delta = timedAppend(engine = engine, chunk = chunk)
-                        appendTotalTimeNanos += delta.elapsedNanos
-                        appendCount += 1
-                        preservedBlocks += delta.delta.stats.preservedBlocks.toLong()
-                        reparsedBlocks += delta.delta.stats.reparsedBlocks.toLong()
-                    }
-                }
-
-                BenchmarkScenario.OneShotMixedDocument -> {
-                    val delta = timedAppend(engine = engine, chunk = input.document)
-                    appendTotalTimeNanos += delta.elapsedNanos
-                    appendCount += 1
-                    preservedBlocks += delta.delta.stats.preservedBlocks.toLong()
-                    reparsedBlocks += delta.delta.stats.reparsedBlocks.toLong()
-                }
+            input.chunks.forEach { chunk ->
+                val delta = timedAppend(engine = engine, chunk = chunk)
+                appendTotalTimeNanos += delta.elapsedNanos
+                builtBlocks += delta.delta.stats.builtBlocks.toLong()
             }
 
             finishTimeNanos = measureNanos {
                 val delta = engine.finish()
-                preservedBlocks += delta.stats.preservedBlocks.toLong()
-                reparsedBlocks += delta.stats.reparsedBlocks.toLong()
+                builtBlocks += delta.stats.builtBlocks.toLong()
             }
         }
 
-        val totalBlocks = preservedBlocks + reparsedBlocks
+        val appendCount = input.chunks.size
         return ScenarioMeasurement(
             documentChars = input.document.length,
             appendCount = appendCount,
@@ -118,8 +87,7 @@ private class MarkdownBenchmarkRunner(
             finishTimeNanos = finishTimeNanos,
             totalParseTimeNanos = appendTotalTimeNanos + finishTimeNanos,
             averageAppendNanos = if (appendCount == 0) 0.0 else appendTotalTimeNanos.toDouble() / appendCount,
-            preservedBlockRatio = if (totalBlocks == 0L) 0.0 else preservedBlocks.toDouble() / totalBlocks,
-            reparsedBlockRatio = if (totalBlocks == 0L) 0.0 else reparsedBlocks.toDouble() / totalBlocks,
+            builtBlocksPerCall = builtBlocks.toDouble() / (appendCount + 1),
             allocatedBytes = allocatedBytes,
         )
     }
@@ -139,37 +107,52 @@ private class MarkdownBenchmarkRunner(
     }
 }
 
-private enum class BenchmarkScenario(
+private class BenchmarkScenario(
     val id: String,
     val description: String,
+    val input: ScenarioInput,
 ) {
-    OneShotLargeParagraph(
-        id = "one-shot-large-paragraph",
-        description = "Large paragraph-heavy document parsed in one append.",
-    ),
-    ChunkedMixedAppend(
-        id = "chunked-mixed-append",
-        description = "240 small appends over mixed paragraph/list/quote/code/table content.",
-    ),
-    OneShotMixedDocument(
-        id = "one-shot-mixed-document",
-        description = "Large mixed document parsed in one append.",
-    ),
-    ;
-
-    fun createInput(smoke: Boolean): ScenarioInput = when (this) {
-        OneShotLargeParagraph -> ScenarioInput(
-            document = BenchmarkCorpus.largeParagraphDocument(repetitions = if (smoke) 180 else 500),
-            chunks = emptyList(),
-        )
-        ChunkedMixedAppend -> {
-            val chunks = BenchmarkCorpus.chunkedMixedDocument(chunkCount = if (smoke) 120 else 240)
-            ScenarioInput(document = chunks.joinToString(separator = ""), chunks = chunks)
+    companion object {
+        fun all(smoke: Boolean): List<BenchmarkScenario> = buildList {
+            val largeParagraphs = BenchmarkCorpus.largeParagraphDocument(repetitions = if (smoke) 180 else 500)
+            add(BenchmarkScenario("one-shot-large-paragraph", "Large paragraph-heavy document parsed in one append.", ScenarioInput.oneShot(largeParagraphs)))
+            val chunkCount = if (smoke) 120 else 240
+            add(
+                BenchmarkScenario(
+                    "chunked-mixed-append",
+                    "$chunkCount small appends over mixed paragraph/list/quote/code/table content.",
+                    ScenarioInput.chunked(BenchmarkCorpus.chunkedMixedDocument(chunkCount = chunkCount)),
+                ),
+            )
+            val mixed = BenchmarkCorpus.mixedDocument(sections = if (smoke) 16 else 40)
+            add(BenchmarkScenario("one-shot-mixed-document", "Large mixed document parsed in one append.", ScenarioInput.oneShot(mixed)))
+            (if (smoke) listOf(25) else listOf(25, 50, 100, 200)).forEach { kilobytes ->
+                val document = BenchmarkCorpus.mixedDocumentOfSize(chars = kilobytes * 1_000)
+                add(
+                    BenchmarkScenario(
+                        "token-stream-${kilobytes}kb",
+                        "Mixed ${kilobytes}KB document streamed in 4-10 character tokens.",
+                        ScenarioInput.chunked(BenchmarkCorpus.tokenChunks(document)),
+                    ),
+                )
+            }
+            if (!smoke) {
+                listOf(
+                    "open-fence" to BenchmarkCorpus.unclosedFenceDocument(chars = 100_000),
+                    "long-list" to BenchmarkCorpus.longListDocument(chars = 100_000),
+                    "long-paragraph" to BenchmarkCorpus.longParagraphDocument(chars = 100_000),
+                    "long-quote" to BenchmarkCorpus.longQuoteDocument(chars = 100_000),
+                ).forEach { (name, document) ->
+                    add(
+                        BenchmarkScenario(
+                            "token-stream-$name-100kb",
+                            "One open 100KB top-level block ($name) streamed in 4-10 character tokens.",
+                            ScenarioInput.chunked(BenchmarkCorpus.tokenChunks(document)),
+                        ),
+                    )
+                }
+            }
         }
-        OneShotMixedDocument -> ScenarioInput(
-            document = BenchmarkCorpus.mixedDocument(sections = if (smoke) 16 else 40),
-            chunks = emptyList(),
-        )
     }
 }
 
@@ -210,8 +193,7 @@ private data class ScenarioResult(
     val finishTimeMillis: Double,
     val totalParseTimeMillis: Double,
     val averageAppendMicros: Double,
-    val preservedBlockRatio: Double,
-    val reparsedBlockRatio: Double,
+    val builtBlocksPerCall: Double,
     val allocatedBytes: Long,
 )
 
@@ -222,8 +204,7 @@ private data class ScenarioMeasurement(
     val finishTimeNanos: Long,
     val totalParseTimeNanos: Long,
     val averageAppendNanos: Double,
-    val preservedBlockRatio: Double,
-    val reparsedBlockRatio: Double,
+    val builtBlocksPerCall: Double,
     val allocatedBytes: Long,
 )
 
@@ -232,10 +213,17 @@ private data class TimedDelta(
     val elapsedNanos: Long,
 )
 
-private data class ScenarioInput(
-    val document: String,
+private class ScenarioInput(
     val chunks: List<String>,
-)
+) {
+    val document: String = chunks.joinToString(separator = "")
+
+    companion object {
+        fun oneShot(document: String) = ScenarioInput(chunks = listOf(document))
+
+        fun chunked(chunks: List<String>) = ScenarioInput(chunks = chunks)
+    }
+}
 
 private object BenchmarkReportRenderer {
     fun render(report: BenchmarkReport): String = buildString {
@@ -246,11 +234,11 @@ private object BenchmarkReportRenderer {
         appendLine("- warmupIterations: ${report.warmupIterations}")
         appendLine("- measuredIterations: ${report.measuredIterations}")
         appendLine()
-        appendLine("| scenario | chars | appends | append total ms | avg append us | finish ms | total ms | preserved ratio | reparsed ratio | allocated bytes |")
-        appendLine("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+        appendLine("| scenario | chars | appends | append total ms | avg append us | finish ms | total ms | built blocks per call | allocated bytes |")
+        appendLine("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
         report.results.forEach { result ->
             appendLine(
-                "| ${result.scenario} | ${result.documentChars} | ${result.appendCount} | ${result.appendTotalTimeMillis.format(3)} | ${result.averageAppendMicros.format(3)} | ${result.finishTimeMillis.format(3)} | ${result.totalParseTimeMillis.format(3)} | ${result.preservedBlockRatio.format(3)} | ${result.reparsedBlockRatio.format(3)} | ${result.allocatedBytes} |",
+                "| ${result.scenario} | ${result.documentChars} | ${result.appendCount} | ${result.appendTotalTimeMillis.format(3)} | ${result.averageAppendMicros.format(3)} | ${result.finishTimeMillis.format(3)} | ${result.totalParseTimeMillis.format(3)} | ${result.builtBlocksPerCall.format(1)} | ${result.allocatedBytes} |",
             )
         }
     }

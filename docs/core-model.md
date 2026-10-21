@@ -35,16 +35,15 @@ This document tracks the Stage 7 core model boundary in `markdown-core`.
 - `append(chunk)` only appends source text to the tail.
 - `finish()` closes the current append session and marks the entire source as stable.
 - After `finish()`, `append()` is invalid until `reset()` is called or a new engine is created.
-- `stablePrefixRange` tracks the prefix that the current engine implementation considers reusable without reinterpretation.
-- `ParseDelta.hasStateChange` marks snapshot-level mutations that remain observable even when block diffs are empty.
-- `dirtyRegion` marks the earliest source offset the engine actually reparsed for the latest operation.
-- Append-only reparsing stays localized to the mutable tail, which starts at the earliest top-level block that later input can still change (for example a paragraph that may still become a setext heading or table header).
-- Late reference definitions do not trigger whole-document reparsing; the engine reprocesses only dependent preserved top-level blocks through the dependency index.
+- `MarkdownSnapshot.stablePrefixRange` covers the top-level blocks that no later input can change; it never moves backward (see `incremental-model.md`).
+- `ParseDelta.dirtyRegion` is the source range the latest call parsed: from the start of the previous unterminated last line to the end of input.
+- Every append parses only the lines it completes and the unterminated last line; closed blocks are built once, and the open top-level block is rebuilt from the cached nodes of its closed children.
+- Late reference definitions do not trigger whole-document reparsing; only the stable blocks that use the defined label get their inline content resolved again.
 
 ## Delta Metrics
 
 - `changedBlocks` is top-level only; nested structure changes are represented through the changed parent block payload.
-- `ParseStats` counts parsed, changed, and reused blocks at that same top-level granularity.
+- `ParseStats` counts the blocks built by a call (at any depth), the preserved stable top-level blocks, and inline parses and inline cache hits at any depth.
 
 ## Internal Reserved State
 
