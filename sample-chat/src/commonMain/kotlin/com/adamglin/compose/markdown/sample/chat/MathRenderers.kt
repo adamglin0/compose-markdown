@@ -1,12 +1,8 @@
 package com.adamglin.compose.markdown.sample.chat
 
-import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.Placeholder
-import androidx.compose.ui.text.PlaceholderVerticalAlign
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.em
+import androidx.compose.ui.text.TextStyle
 import com.adamglin.compose.markdown.compose.MathRenderer
 import com.hrm.latex.renderer.Latex
 import com.hrm.latex.renderer.model.LatexConfig
@@ -30,19 +26,12 @@ public class HuarangmengMathRenderer : MathRenderer {
     }
 
     @Composable
-    override fun inlineMathContent(latex: String, fontSize: TextUnit): InlineTextContent =
-        InlineTextContent(
-            placeholder = Placeholder(
-                width = (latex.length.coerceAtLeast(1) * 0.6f).em,
-                height = 1.4.em,
-                placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter,
-            ),
-        ) {
-            Latex(
-                latex = latex,
-                config = LatexConfig(fontSize = fontSize, theme = LatexTheme.auto()),
-            )
-        }
+    override fun InlineMath(latex: String, style: TextStyle) {
+        Latex(
+            latex = latex,
+            config = LatexConfig(fontSize = style.fontSize, theme = LatexTheme.auto()),
+        )
+    }
 }
 
 public class RaTeXMathRenderer : MathRenderer {
@@ -56,18 +45,11 @@ public class RaTeXMathRenderer : MathRenderer {
     }
 
     @Composable
-    override fun inlineMathContent(latex: String, fontSize: TextUnit): InlineTextContent =
-        InlineTextContent(
-            placeholder = Placeholder(
-                width = (latex.length.coerceAtLeast(1) * 0.6f).em,
-                height = 1.4.em,
-                placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter,
-            ),
-        ) {
-            RaTeX(
-                latex = latex,
-                fontSize = fontSize,
-                displayMode = false,
-            )
-        }
+    override fun InlineMath(latex: String, style: TextStyle) {
+        RaTeX(
+            latex = latex,
+            fontSize = style.fontSize,
+            displayMode = false,
+        )
+    }
 }

@@ -100,15 +100,10 @@ object SampleChatDefaults {
         return chunks
     }
 
-    fun createMarkdownEngine(): MarkdownEngine = MarkdownEngine(
-        dialect = MarkdownDialect.GfmMath,
-    )
+    val dialect: MarkdownDialect = MarkdownDialect.GfmMath
 
-    fun finalSnapshot(
-        message: String,
-        engineFactory: () -> MarkdownEngine = { createMarkdownEngine() },
-    ): MarkdownSnapshot {
-        val engine = engineFactory()
+    fun finalSnapshot(message: String): MarkdownSnapshot {
+        val engine = MarkdownEngine(dialect)
         createStreamingChunks(message).forEach(engine::append)
         return engine.finish().snapshot
     }
