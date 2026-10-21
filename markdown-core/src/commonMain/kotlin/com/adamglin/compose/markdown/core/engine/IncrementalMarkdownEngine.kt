@@ -178,7 +178,7 @@ internal class IncrementalMarkdownEngine(
                 lineCount = lineIndex.lineCount(),
                 blocks = blocks,
             ),
-            stablePrefixRange = TextRange(start = 0, endExclusive = stablePrefixEnd),
+            stablePrefixEnd = stablePrefixEnd,
             isFinal = isFinal,
         )
         val stats = ParseStats(
@@ -191,7 +191,6 @@ internal class IncrementalMarkdownEngine(
         )
         inlineCache.endCall()
         return ParseDelta(
-            version = version,
             changedBlocks = changedBlocks,
             removedBlockIds = removedBlockIds,
             dirtyRegion = TextRange(start = dirtyStart, endExclusive = sourceLength),
@@ -201,7 +200,6 @@ internal class IncrementalMarkdownEngine(
     }
 
     private fun noChangeDelta(): ParseDelta = ParseDelta(
-        version = snapshot.version,
         changedBlocks = emptyList(),
         removedBlockIds = emptyList(),
         dirtyRegion = TextRange(start = source.length, endExclusive = source.length),
@@ -213,7 +211,7 @@ internal class IncrementalMarkdownEngine(
         version = 0L,
         dialect = dialect,
         document = MarkdownDocument(sourceLength = 0, lineCount = 0, blocks = emptyList()),
-        stablePrefixRange = TextRange.Empty,
+        stablePrefixEnd = 0,
         isFinal = false,
     )
 }

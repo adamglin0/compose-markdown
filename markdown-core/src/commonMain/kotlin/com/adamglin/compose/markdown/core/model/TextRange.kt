@@ -16,8 +16,4 @@ public data class TextRange(
         get() = start == endExclusive
 
     public fun contains(offset: Int): Boolean = offset in start until endExclusive
-
-    internal companion object {
-        val Empty = TextRange(start = 0, endExclusive = 0)
-    }
 }

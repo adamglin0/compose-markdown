@@ -137,14 +137,6 @@ private fun BlockNode.debugShape(depth: Int): String {
             }
         }
 
-        is BlockNode.Document -> buildString {
-            append("${indent}document")
-            children.forEach { child ->
-                append('\n')
-                append(child.debugShape(depth + 1))
-            }
-        }
-
         is BlockNode.FencedCodeBlock -> "${indent}fence(info=${infoString ?: "-"}, closed=$isClosed, literal=${literal.replace("\n", "\\n")})"
         is BlockNode.Heading -> "${indent}heading(level=$level, text=${children.inlineLiteral()})"
         is BlockNode.ListBlock -> buildString {

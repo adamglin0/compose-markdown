@@ -44,13 +44,10 @@ public final class com/adamglin/compose/markdown/core/dialect/MarkdownDialect$Gf
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockChange {
-	public synthetic fun <init> (JLjava/lang/Integer;ILcom/adamglin/compose/markdown/core/model/BlockNode;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Ljava/lang/Integer;
 	public final fun component3 ()I
 	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/BlockNode;
-	public final fun copy--iBrWDo (JLjava/lang/Integer;ILcom/adamglin/compose/markdown/core/model/BlockNode;)Lcom/adamglin/compose/markdown/core/model/BlockChange;
-	public static synthetic fun copy--iBrWDo$default (Lcom/adamglin/compose/markdown/core/model/BlockChange;JLjava/lang/Integer;ILcom/adamglin/compose/markdown/core/model/BlockNode;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockChange;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBlock ()Lcom/adamglin/compose/markdown/core/model/BlockNode;
 	public final fun getId-dG1Ao-A ()J
@@ -61,7 +58,6 @@ public final class com/adamglin/compose/markdown/core/model/BlockChange {
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockId {
-	public static final field Companion Lcom/adamglin/compose/markdown/core/model/BlockId$Companion;
 	public static final synthetic fun box-impl (J)Lcom/adamglin/compose/markdown/core/model/BlockId;
 	public static fun constructor-impl (J)J
 	public fun equals (Ljava/lang/Object;)Z
@@ -73,10 +69,6 @@ public final class com/adamglin/compose/markdown/core/model/BlockId {
 	public fun toString ()Ljava/lang/String;
 	public static fun toString-impl (J)Ljava/lang/String;
 	public final synthetic fun unbox-impl ()J
-}
-
-public final class com/adamglin/compose/markdown/core/model/BlockId$Companion {
-	public final fun getDocument-dG1Ao-A ()J
 }
 
 public abstract interface class com/adamglin/compose/markdown/core/model/BlockNode {
@@ -93,23 +85,6 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$BlockQuote
 	public final fun component4 ()Ljava/util/List;
 	public final fun copy--iBrWDo (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;)Lcom/adamglin/compose/markdown/core/model/BlockNode$BlockQuote;
 	public static synthetic fun copy--iBrWDo$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$BlockQuote;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$BlockQuote;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getChildren ()Ljava/util/List;
-	public fun getId-dG1Ao-A ()J
-	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
-	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/adamglin/compose/markdown/core/model/BlockNode$Document : com/adamglin/compose/markdown/core/model/BlockNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1-dG1Ao-A ()J
-	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
-	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
-	public final fun component4 ()Ljava/util/List;
-	public final fun copy--iBrWDo (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;)Lcom/adamglin/compose/markdown/core/model/BlockNode$Document;
-	public static synthetic fun copy--iBrWDo$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$Document;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$Document;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public fun getId-dG1Ao-A ()J
@@ -565,37 +540,27 @@ public final class com/adamglin/compose/markdown/core/model/ListType$Ordered : c
 }
 
 public final class com/adamglin/compose/markdown/core/model/MarkdownDocument {
-	public fun <init> (IILjava/util/List;)V
 	public final fun component1 ()I
 	public final fun component2 ()I
 	public final fun component3 ()Ljava/util/List;
-	public final fun copy (IILjava/util/List;)Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;
-	public static synthetic fun copy$default (Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;IILjava/util/List;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBlocks ()Ljava/util/List;
 	public final fun getLineCount ()I
-	public final fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
-	public final fun getRoot ()Lcom/adamglin/compose/markdown/core/model/BlockNode$Document;
 	public final fun getSourceLength ()I
-	public final fun getSourceRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/adamglin/compose/markdown/core/model/MarkdownSnapshot {
-	public fun <init> (JLcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;Lcom/adamglin/compose/markdown/core/model/TextRange;Z)V
 	public final fun component1 ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;
-	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component4 ()I
 	public final fun component5 ()Z
-	public final fun copy (JLcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;Lcom/adamglin/compose/markdown/core/model/TextRange;Z)Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;
-	public static synthetic fun copy$default (Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;JLcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;Lcom/adamglin/compose/markdown/core/model/TextRange;ZILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDialect ()Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;
 	public final fun getDocument ()Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;
 	public final fun getStablePrefixEnd ()I
-	public final fun getStablePrefixRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun getVersion ()J
 	public fun hashCode ()I
 	public final fun isFinal ()Z
@@ -619,36 +584,28 @@ public final class com/adamglin/compose/markdown/core/model/MathInlineDelimiter 
 }
 
 public final class com/adamglin/compose/markdown/core/model/ParseDelta {
-	public fun <init> (JLjava/util/List;Ljava/util/List;Lcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;Lcom/adamglin/compose/markdown/core/model/ParseStats;)V
-	public final fun component1 ()J
+	public final fun component1 ()Ljava/util/List;
 	public final fun component2 ()Ljava/util/List;
-	public final fun component3 ()Ljava/util/List;
-	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
-	public final fun component5 ()Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;
-	public final fun component6 ()Lcom/adamglin/compose/markdown/core/model/ParseStats;
-	public final fun copy (JLjava/util/List;Ljava/util/List;Lcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;Lcom/adamglin/compose/markdown/core/model/ParseStats;)Lcom/adamglin/compose/markdown/core/model/ParseDelta;
-	public static synthetic fun copy$default (Lcom/adamglin/compose/markdown/core/model/ParseDelta;JLjava/util/List;Ljava/util/List;Lcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;Lcom/adamglin/compose/markdown/core/model/ParseStats;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/ParseDelta;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;
+	public final fun component5 ()Lcom/adamglin/compose/markdown/core/model/ParseStats;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChangedBlocks ()Ljava/util/List;
 	public final fun getDirtyRegion ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun getRemovedBlockIds ()Ljava/util/List;
 	public final fun getSnapshot ()Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;
 	public final fun getStats ()Lcom/adamglin/compose/markdown/core/model/ParseStats;
-	public final fun getVersion ()J
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/adamglin/compose/markdown/core/model/ParseStats {
-	public fun <init> (IIIIII)V
 	public final fun component1 ()I
 	public final fun component2 ()I
 	public final fun component3 ()I
 	public final fun component4 ()I
 	public final fun component5 ()I
 	public final fun component6 ()I
-	public final fun copy (IIIIII)Lcom/adamglin/compose/markdown/core/model/ParseStats;
-	public static synthetic fun copy$default (Lcom/adamglin/compose/markdown/core/model/ParseStats;IIIIIIILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/ParseStats;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAppendedChars ()I
 	public final fun getBuiltBlocks ()I

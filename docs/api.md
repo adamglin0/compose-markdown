@@ -48,28 +48,21 @@ The syntax each dialect enables is listed in [dialects.md](dialects.md). The fea
 ```kotlin
 package com.adamglin.compose.markdown.core.model
 
-public data class MarkdownSnapshot(
+public data class MarkdownSnapshot internal constructor(
     val version: Long,
     val dialect: MarkdownDialect,
     val document: MarkdownDocument,
-    val stablePrefixRange: TextRange,
+    val stablePrefixEnd: Int,
     val isFinal: Boolean,
-) {
-    public val stablePrefixEnd: Int
-}
+)
 
-public data class MarkdownDocument(
+public data class MarkdownDocument internal constructor(
     val sourceLength: Int,
     val lineCount: Int,
-    val blocks: List<BlockNode>,       // top-level blocks
-) {
-    public val sourceRange: TextRange
-    public val lineRange: LineRange
-    public val root: BlockNode.Document // `blocks` wrapped in a document node with id BlockId.Document
-}
+    val blocks: List<BlockNode>, // top-level blocks
+)
 
-public data class ParseDelta(
-    val version: Long,
+public data class ParseDelta internal constructor(
     val changedBlocks: List<BlockChange>,
     val removedBlockIds: List<BlockId>,
     val dirtyRegion: TextRange,
@@ -77,9 +70,9 @@ public data class ParseDelta(
     val stats: ParseStats,
 )
 
-public data class BlockChange(val id: BlockId, val oldIndex: Int?, val newIndex: Int, val block: BlockNode)
+public data class BlockChange internal constructor(val id: BlockId, val oldIndex: Int?, val newIndex: Int, val block: BlockNode)
 
-public data class ParseStats(
+public data class ParseStats internal constructor(
     val appendedChars: Int,
     val processedLines: Int,
     val builtBlocks: Int,
@@ -88,6 +81,8 @@ public data class ParseStats(
     val inlineCacheHitBlockCount: Int,
 )
 ```
+
+Only the engine creates snapshots, documents, deltas and stats (their constructors and `copy` are internal), so they always satisfy the guarantees below. Nodes, ranges and ids have public constructors so apps can build documents for previews and renderer tests.
 
 - `changedBlocks` lists the top-level blocks that are new, moved or changed, in document order. `oldIndex` is `null` for an inserted block. Nested changes show up as a changed top-level block.
 - `removedBlockIds` lists the ids, at any depth, that were in the previous snapshot and are not in this one.
@@ -101,7 +96,6 @@ public data class ParseStats(
 
 | Node | Content |
 | --- | --- |
-| `Document` | `children` (only from `MarkdownDocument.root`) |
 | `Paragraph` | `children: List<InlineNode>` |
 | `Heading` | `level` (1-6), `children`, `style: HeadingStyle` (`Atx`, `Setext`) |
 | `FencedCodeBlock` | `infoString`, `languageHint` (the first word of the info string, lowercased, with common aliases such as `kt` mapped to `kotlin`), `literal`, `isClosed` |
@@ -131,9 +125,9 @@ public data class ParseStats(
 
 ### Guarantees
 
-- Snapshots never change. A later `append()` returns a new snapshot, and `version` grows with every call that changes state.
+- Snapshots never change. Every call that adds text, and the first `finish()`, returns a new snapshot with a higher `version`; a call that changes nothing (such as an empty chunk) returns the previous snapshot.
 - **Streaming is invisible.** After every `append()`, the snapshot equals what a fresh engine produces for the same source in one `append()`. After `finish()`, it equals a one-shot parse followed by `finish()`. This holds in every dialect, however the input is split into chunks.
-- **Stable prefix.** `stablePrefixRange` is `[0, stablePrefixEnd)`. It ends at a top-level block boundary, never moves backward within a session, and covers the whole source after `finish()`. Its top-level blocks keep their index, id, range and structure in every later snapshot and are never parsed again. Their inline content changes only when a link reference definition later in the document defines a label they use; the block is then reported in `changedBlocks` at the same index.
+- **Stable prefix.** The stable prefix is `[0, stablePrefixEnd)`. It ends at a top-level block boundary, never moves backward within a session, and covers the whole source after `finish()`. Its top-level blocks keep their index, id, range and structure in every later snapshot and are never parsed again. Their inline content changes only when a link reference definition later in the document defines a label they use; the block is then reported in `changedBlocks` at the same index.
 - **Stable ids.** A closed block keeps its id for good. A block of the mutable tail keeps its id while it keeps its identity (kind, start offset, depth and a discriminator such as heading level or list marker type). Ids are unique within a snapshot.
 - Open fenced code and math blocks appear in non-final snapshots with `isClosed = false`. After `finish()`, `isClosed = false` still means the source has no closing fence.
 - Link reference definitions are not blocks; they are resolved into `Link` and `Image` nodes.

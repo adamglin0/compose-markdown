@@ -17,13 +17,4 @@ class StableIdTest {
             second.snapshot.document.blocks.single().id,
         )
     }
-
-    @Test
-    fun documentRootUsesReservedStableId() {
-        val engine = MarkdownEngine()
-
-        val snapshot = engine.append("hello").snapshot
-
-        assertEquals(BlockId.Document, snapshot.document.root.id)
-    }
 }

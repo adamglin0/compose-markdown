@@ -5,13 +5,6 @@ public sealed interface BlockNode {
     public val range: TextRange
     public val lineRange: LineRange
 
-    public data class Document(
-        override val id: BlockId,
-        override val range: TextRange,
-        override val lineRange: LineRange,
-        val children: List<BlockNode>,
-    ) : BlockNode
-
     public data class Paragraph(
         override val id: BlockId,
         override val range: TextRange,
@@ -150,7 +143,8 @@ public enum class MathBlockDelimiter {
     Bracket,
 }
 
-public data class BlockChange(
+@ConsistentCopyVisibility
+public data class BlockChange internal constructor(
     val id: BlockId,
     val oldIndex: Int?,
     val newIndex: Int,

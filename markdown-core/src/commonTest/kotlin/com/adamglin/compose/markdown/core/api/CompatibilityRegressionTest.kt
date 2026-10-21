@@ -278,7 +278,6 @@ private val streamingCases = listOf(
 private fun List<BlockNode>.debugShape(): String = joinToString(separator = "\n") { block ->
     when (block) {
         is BlockNode.BlockQuote -> "quote(${block.children.debugShape()})"
-        is BlockNode.Document -> "document(${block.children.debugShape()})"
         is BlockNode.FencedCodeBlock -> "fence(${block.infoString ?: "-"},${if (block.isClosed) "closed" else "open"},${block.literal.replace("\n", "\\n")})"
         is BlockNode.Heading -> "heading(${block.level},${block.style.name.lowercase()},${block.children.debugInline()})"
         is BlockNode.ListBlock -> "list(${block.styleName},${if (block.isLoose) "loose" else "tight"},${block.debugItems()})"

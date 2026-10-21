@@ -138,7 +138,6 @@ private inline fun BlockNode.forEachBlock(action: (BlockNode) -> Unit) {
 
 private fun BlockNode.childBlocks(): List<BlockNode> = when (this) {
     is BlockNode.BlockQuote -> children
-    is BlockNode.Document -> children
     is BlockNode.ListBlock -> items
     is BlockNode.ListItem -> children
     is BlockNode.TableBlock -> listOf(header) + rows

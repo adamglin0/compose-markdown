@@ -36,7 +36,6 @@ internal object SpecHtmlRenderer {
 
         fun block(block: BlockNode, tight: Boolean) {
             when (block) {
-                is BlockNode.Document -> block.children.forEach { block(it, tight = false) }
                 is BlockNode.Paragraph -> if (tight) {
                     inlines(block.children)
                 } else {
