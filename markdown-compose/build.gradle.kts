@@ -16,7 +16,6 @@ kotlin {
     explicitApi()
     abiValidation {
         enabled = true
-        // iOS dumps cannot be generated on Linux CI; they are carried over from the committed dump there.
         klib { enabled = true }
     }
 
@@ -58,8 +57,4 @@ kotlin {
             implementation(compose.desktop.currentOs)
         }
     }
-}
-
-composeCompiler {
-    stabilityConfigurationFiles.add(layout.projectDirectory.file("compose-stability.conf"))
 }

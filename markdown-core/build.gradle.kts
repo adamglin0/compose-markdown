@@ -14,7 +14,6 @@ kotlin {
     explicitApi()
     abiValidation {
         enabled = true
-        // iOS dumps cannot be generated on Linux CI; they are carried over from the committed dump there.
         klib { enabled = true }
     }
 
