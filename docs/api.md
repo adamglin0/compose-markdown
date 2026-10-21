@@ -197,7 +197,9 @@ public class MarkdownComponents(
     public val table: @Composable MarkdownBlockScope<BlockNode.TableBlock>.() -> Unit = { DefaultContent() },
     public val thematicBreak: @Composable MarkdownBlockScope<BlockNode.ThematicBreak>.() -> Unit = { DefaultContent() },
     public val image: (@Composable (MarkdownImage) -> Unit)? = null, // null shows alt text
-)
+) {
+    public fun copy(/* every slot, defaulting to this instance's */): MarkdownComponents
+}
 @Stable public interface MarkdownBlockScope<out T : BlockNode> {
     val block: T
     @Composable fun DefaultContent(modifier: Modifier = Modifier)
@@ -230,6 +232,7 @@ Components rules:
 - `blockQuote` and `listItem` render their nested blocks through `Children()`, so nested content keeps its own slots and streaming behavior. A list item's `DefaultContent()` is its `Children()`; a quote's adds the quote surface.
 - `HighlightedCode()` is the code text of the built-in code block: theme code style, horizontal scroll with `contentPadding` inside it, colored by `codeHighlighter` once the fence is closed.
 - `mathBlock`'s `DefaultContent()` calls `MathRenderer.BlockMath` once the block is closed and shows the LaTeX source before. Inline math stays with `MathRenderer.InlineMath`: it is measured and embedded in its line of text, which a block slot cannot do.
+- `copy(...)` derives a set from another, replacing only the slots passed, e.g. a screen that adjusts the app's shared components.
 - `image` is the only nullable slot: without it, images are plain alt text in the line; with it, each image is composed, measured and embedded in the line.
 - `MarkdownComponents` may be a new instance on every call (as it is in a `LazyListScope` builder). The renderer keeps each slot in its own state and reads it in the composable that invokes the slot: a slot whose lambda changed re-runs for every composed element of its kind (in a lazy list, the visible ones), and nothing else re-runs; a slot with the same lambda (a default, a non-capturing lambda, or a lambda remembered in composition) re-runs nothing. Hoist or `remember` a capturing slot that would otherwise change on every chunk.
 - Replacing a slot also replaces the semantics of the default: a custom `heading` should set `heading()` semantics, a custom `taskCheckbox` the checkbox role and toggle state.

@@ -194,6 +194,18 @@ class MarkdownComponentsTest {
     }
 
     @Test
+    fun copyReplacesOnlyTheGivenSlots() = runComposeUiTest {
+        val base = MarkdownComponents(
+            heading = { BasicText("base heading") },
+            thematicBreak = { BasicText("base rule") },
+        )
+        setContent { Markdown("# Head\n\n---", components = base.copy(heading = { BasicText("copied heading") })) }
+        onNodeWithText("copied heading").assertExists()
+        onNodeWithText("base heading").assertDoesNotExist()
+        onNodeWithText("base rule").assertExists()
+    }
+
+    @Test
     fun lazyEntryUsesComponents() = runComposeUiTest {
         setContent {
             val document = rememberMarkdownDocument("# Head\n\n---")
@@ -211,6 +223,24 @@ class MarkdownComponentsTest {
         onNodeWithText("anchor 1").assertExists()
         onNodeWithText("Head").assertExists()
         onNodeWithText("custom rule").assertExists()
+    }
+
+    @Test
+    fun lazyEntryFollowsChangedComponents() = runComposeUiTest {
+        var label by mutableStateOf("first")
+        setContent {
+            val document = rememberMarkdownDocument("# Head\n\nbody")
+            val current = label
+            LazyColumn {
+                markdown(document, key = "doc", components = MarkdownComponents(heading = { BasicText("$current ${block.level}") }))
+            }
+        }
+        onNodeWithText("first 1").assertExists()
+        label = "second"
+        waitForIdle()
+        onNodeWithText("second 1").assertExists()
+        onNodeWithText("first 1").assertDoesNotExist()
+        onNodeWithText("body").assertExists()
     }
 
     private enum class Mode { Replace, Decorate }

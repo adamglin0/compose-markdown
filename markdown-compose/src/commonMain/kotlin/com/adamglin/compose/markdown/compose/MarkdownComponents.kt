@@ -24,6 +24,8 @@ import com.adamglin.compose.markdown.core.model.ListType
  * )
  * ```
  *
+ * Derive a variant of a shared set with [copy], e.g. `ChatComponents.copy(heading = { ... })`.
+ *
  * A slot runs with its scope as receiver: the scope carries the element's data and
  * `DefaultContent()`, the built-in rendering, so a slot can decorate the default or replace it.
  * Containers render their child blocks through the library (`Children()`), so nested content keeps
@@ -67,7 +69,36 @@ public class MarkdownComponents(
     public val table: @Composable MarkdownBlockScope<BlockNode.TableBlock>.() -> Unit = { DefaultContent() },
     public val thematicBreak: @Composable MarkdownBlockScope<BlockNode.ThematicBreak>.() -> Unit = { DefaultContent() },
     public val image: (@Composable (MarkdownImage) -> Unit)? = null,
-)
+) {
+    /** These components with the given slots replaced, e.g. to adjust a shared set for one screen. */
+    public fun copy(
+        paragraph: @Composable MarkdownBlockScope<BlockNode.Paragraph>.() -> Unit = this.paragraph,
+        heading: @Composable MarkdownBlockScope<BlockNode.Heading>.() -> Unit = this.heading,
+        codeBlock: @Composable MarkdownCodeBlockScope.() -> Unit = this.codeBlock,
+        mathBlock: @Composable MarkdownBlockScope<BlockNode.MathBlock>.() -> Unit = this.mathBlock,
+        blockQuote: @Composable MarkdownContainerScope<BlockNode.BlockQuote>.() -> Unit = this.blockQuote,
+        list: @Composable MarkdownBlockScope<BlockNode.ListBlock>.() -> Unit = this.list,
+        listItem: @Composable MarkdownContainerScope<BlockNode.ListItem>.() -> Unit = this.listItem,
+        listMarker: @Composable MarkdownListMarkerScope.() -> Unit = this.listMarker,
+        taskCheckbox: @Composable MarkdownBlockScope<BlockNode.ListItem>.() -> Unit = this.taskCheckbox,
+        table: @Composable MarkdownBlockScope<BlockNode.TableBlock>.() -> Unit = this.table,
+        thematicBreak: @Composable MarkdownBlockScope<BlockNode.ThematicBreak>.() -> Unit = this.thematicBreak,
+        image: (@Composable (MarkdownImage) -> Unit)? = this.image,
+    ): MarkdownComponents = MarkdownComponents(
+        paragraph = paragraph,
+        heading = heading,
+        codeBlock = codeBlock,
+        mathBlock = mathBlock,
+        blockQuote = blockQuote,
+        list = list,
+        listItem = listItem,
+        listMarker = listMarker,
+        taskCheckbox = taskCheckbox,
+        table = table,
+        thematicBreak = thematicBreak,
+        image = image,
+    )
+}
 
 /** The element a [MarkdownComponents] slot renders, and its built-in rendering. */
 @Stable

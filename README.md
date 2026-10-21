@@ -150,7 +150,7 @@ Without a renderer, math shows its LaTeX source. A math block that has not been 
 
 ### Components
 
-`MarkdownComponents` has one slot per element: `paragraph`, `heading`, `codeBlock`, `mathBlock`, `blockQuote`, `list`, `listItem`, `listMarker`, `taskCheckbox`, `table`, `thematicBreak` and `image`. A slot runs with a scope as receiver. The scope holds the element's data (`block`, the parsed node, or the fields of a code block or list marker) and `DefaultContent()`, the built-in rendering, so a slot can wrap the default or replace it. `blockQuote` and `listItem` also get `Children()`, which renders the nested blocks with their own slots. Slots you leave out keep the built-in rendering.
+`MarkdownComponents` has one slot per element: `paragraph`, `heading`, `codeBlock`, `mathBlock`, `blockQuote`, `list`, `listItem`, `listMarker`, `taskCheckbox`, `table`, `thematicBreak` and `image`. A slot runs with a scope as receiver. The scope holds the element's data (`block`, the parsed node, or the fields of a code block or list marker) and `DefaultContent()`, the built-in rendering, so a slot can wrap the default or replace it. `blockQuote` and `listItem` also get `Children()`, which renders the nested blocks with their own slots. Slots you leave out keep the built-in rendering, and `copy(...)` derives a variant of a shared set, such as `ChatComponents.copy(image = { ... })`.
 
 A code block with a header that shows the language and a copy button, around the built-in highlighted code:
 
