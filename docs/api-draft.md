@@ -29,7 +29,6 @@ data class MarkdownSnapshot(
     val dialect: MarkdownDialect,
     val document: MarkdownDocument,
     val stablePrefixRange: TextRange,
-    val dirtyRegion: TextRange,
     val isFinal: Boolean,
 )
 
@@ -42,14 +41,10 @@ data class MarkdownDocument(
 data class ParseDelta(
     val version: Long,
     val changedBlocks: List<BlockChange>,
-    val insertedBlockIds: List<BlockId>,
-    val updatedBlockIds: List<BlockId>,
     val removedBlockIds: List<BlockId>,
-    val stablePrefixRange: TextRange,
     val dirtyRegion: TextRange,
     val snapshot: MarkdownSnapshot,
     val stats: ParseStats,
-    val hasStateChange: Boolean,
 )
 ```
 
@@ -71,7 +66,6 @@ Represents the latest displayable state. It contains:
 - the active dialect,
 - the immutable document,
 - the current stable prefix boundary,
-- the current dirty region,
 - whether the stream is final.
 
 ### `MarkdownDocument`
@@ -82,11 +76,9 @@ Represents the parsed document model at one version. It is immutable and range-b
 
 Describes what changed after one append or finish operation:
 
-- updated or inserted blocks,
-- explicit inserted and updated block ID sets,
+- top-level blocks that are new, moved or changed, with old and new index (an old index of `null` means inserted),
 - removed block IDs,
-- the dirty region used by incremental reparsing,
-- whether the operation changed externally observable engine state even when block diffs stayed empty,
+- the dirty region the call parsed,
 - the post-update snapshot.
 
 ## Additional Public Types
@@ -118,17 +110,12 @@ data class BlockChange(
 )
 
 data class ParseStats(
-    val parsedBlockCount: Int,
-    val changedBlockCount: Int,
-    val reusedBlockCount: Int,
-    val inlineParsedBlockCount: Int,
-    val inlineCacheHitBlockCount: Int,
     val appendedChars: Int,
     val processedLines: Int,
     val reparsedBlocks: Int,
     val preservedBlocks: Int,
-    val fallbackCount: Int,
-    val fallbackReason: String?,
+    val inlineParsedBlockCount: Int,
+    val inlineCacheHitBlockCount: Int,
 )
 ```
 
@@ -140,21 +127,28 @@ data class ParseStats(
 
 - `version` increases after every successful state mutation.
 - `snapshot()` is always safe to call after any `append()`.
-- `stablePrefixRange` never moves backward unless `reset()` is called.
+- streaming is invisible: after every `append()` the snapshot equals a one-shot parse of the same source, and after `finish()` it equals a one-shot parse followed by `finish()`, however the input was split into chunks.
 - `append()` after `finish()` fails with a clear error until `reset()` is called or a new engine is created.
 - block IDs stay stable while a block's identity is preserved across reparses.
-- `hasStateChange` is true whenever the returned snapshot differs from the previous snapshot, including `finish()` transitions that only change `isFinal` or `stablePrefixRange`.
-- `dirtyRegion` covers the earliest source offset the current engine actually reparsed; in the normal append path this is the mutable-tail boundary rather than `0`.
+- `dirtyRegion` is the source range the call parsed: from the previous stable prefix end to the end of input.
+- top-level blocks not listed in `changedBlocks` are unchanged; `removedBlockIds` lists every block id, at any depth, that left the document.
 - snapshots are safe for UI read access because they expose immutable values only.
 
-## Stage 5 Incremental Metrics
+### Stable Prefix Contract
+
+`MarkdownSnapshot.stablePrefixRange` is `[0, stablePrefixEnd)`:
+
+- it ends at a top-level block boundary: the start of the first top-level block that later input can still change (or the end of the last complete line when no block is open);
+- it never moves backward unless `reset()` is called, and it covers the whole source after `finish()`;
+- its top-level blocks keep their index, id, range and structure in every later snapshot and are never re-parsed;
+- their inline content changes only when a link reference definition later in the document defines a label they use; the block is then reported in `changedBlocks` with the same index.
+
+## Incremental Metrics
 
 - `ParseDelta.changedBlocks` is reported at the top-level block list only; nested children are reflected through the replacement block payloads.
-- `insertedBlockIds` and `updatedBlockIds` are derived from the top-level delta classification.
-- `ParseStats.parsedBlockCount` / `reparsedBlocks` count reparsed top-level tail blocks for the current update.
-- `ParseStats.reusedBlockCount` / `preservedBlocks` count top-level blocks preserved from block cache.
-- `ParseStats.inlineParsedBlockCount` and `inlineCacheHitBlockCount` are counted on text-bearing reparsed blocks (`Paragraph`/`Heading`) during inline hydration.
-- `fallbackCount` and `fallbackReason` remain reserved diagnostic fields; the current Stage 5 engine keeps them at `0` / `null`.
+- `ParseStats.reparsedBlocks` counts the top-level blocks the block parser produced for the call, plus stable blocks whose inline content was resolved again for a changed definition.
+- `ParseStats.preservedBlocks` counts stable top-level blocks carried over untouched.
+- `ParseStats.inlineParsedBlockCount` and `inlineCacheHitBlockCount` count leaf blocks (paragraphs, headings, table cells) at any depth whose inline content was parsed or reused from the cache.
 
 ## Deferred Surface Area
 
@@ -169,7 +163,7 @@ Not part of the initial public API:
 
 ## Stage 5 Stop Point
 
-Stage 5 freezes the append-only incremental contract: stable prefix reuse, mutable-tail reparsing, newline normalization before parsing, and explicit dirty-region reporting are now part of the expected engine behavior.
+Stage 5 freezes the append-only incremental contract: the stable prefix contract above, mutable-tail reparsing, newline normalization before parsing, and explicit dirty-region reporting are part of the expected engine behavior.
 
 ## Compose Renderer API (`markdown-compose`)
 

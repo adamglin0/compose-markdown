@@ -66,8 +66,8 @@ Inline nodes nested deeper than 32 levels (emphasis, links, images) are kept as 
 ## ParseStats Note
 
 - `ParseStats` keeps block-level counters and includes inline counters:
-  - `inlineParsedBlockCount`: blocks that actually ran inline parsing in this rebuild.
-  - `inlineCacheHitBlockCount`: unchanged blocks resolved by inline cache reuse.
+  - `inlineParsedBlockCount`: blocks that actually ran inline parsing in this call.
+  - `inlineCacheHitBlockCount`: tail blocks whose raw text, range and definitions in effect were unchanged, so the cached result was reused.
 
 ## Requirement -> Tests
 

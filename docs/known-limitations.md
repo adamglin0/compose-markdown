@@ -20,7 +20,8 @@
 
 ## Incremental Model And Performance
 
-- mutable-tail reparsing is localized, but immutable snapshot rebuild and delta classification still scale with the current top-level block list
+- the mutable tail is re-parsed from its first block on every append, so one huge open top-level block (a 100KB list, fence or paragraph) costs time proportional to its size per append; documents made of many ordinary blocks stream in time proportional to the tail
+- a link reference definition on the unterminated last line takes effect only once the line ends (or at `finish()`)
 - performance measurements are documented from the JVM benchmark runner only; no equivalent native or JS benchmark suite ships yet
 - `ParseStats` is diagnostic surface area, not a hard complexity guarantee
 

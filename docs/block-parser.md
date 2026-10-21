@@ -43,7 +43,7 @@ When a block closes it is finalized: a paragraph moves its leading link referenc
 - headings, thematic breaks, single-line math and closed fences are never open, because no later line can change them;
 - when the last line has no line ending yet, it may still grow into a different block start, so the blocks it closed are reported as open.
 
-The engine uses the first frame's offset as the end of the stable prefix and starts the next reparse there.
+The engine uses the first frame's offset as the end of the stable prefix (capped at the start of an unterminated last line) and restarts the next parse there, so parsing from a top-level block boundary must yield the same blocks as parsing from the start of the document. See `incremental-engine.md`.
 
 ## Limitations
 
