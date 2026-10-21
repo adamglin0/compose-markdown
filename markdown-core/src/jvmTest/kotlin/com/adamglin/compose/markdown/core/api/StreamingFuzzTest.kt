@@ -12,6 +12,8 @@ import kotlin.test.assertTrue
  * Streams random block-heavy documents in random chunks and checks the incremental contract: every
  * intermediate snapshot equals a one-shot parse of the same prefix, the final snapshot equals a one-shot
  * parse of the whole document, and the stable prefix never moves backward nor changes the blocks it covers.
+ * It runs on the JVM only, where it takes a second or two; the same code is far slower on Kotlin/Native
+ * debug builds and the browser targets.
  */
 class StreamingFuzzTest {
     @Test
@@ -82,7 +84,7 @@ class StreamingFuzzTest {
     private fun String.debug(): String = replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t")
 
     private companion object {
-        // Larger counts and other seeds were run locally; this keeps the test fast on every target.
+        // Larger counts and other seeds were run locally; this keeps the test fast.
         const val DOCUMENT_COUNT = 300
         const val SEED = 20261021
 

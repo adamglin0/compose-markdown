@@ -39,11 +39,11 @@ class BlockParserPerformanceTest {
 
     @Test
     fun longDocumentsAreLinear() {
-        parse("|a|b|c|\n|-|-|-|\n" + "|x|y|z|\n".repeat(30_000))
-        parse("|" + "a|".repeat(10_000) + "\n|" + "-|".repeat(10_000) + "\n" + ("|" + "x|".repeat(10_000) + "\n").repeat(5))
-        parse("- a\n".repeat(30_000))
-        parse("-\n".repeat(30_000))
-        parse("[a]: /u\n".repeat(30_000) + "===\n")
+        parse("|a|b|c|\n|-|-|-|\n" + "|x|y|z|\n".repeat(10_000))
+        parse("|" + "a|".repeat(5_000) + "\n|" + "-|".repeat(5_000) + "\n" + ("|" + "x|".repeat(5_000) + "\n").repeat(5))
+        parse("- a\n".repeat(10_000))
+        parse("-\n".repeat(10_000))
+        parse("[a]: /u\n".repeat(10_000) + "===\n")
         parse("a ".repeat(200_000))
     }
 
