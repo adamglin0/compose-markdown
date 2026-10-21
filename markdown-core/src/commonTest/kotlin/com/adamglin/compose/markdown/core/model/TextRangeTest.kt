@@ -15,13 +15,4 @@ class TextRangeTest {
         assertTrue(range.contains(4))
         assertFalse(range.contains(5))
     }
-
-    @Test
-    fun unionProducesSmallestCoveringRange() {
-        val left = TextRange(start = 2, endExclusive = 5)
-        val right = TextRange(start = 4, endExclusive = 9)
-
-        assertEquals(TextRange(start = 2, endExclusive = 9), left.union(right))
-        assertTrue(left.intersects(right))
-    }
 }

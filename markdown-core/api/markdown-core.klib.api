@@ -1,0 +1,897 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, js, wasmJs]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <com.adamglin.compose.markdown:markdown-core>
+final enum class com.adamglin.compose.markdown.core.model/HeadingStyle : kotlin/Enum<com.adamglin.compose.markdown.core.model/HeadingStyle> { // com.adamglin.compose.markdown.core.model/HeadingStyle|null[0]
+    enum entry Atx // com.adamglin.compose.markdown.core.model/HeadingStyle.Atx|null[0]
+    enum entry Setext // com.adamglin.compose.markdown.core.model/HeadingStyle.Setext|null[0]
+
+    final val entries // com.adamglin.compose.markdown.core.model/HeadingStyle.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.adamglin.compose.markdown.core.model/HeadingStyle> // com.adamglin.compose.markdown.core.model/HeadingStyle.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.adamglin.compose.markdown.core.model/HeadingStyle // com.adamglin.compose.markdown.core.model/HeadingStyle.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.adamglin.compose.markdown.core.model/HeadingStyle> // com.adamglin.compose.markdown.core.model/HeadingStyle.values|values#static(){}[0]
+}
+
+final enum class com.adamglin.compose.markdown.core.model/MathBlockDelimiter : kotlin/Enum<com.adamglin.compose.markdown.core.model/MathBlockDelimiter> { // com.adamglin.compose.markdown.core.model/MathBlockDelimiter|null[0]
+    enum entry Bracket // com.adamglin.compose.markdown.core.model/MathBlockDelimiter.Bracket|null[0]
+    enum entry Dollar // com.adamglin.compose.markdown.core.model/MathBlockDelimiter.Dollar|null[0]
+
+    final val entries // com.adamglin.compose.markdown.core.model/MathBlockDelimiter.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.adamglin.compose.markdown.core.model/MathBlockDelimiter> // com.adamglin.compose.markdown.core.model/MathBlockDelimiter.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.adamglin.compose.markdown.core.model/MathBlockDelimiter // com.adamglin.compose.markdown.core.model/MathBlockDelimiter.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.adamglin.compose.markdown.core.model/MathBlockDelimiter> // com.adamglin.compose.markdown.core.model/MathBlockDelimiter.values|values#static(){}[0]
+}
+
+final enum class com.adamglin.compose.markdown.core.model/MathInlineDelimiter : kotlin/Enum<com.adamglin.compose.markdown.core.model/MathInlineDelimiter> { // com.adamglin.compose.markdown.core.model/MathInlineDelimiter|null[0]
+    enum entry Dollar // com.adamglin.compose.markdown.core.model/MathInlineDelimiter.Dollar|null[0]
+    enum entry Paren // com.adamglin.compose.markdown.core.model/MathInlineDelimiter.Paren|null[0]
+
+    final val entries // com.adamglin.compose.markdown.core.model/MathInlineDelimiter.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.adamglin.compose.markdown.core.model/MathInlineDelimiter> // com.adamglin.compose.markdown.core.model/MathInlineDelimiter.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.adamglin.compose.markdown.core.model/MathInlineDelimiter // com.adamglin.compose.markdown.core.model/MathInlineDelimiter.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.adamglin.compose.markdown.core.model/MathInlineDelimiter> // com.adamglin.compose.markdown.core.model/MathInlineDelimiter.values|values#static(){}[0]
+}
+
+final enum class com.adamglin.compose.markdown.core.model/TableAlignment : kotlin/Enum<com.adamglin.compose.markdown.core.model/TableAlignment> { // com.adamglin.compose.markdown.core.model/TableAlignment|null[0]
+    enum entry Center // com.adamglin.compose.markdown.core.model/TableAlignment.Center|null[0]
+    enum entry Default // com.adamglin.compose.markdown.core.model/TableAlignment.Default|null[0]
+    enum entry Left // com.adamglin.compose.markdown.core.model/TableAlignment.Left|null[0]
+    enum entry Right // com.adamglin.compose.markdown.core.model/TableAlignment.Right|null[0]
+
+    final val entries // com.adamglin.compose.markdown.core.model/TableAlignment.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.adamglin.compose.markdown.core.model/TableAlignment> // com.adamglin.compose.markdown.core.model/TableAlignment.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.adamglin.compose.markdown.core.model/TableAlignment // com.adamglin.compose.markdown.core.model/TableAlignment.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.adamglin.compose.markdown.core.model/TableAlignment> // com.adamglin.compose.markdown.core.model/TableAlignment.values|values#static(){}[0]
+}
+
+final enum class com.adamglin.compose.markdown.core.model/TaskState : kotlin/Enum<com.adamglin.compose.markdown.core.model/TaskState> { // com.adamglin.compose.markdown.core.model/TaskState|null[0]
+    enum entry Checked // com.adamglin.compose.markdown.core.model/TaskState.Checked|null[0]
+    enum entry Unchecked // com.adamglin.compose.markdown.core.model/TaskState.Unchecked|null[0]
+
+    final val entries // com.adamglin.compose.markdown.core.model/TaskState.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<com.adamglin.compose.markdown.core.model/TaskState> // com.adamglin.compose.markdown.core.model/TaskState.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): com.adamglin.compose.markdown.core.model/TaskState // com.adamglin.compose.markdown.core.model/TaskState.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<com.adamglin.compose.markdown.core.model/TaskState> // com.adamglin.compose.markdown.core.model/TaskState.values|values#static(){}[0]
+}
+
+abstract interface com.adamglin.compose.markdown.core.api/MarkdownEngine { // com.adamglin.compose.markdown.core.api/MarkdownEngine|null[0]
+    abstract val dialect // com.adamglin.compose.markdown.core.api/MarkdownEngine.dialect|{}dialect[0]
+        abstract fun <get-dialect>(): com.adamglin.compose.markdown.core.dialect/MarkdownDialect // com.adamglin.compose.markdown.core.api/MarkdownEngine.dialect.<get-dialect>|<get-dialect>(){}[0]
+
+    abstract fun append(kotlin/String): com.adamglin.compose.markdown.core.model/ParseDelta // com.adamglin.compose.markdown.core.api/MarkdownEngine.append|append(kotlin.String){}[0]
+    abstract fun finish(): com.adamglin.compose.markdown.core.model/ParseDelta // com.adamglin.compose.markdown.core.api/MarkdownEngine.finish|finish(){}[0]
+    abstract fun reset() // com.adamglin.compose.markdown.core.api/MarkdownEngine.reset|reset(){}[0]
+    abstract fun snapshot(): com.adamglin.compose.markdown.core.model/MarkdownSnapshot // com.adamglin.compose.markdown.core.api/MarkdownEngine.snapshot|snapshot(){}[0]
+}
+
+sealed interface com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode|null[0]
+    abstract val id // com.adamglin.compose.markdown.core.model/BlockNode.id|{}id[0]
+        abstract fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.id.<get-id>|<get-id>(){}[0]
+    abstract val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.lineRange|{}lineRange[0]
+        abstract fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+    abstract val range // com.adamglin.compose.markdown.core.model/BlockNode.range|{}range[0]
+        abstract fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.range.<get-range>|<get-range>(){}[0]
+
+    final class BlockQuote : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode>) // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode>){}[0]
+
+        final val children // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.children|{}children[0]
+            final fun <get-children>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.children.<get-children>|<get-children>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.id.<get-id>|<get-id>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.component3|component3(){}[0]
+        final fun component4(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.component4|component4(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> = ...): com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.BlockQuote.toString|toString(){}[0]
+    }
+
+    final class Document : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.Document|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode>) // com.adamglin.compose.markdown.core.model/BlockNode.Document.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode>){}[0]
+
+        final val children // com.adamglin.compose.markdown.core.model/BlockNode.Document.children|{}children[0]
+            final fun <get-children>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> // com.adamglin.compose.markdown.core.model/BlockNode.Document.children.<get-children>|<get-children>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.Document.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.Document.id.<get-id>|<get-id>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.Document.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.Document.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.Document.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.Document.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.Document.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.Document.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.Document.component3|component3(){}[0]
+        final fun component4(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> // com.adamglin.compose.markdown.core.model/BlockNode.Document.component4|component4(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> = ...): com.adamglin.compose.markdown.core.model/BlockNode.Document // com.adamglin.compose.markdown.core.model/BlockNode.Document.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.Document.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.Document.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.Document.toString|toString(){}[0]
+    }
+
+    final class FencedCodeBlock : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, kotlin/String?, kotlin/String?, kotlin/String, kotlin/Boolean) // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.String?;kotlin.String?;kotlin.String;kotlin.Boolean){}[0]
+
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.id.<get-id>|<get-id>(){}[0]
+        final val infoString // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.infoString|{}infoString[0]
+            final fun <get-infoString>(): kotlin/String? // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.infoString.<get-infoString>|<get-infoString>(){}[0]
+        final val isClosed // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.isClosed|{}isClosed[0]
+            final fun <get-isClosed>(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.isClosed.<get-isClosed>|<get-isClosed>(){}[0]
+        final val languageHint // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.languageHint|{}languageHint[0]
+            final fun <get-languageHint>(): kotlin/String? // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.languageHint.<get-languageHint>|<get-languageHint>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val literal // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.literal|{}literal[0]
+            final fun <get-literal>(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.literal.<get-literal>|<get-literal>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.component3|component3(){}[0]
+        final fun component4(): kotlin/String? // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.component4|component4(){}[0]
+        final fun component5(): kotlin/String? // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.component5|component5(){}[0]
+        final fun component6(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.component6|component6(){}[0]
+        final fun component7(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.component7|component7(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., kotlin/String? = ..., kotlin/String? = ..., kotlin/String = ..., kotlin/Boolean = ...): com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.String?;kotlin.String?;kotlin.String;kotlin.Boolean){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.FencedCodeBlock.toString|toString(){}[0]
+    }
+
+    final class Heading : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.Heading|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, kotlin/Int, kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode>, com.adamglin.compose.markdown.core.model/HeadingStyle = ...) // com.adamglin.compose.markdown.core.model/BlockNode.Heading.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.Int;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>;com.adamglin.compose.markdown.core.model.HeadingStyle){}[0]
+
+        final val children // com.adamglin.compose.markdown.core.model/BlockNode.Heading.children|{}children[0]
+            final fun <get-children>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/BlockNode.Heading.children.<get-children>|<get-children>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.Heading.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.Heading.id.<get-id>|<get-id>(){}[0]
+        final val level // com.adamglin.compose.markdown.core.model/BlockNode.Heading.level|{}level[0]
+            final fun <get-level>(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.Heading.level.<get-level>|<get-level>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.Heading.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.Heading.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.Heading.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.Heading.range.<get-range>|<get-range>(){}[0]
+        final val style // com.adamglin.compose.markdown.core.model/BlockNode.Heading.style|{}style[0]
+            final fun <get-style>(): com.adamglin.compose.markdown.core.model/HeadingStyle // com.adamglin.compose.markdown.core.model/BlockNode.Heading.style.<get-style>|<get-style>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.Heading.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.Heading.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.Heading.component3|component3(){}[0]
+        final fun component4(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.Heading.component4|component4(){}[0]
+        final fun component5(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/BlockNode.Heading.component5|component5(){}[0]
+        final fun component6(): com.adamglin.compose.markdown.core.model/HeadingStyle // com.adamglin.compose.markdown.core.model/BlockNode.Heading.component6|component6(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., kotlin/Int = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> = ..., com.adamglin.compose.markdown.core.model/HeadingStyle = ...): com.adamglin.compose.markdown.core.model/BlockNode.Heading // com.adamglin.compose.markdown.core.model/BlockNode.Heading.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.Int;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>;com.adamglin.compose.markdown.core.model.HeadingStyle){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.Heading.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.Heading.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.Heading.toString|toString(){}[0]
+    }
+
+    final class IndentedCodeBlock : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, kotlin/String) // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.String){}[0]
+
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.id.<get-id>|<get-id>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val literal // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.literal|{}literal[0]
+            final fun <get-literal>(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.literal.<get-literal>|<get-literal>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.component3|component3(){}[0]
+        final fun component4(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.component4|component4(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., kotlin/String = ...): com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.IndentedCodeBlock.toString|toString(){}[0]
+    }
+
+    final class ListBlock : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, com.adamglin.compose.markdown.core.model/ListType, kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.ListItem>, kotlin/Boolean) // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;com.adamglin.compose.markdown.core.model.ListType;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode.ListItem>;kotlin.Boolean){}[0]
+
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.id.<get-id>|<get-id>(){}[0]
+        final val isLoose // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.isLoose|{}isLoose[0]
+            final fun <get-isLoose>(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.isLoose.<get-isLoose>|<get-isLoose>(){}[0]
+        final val items // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.items|{}items[0]
+            final fun <get-items>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.ListItem> // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.items.<get-items>|<get-items>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.range.<get-range>|<get-range>(){}[0]
+        final val type // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.type|{}type[0]
+            final fun <get-type>(): com.adamglin.compose.markdown.core.model/ListType // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.type.<get-type>|<get-type>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.component3|component3(){}[0]
+        final fun component4(): com.adamglin.compose.markdown.core.model/ListType // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.component4|component4(){}[0]
+        final fun component5(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.ListItem> // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.component5|component5(){}[0]
+        final fun component6(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.component6|component6(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., com.adamglin.compose.markdown.core.model/ListType = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.ListItem> = ..., kotlin/Boolean = ...): com.adamglin.compose.markdown.core.model/BlockNode.ListBlock // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;com.adamglin.compose.markdown.core.model.ListType;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode.ListItem>;kotlin.Boolean){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.ListBlock.toString|toString(){}[0]
+    }
+
+    final class ListItem : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.ListItem|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode>, com.adamglin.compose.markdown.core.model/TaskState? = ...) // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode>;com.adamglin.compose.markdown.core.model.TaskState?){}[0]
+
+        final val children // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.children|{}children[0]
+            final fun <get-children>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.children.<get-children>|<get-children>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.id.<get-id>|<get-id>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.range.<get-range>|<get-range>(){}[0]
+        final val taskState // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.taskState|{}taskState[0]
+            final fun <get-taskState>(): com.adamglin.compose.markdown.core.model/TaskState? // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.taskState.<get-taskState>|<get-taskState>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.component3|component3(){}[0]
+        final fun component4(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.component4|component4(){}[0]
+        final fun component5(): com.adamglin.compose.markdown.core.model/TaskState? // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.component5|component5(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> = ..., com.adamglin.compose.markdown.core.model/TaskState? = ...): com.adamglin.compose.markdown.core.model/BlockNode.ListItem // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode>;com.adamglin.compose.markdown.core.model.TaskState?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.ListItem.toString|toString(){}[0]
+    }
+
+    final class MathBlock : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, kotlin/String, kotlin/Boolean, com.adamglin.compose.markdown.core.model/MathBlockDelimiter) // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.String;kotlin.Boolean;com.adamglin.compose.markdown.core.model.MathBlockDelimiter){}[0]
+
+        final val delimiter // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.delimiter|{}delimiter[0]
+            final fun <get-delimiter>(): com.adamglin.compose.markdown.core.model/MathBlockDelimiter // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.delimiter.<get-delimiter>|<get-delimiter>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.id.<get-id>|<get-id>(){}[0]
+        final val isClosed // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.isClosed|{}isClosed[0]
+            final fun <get-isClosed>(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.isClosed.<get-isClosed>|<get-isClosed>(){}[0]
+        final val latex // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.latex|{}latex[0]
+            final fun <get-latex>(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.latex.<get-latex>|<get-latex>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.component3|component3(){}[0]
+        final fun component4(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.component4|component4(){}[0]
+        final fun component5(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.component5|component5(){}[0]
+        final fun component6(): com.adamglin.compose.markdown.core.model/MathBlockDelimiter // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.component6|component6(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., kotlin/String = ..., kotlin/Boolean = ..., com.adamglin.compose.markdown.core.model/MathBlockDelimiter = ...): com.adamglin.compose.markdown.core.model/BlockNode.MathBlock // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.String;kotlin.Boolean;com.adamglin.compose.markdown.core.model.MathBlockDelimiter){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.MathBlock.toString|toString(){}[0]
+    }
+
+    final class Paragraph : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode>) // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>){}[0]
+
+        final val children // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.children|{}children[0]
+            final fun <get-children>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.children.<get-children>|<get-children>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.id.<get-id>|<get-id>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.component3|component3(){}[0]
+        final fun component4(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.component4|component4(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> = ...): com.adamglin.compose.markdown.core.model/BlockNode.Paragraph // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.Paragraph.toString|toString(){}[0]
+    }
+
+    final class TableBlock : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, com.adamglin.compose.markdown.core.model/BlockNode.TableRow, kotlin.collections/List<com.adamglin.compose.markdown.core.model/TableAlignment>, kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.TableRow>) // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;com.adamglin.compose.markdown.core.model.BlockNode.TableRow;kotlin.collections.List<com.adamglin.compose.markdown.core.model.TableAlignment>;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode.TableRow>){}[0]
+
+        final val alignments // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.alignments|{}alignments[0]
+            final fun <get-alignments>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/TableAlignment> // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.alignments.<get-alignments>|<get-alignments>(){}[0]
+        final val header // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.header|{}header[0]
+            final fun <get-header>(): com.adamglin.compose.markdown.core.model/BlockNode.TableRow // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.header.<get-header>|<get-header>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.id.<get-id>|<get-id>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.range.<get-range>|<get-range>(){}[0]
+        final val rows // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.rows|{}rows[0]
+            final fun <get-rows>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.TableRow> // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.rows.<get-rows>|<get-rows>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.component3|component3(){}[0]
+        final fun component4(): com.adamglin.compose.markdown.core.model/BlockNode.TableRow // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.component4|component4(){}[0]
+        final fun component5(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/TableAlignment> // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.component5|component5(){}[0]
+        final fun component6(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.TableRow> // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.component6|component6(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., com.adamglin.compose.markdown.core.model/BlockNode.TableRow = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/TableAlignment> = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.TableRow> = ...): com.adamglin.compose.markdown.core.model/BlockNode.TableBlock // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;com.adamglin.compose.markdown.core.model.BlockNode.TableRow;kotlin.collections.List<com.adamglin.compose.markdown.core.model.TableAlignment>;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode.TableRow>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.TableBlock.toString|toString(){}[0]
+    }
+
+    final class TableCell : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.TableCell|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode>) // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>){}[0]
+
+        final val children // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.children|{}children[0]
+            final fun <get-children>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.children.<get-children>|<get-children>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.id.<get-id>|<get-id>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.component3|component3(){}[0]
+        final fun component4(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.component4|component4(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> = ...): com.adamglin.compose.markdown.core.model/BlockNode.TableCell // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.TableCell.toString|toString(){}[0]
+    }
+
+    final class TableRow : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.TableRow|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.TableCell>, kotlin/Boolean) // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode.TableCell>;kotlin.Boolean){}[0]
+
+        final val cells // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.cells|{}cells[0]
+            final fun <get-cells>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.TableCell> // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.cells.<get-cells>|<get-cells>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.id.<get-id>|<get-id>(){}[0]
+        final val isHeader // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.isHeader|{}isHeader[0]
+            final fun <get-isHeader>(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.isHeader.<get-isHeader>|<get-isHeader>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.component3|component3(){}[0]
+        final fun component4(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.TableCell> // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.component4|component4(){}[0]
+        final fun component5(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.component5|component5(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode.TableCell> = ..., kotlin/Boolean = ...): com.adamglin.compose.markdown.core.model/BlockNode.TableRow // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode.TableCell>;kotlin.Boolean){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.TableRow.toString|toString(){}[0]
+    }
+
+    final class ThematicBreak : com.adamglin.compose.markdown.core.model/BlockNode { // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/LineRange, kotlin/String) // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.String){}[0]
+
+        final val id // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.id.<get-id>|<get-id>(){}[0]
+        final val lineRange // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.lineRange|{}lineRange[0]
+            final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+        final val marker // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.marker|{}marker[0]
+            final fun <get-marker>(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.marker.<get-marker>|<get-marker>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.component2|component2(){}[0]
+        final fun component3(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.component3|component3(){}[0]
+        final fun component4(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.component4|component4(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/LineRange = ..., kotlin/String = ...): com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.LineRange;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockNode.ThematicBreak.toString|toString(){}[0]
+    }
+}
+
+sealed interface com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode|null[0]
+    abstract val id // com.adamglin.compose.markdown.core.model/InlineNode.id|{}id[0]
+        abstract fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.id.<get-id>|<get-id>(){}[0]
+    abstract val range // com.adamglin.compose.markdown.core.model/InlineNode.range|{}range[0]
+        abstract fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.range.<get-range>|<get-range>(){}[0]
+
+    final class CodeSpan : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange, kotlin/String) // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String){}[0]
+
+        final val id // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.id.<get-id>|<get-id>(){}[0]
+        final val literal // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.literal|{}literal[0]
+            final fun <get-literal>(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.literal.<get-literal>|<get-literal>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.component3|component3(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., kotlin/String = ...): com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.CodeSpan.toString|toString(){}[0]
+    }
+
+    final class Emphasis : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange, kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode>) // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>){}[0]
+
+        final val children // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.children|{}children[0]
+            final fun <get-children>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.children.<get-children>|<get-children>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.id.<get-id>|<get-id>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.component2|component2(){}[0]
+        final fun component3(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.component3|component3(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> = ...): com.adamglin.compose.markdown.core.model/InlineNode.Emphasis // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Emphasis.toString|toString(){}[0]
+    }
+
+    final class HardBreak : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange) // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange){}[0]
+
+        final val id // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak.id.<get-id>|<get-id>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak.component2|component2(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ...): com.adamglin.compose.markdown.core.model/InlineNode.HardBreak // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.HardBreak.toString|toString(){}[0]
+    }
+
+    final class Image : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.Image|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange, kotlin/String, kotlin/String?, kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode>, kotlin/String? = ...) // com.adamglin.compose.markdown.core.model/InlineNode.Image.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String;kotlin.String?;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>;kotlin.String?){}[0]
+
+        final val alt // com.adamglin.compose.markdown.core.model/InlineNode.Image.alt|{}alt[0]
+            final fun <get-alt>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/InlineNode.Image.alt.<get-alt>|<get-alt>(){}[0]
+        final val destination // com.adamglin.compose.markdown.core.model/InlineNode.Image.destination|{}destination[0]
+            final fun <get-destination>(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Image.destination.<get-destination>|<get-destination>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/InlineNode.Image.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Image.id.<get-id>|<get-id>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/InlineNode.Image.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Image.range.<get-range>|<get-range>(){}[0]
+        final val referenceLabel // com.adamglin.compose.markdown.core.model/InlineNode.Image.referenceLabel|{}referenceLabel[0]
+            final fun <get-referenceLabel>(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.Image.referenceLabel.<get-referenceLabel>|<get-referenceLabel>(){}[0]
+        final val title // com.adamglin.compose.markdown.core.model/InlineNode.Image.title|{}title[0]
+            final fun <get-title>(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.Image.title.<get-title>|<get-title>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Image.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Image.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Image.component3|component3(){}[0]
+        final fun component4(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.Image.component4|component4(){}[0]
+        final fun component5(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/InlineNode.Image.component5|component5(){}[0]
+        final fun component6(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.Image.component6|component6(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., kotlin/String = ..., kotlin/String? = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> = ..., kotlin/String? = ...): com.adamglin.compose.markdown.core.model/InlineNode.Image // com.adamglin.compose.markdown.core.model/InlineNode.Image.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String;kotlin.String?;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>;kotlin.String?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.Image.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.Image.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Image.toString|toString(){}[0]
+    }
+
+    final class Link : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.Link|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange, kotlin/String, kotlin/String?, kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode>, kotlin/String? = ...) // com.adamglin.compose.markdown.core.model/InlineNode.Link.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String;kotlin.String?;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>;kotlin.String?){}[0]
+
+        final val children // com.adamglin.compose.markdown.core.model/InlineNode.Link.children|{}children[0]
+            final fun <get-children>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/InlineNode.Link.children.<get-children>|<get-children>(){}[0]
+        final val destination // com.adamglin.compose.markdown.core.model/InlineNode.Link.destination|{}destination[0]
+            final fun <get-destination>(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Link.destination.<get-destination>|<get-destination>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/InlineNode.Link.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Link.id.<get-id>|<get-id>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/InlineNode.Link.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Link.range.<get-range>|<get-range>(){}[0]
+        final val referenceLabel // com.adamglin.compose.markdown.core.model/InlineNode.Link.referenceLabel|{}referenceLabel[0]
+            final fun <get-referenceLabel>(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.Link.referenceLabel.<get-referenceLabel>|<get-referenceLabel>(){}[0]
+        final val title // com.adamglin.compose.markdown.core.model/InlineNode.Link.title|{}title[0]
+            final fun <get-title>(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.Link.title.<get-title>|<get-title>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Link.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Link.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Link.component3|component3(){}[0]
+        final fun component4(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.Link.component4|component4(){}[0]
+        final fun component5(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/InlineNode.Link.component5|component5(){}[0]
+        final fun component6(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.Link.component6|component6(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., kotlin/String = ..., kotlin/String? = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> = ..., kotlin/String? = ...): com.adamglin.compose.markdown.core.model/InlineNode.Link // com.adamglin.compose.markdown.core.model/InlineNode.Link.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String;kotlin.String?;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>;kotlin.String?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.Link.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.Link.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Link.toString|toString(){}[0]
+    }
+
+    final class MathSpan : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange, kotlin/String, com.adamglin.compose.markdown.core.model/MathInlineDelimiter) // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String;com.adamglin.compose.markdown.core.model.MathInlineDelimiter){}[0]
+
+        final val delimiter // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.delimiter|{}delimiter[0]
+            final fun <get-delimiter>(): com.adamglin.compose.markdown.core.model/MathInlineDelimiter // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.delimiter.<get-delimiter>|<get-delimiter>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.id.<get-id>|<get-id>(){}[0]
+        final val latex // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.latex|{}latex[0]
+            final fun <get-latex>(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.latex.<get-latex>|<get-latex>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.component3|component3(){}[0]
+        final fun component4(): com.adamglin.compose.markdown.core.model/MathInlineDelimiter // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.component4|component4(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., kotlin/String = ..., com.adamglin.compose.markdown.core.model/MathInlineDelimiter = ...): com.adamglin.compose.markdown.core.model/InlineNode.MathSpan // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String;com.adamglin.compose.markdown.core.model.MathInlineDelimiter){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.MathSpan.toString|toString(){}[0]
+    }
+
+    final class SoftBreak : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange) // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange){}[0]
+
+        final val id // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak.id.<get-id>|<get-id>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak.component2|component2(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ...): com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.SoftBreak.toString|toString(){}[0]
+    }
+
+    final class Strikethrough : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange, kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode>) // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>){}[0]
+
+        final val children // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.children|{}children[0]
+            final fun <get-children>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.children.<get-children>|<get-children>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.id.<get-id>|<get-id>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.component2|component2(){}[0]
+        final fun component3(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.component3|component3(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> = ...): com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Strikethrough.toString|toString(){}[0]
+    }
+
+    final class Strong : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.Strong|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange, kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode>) // com.adamglin.compose.markdown.core.model/InlineNode.Strong.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>){}[0]
+
+        final val children // com.adamglin.compose.markdown.core.model/InlineNode.Strong.children|{}children[0]
+            final fun <get-children>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/InlineNode.Strong.children.<get-children>|<get-children>(){}[0]
+        final val id // com.adamglin.compose.markdown.core.model/InlineNode.Strong.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Strong.id.<get-id>|<get-id>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/InlineNode.Strong.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Strong.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Strong.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Strong.component2|component2(){}[0]
+        final fun component3(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> // com.adamglin.compose.markdown.core.model/InlineNode.Strong.component3|component3(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/InlineNode> = ...): com.adamglin.compose.markdown.core.model/InlineNode.Strong // com.adamglin.compose.markdown.core.model/InlineNode.Strong.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.collections.List<com.adamglin.compose.markdown.core.model.InlineNode>){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.Strong.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.Strong.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Strong.toString|toString(){}[0]
+    }
+
+    final class Text : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.Text|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange, kotlin/String) // com.adamglin.compose.markdown.core.model/InlineNode.Text.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String){}[0]
+
+        final val id // com.adamglin.compose.markdown.core.model/InlineNode.Text.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Text.id.<get-id>|<get-id>(){}[0]
+        final val literal // com.adamglin.compose.markdown.core.model/InlineNode.Text.literal|{}literal[0]
+            final fun <get-literal>(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Text.literal.<get-literal>|<get-literal>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/InlineNode.Text.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Text.range.<get-range>|<get-range>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.Text.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.Text.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Text.component3|component3(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., kotlin/String = ...): com.adamglin.compose.markdown.core.model/InlineNode.Text // com.adamglin.compose.markdown.core.model/InlineNode.Text.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.Text.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.Text.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.Text.toString|toString(){}[0]
+    }
+
+    final class UnsupportedInline : com.adamglin.compose.markdown.core.model/InlineNode { // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline|null[0]
+        constructor <init>(com.adamglin.compose.markdown.core.model/InlineId, com.adamglin.compose.markdown.core.model/TextRange, kotlin/String, kotlin/String? = ...) // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.<init>|<init>(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String;kotlin.String?){}[0]
+
+        final val id // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.id|{}id[0]
+            final fun <get-id>(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.id.<get-id>|<get-id>(){}[0]
+        final val literal // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.literal|{}literal[0]
+            final fun <get-literal>(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.literal.<get-literal>|<get-literal>(){}[0]
+        final val range // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.range|{}range[0]
+            final fun <get-range>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.range.<get-range>|<get-range>(){}[0]
+        final val reason // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.reason|{}reason[0]
+            final fun <get-reason>(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun component1(): com.adamglin.compose.markdown.core.model/InlineId // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.component1|component1(){}[0]
+        final fun component2(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.component2|component2(){}[0]
+        final fun component3(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.component3|component3(){}[0]
+        final fun component4(): kotlin/String? // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.component4|component4(){}[0]
+        final fun copy(com.adamglin.compose.markdown.core.model/InlineId = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., kotlin/String = ..., kotlin/String? = ...): com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.copy|copy(com.adamglin.compose.markdown.core.model.InlineId;com.adamglin.compose.markdown.core.model.TextRange;kotlin.String;kotlin.String?){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineNode.UnsupportedInline.toString|toString(){}[0]
+    }
+}
+
+sealed interface com.adamglin.compose.markdown.core.model/ListType { // com.adamglin.compose.markdown.core.model/ListType|null[0]
+    final class Bullet : com.adamglin.compose.markdown.core.model/ListType { // com.adamglin.compose.markdown.core.model/ListType.Bullet|null[0]
+        constructor <init>(kotlin/Char) // com.adamglin.compose.markdown.core.model/ListType.Bullet.<init>|<init>(kotlin.Char){}[0]
+
+        final val bulletChar // com.adamglin.compose.markdown.core.model/ListType.Bullet.bulletChar|{}bulletChar[0]
+            final fun <get-bulletChar>(): kotlin/Char // com.adamglin.compose.markdown.core.model/ListType.Bullet.bulletChar.<get-bulletChar>|<get-bulletChar>(){}[0]
+
+        final fun component1(): kotlin/Char // com.adamglin.compose.markdown.core.model/ListType.Bullet.component1|component1(){}[0]
+        final fun copy(kotlin/Char = ...): com.adamglin.compose.markdown.core.model/ListType.Bullet // com.adamglin.compose.markdown.core.model/ListType.Bullet.copy|copy(kotlin.Char){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/ListType.Bullet.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/ListType.Bullet.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/ListType.Bullet.toString|toString(){}[0]
+    }
+
+    final class Ordered : com.adamglin.compose.markdown.core.model/ListType { // com.adamglin.compose.markdown.core.model/ListType.Ordered|null[0]
+        constructor <init>(kotlin/Int, kotlin/Char) // com.adamglin.compose.markdown.core.model/ListType.Ordered.<init>|<init>(kotlin.Int;kotlin.Char){}[0]
+
+        final val delimiter // com.adamglin.compose.markdown.core.model/ListType.Ordered.delimiter|{}delimiter[0]
+            final fun <get-delimiter>(): kotlin/Char // com.adamglin.compose.markdown.core.model/ListType.Ordered.delimiter.<get-delimiter>|<get-delimiter>(){}[0]
+        final val startNumber // com.adamglin.compose.markdown.core.model/ListType.Ordered.startNumber|{}startNumber[0]
+            final fun <get-startNumber>(): kotlin/Int // com.adamglin.compose.markdown.core.model/ListType.Ordered.startNumber.<get-startNumber>|<get-startNumber>(){}[0]
+
+        final fun component1(): kotlin/Int // com.adamglin.compose.markdown.core.model/ListType.Ordered.component1|component1(){}[0]
+        final fun component2(): kotlin/Char // com.adamglin.compose.markdown.core.model/ListType.Ordered.component2|component2(){}[0]
+        final fun copy(kotlin/Int = ..., kotlin/Char = ...): com.adamglin.compose.markdown.core.model/ListType.Ordered // com.adamglin.compose.markdown.core.model/ListType.Ordered.copy|copy(kotlin.Int;kotlin.Char){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/ListType.Ordered.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/ListType.Ordered.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/ListType.Ordered.toString|toString(){}[0]
+    }
+}
+
+final class com.adamglin.compose.markdown.core.model/BlockChange { // com.adamglin.compose.markdown.core.model/BlockChange|null[0]
+    constructor <init>(com.adamglin.compose.markdown.core.model/BlockId, kotlin/Int?, kotlin/Int, com.adamglin.compose.markdown.core.model/BlockNode) // com.adamglin.compose.markdown.core.model/BlockChange.<init>|<init>(com.adamglin.compose.markdown.core.model.BlockId;kotlin.Int?;kotlin.Int;com.adamglin.compose.markdown.core.model.BlockNode){}[0]
+
+    final val block // com.adamglin.compose.markdown.core.model/BlockChange.block|{}block[0]
+        final fun <get-block>(): com.adamglin.compose.markdown.core.model/BlockNode // com.adamglin.compose.markdown.core.model/BlockChange.block.<get-block>|<get-block>(){}[0]
+    final val id // com.adamglin.compose.markdown.core.model/BlockChange.id|{}id[0]
+        final fun <get-id>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockChange.id.<get-id>|<get-id>(){}[0]
+    final val newIndex // com.adamglin.compose.markdown.core.model/BlockChange.newIndex|{}newIndex[0]
+        final fun <get-newIndex>(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockChange.newIndex.<get-newIndex>|<get-newIndex>(){}[0]
+    final val oldIndex // com.adamglin.compose.markdown.core.model/BlockChange.oldIndex|{}oldIndex[0]
+        final fun <get-oldIndex>(): kotlin/Int? // com.adamglin.compose.markdown.core.model/BlockChange.oldIndex.<get-oldIndex>|<get-oldIndex>(){}[0]
+
+    final fun component1(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockChange.component1|component1(){}[0]
+    final fun component2(): kotlin/Int? // com.adamglin.compose.markdown.core.model/BlockChange.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockChange.component3|component3(){}[0]
+    final fun component4(): com.adamglin.compose.markdown.core.model/BlockNode // com.adamglin.compose.markdown.core.model/BlockChange.component4|component4(){}[0]
+    final fun copy(com.adamglin.compose.markdown.core.model/BlockId = ..., kotlin/Int? = ..., kotlin/Int = ..., com.adamglin.compose.markdown.core.model/BlockNode = ...): com.adamglin.compose.markdown.core.model/BlockChange // com.adamglin.compose.markdown.core.model/BlockChange.copy|copy(com.adamglin.compose.markdown.core.model.BlockId;kotlin.Int?;kotlin.Int;com.adamglin.compose.markdown.core.model.BlockNode){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockChange.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockChange.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockChange.toString|toString(){}[0]
+}
+
+final class com.adamglin.compose.markdown.core.model/LineRange { // com.adamglin.compose.markdown.core.model/LineRange|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int) // com.adamglin.compose.markdown.core.model/LineRange.<init>|<init>(kotlin.Int;kotlin.Int){}[0]
+
+    final val endLineExclusive // com.adamglin.compose.markdown.core.model/LineRange.endLineExclusive|{}endLineExclusive[0]
+        final fun <get-endLineExclusive>(): kotlin/Int // com.adamglin.compose.markdown.core.model/LineRange.endLineExclusive.<get-endLineExclusive>|<get-endLineExclusive>(){}[0]
+    final val lineCount // com.adamglin.compose.markdown.core.model/LineRange.lineCount|{}lineCount[0]
+        final fun <get-lineCount>(): kotlin/Int // com.adamglin.compose.markdown.core.model/LineRange.lineCount.<get-lineCount>|<get-lineCount>(){}[0]
+    final val startLine // com.adamglin.compose.markdown.core.model/LineRange.startLine|{}startLine[0]
+        final fun <get-startLine>(): kotlin/Int // com.adamglin.compose.markdown.core.model/LineRange.startLine.<get-startLine>|<get-startLine>(){}[0]
+
+    final fun component1(): kotlin/Int // com.adamglin.compose.markdown.core.model/LineRange.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // com.adamglin.compose.markdown.core.model/LineRange.component2|component2(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ...): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/LineRange.copy|copy(kotlin.Int;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/LineRange.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/LineRange.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/LineRange.toString|toString(){}[0]
+}
+
+final class com.adamglin.compose.markdown.core.model/MarkdownDocument { // com.adamglin.compose.markdown.core.model/MarkdownDocument|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode>) // com.adamglin.compose.markdown.core.model/MarkdownDocument.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode>){}[0]
+
+    final val blocks // com.adamglin.compose.markdown.core.model/MarkdownDocument.blocks|{}blocks[0]
+        final fun <get-blocks>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> // com.adamglin.compose.markdown.core.model/MarkdownDocument.blocks.<get-blocks>|<get-blocks>(){}[0]
+    final val lineCount // com.adamglin.compose.markdown.core.model/MarkdownDocument.lineCount|{}lineCount[0]
+        final fun <get-lineCount>(): kotlin/Int // com.adamglin.compose.markdown.core.model/MarkdownDocument.lineCount.<get-lineCount>|<get-lineCount>(){}[0]
+    final val lineRange // com.adamglin.compose.markdown.core.model/MarkdownDocument.lineRange|{}lineRange[0]
+        final fun <get-lineRange>(): com.adamglin.compose.markdown.core.model/LineRange // com.adamglin.compose.markdown.core.model/MarkdownDocument.lineRange.<get-lineRange>|<get-lineRange>(){}[0]
+    final val root // com.adamglin.compose.markdown.core.model/MarkdownDocument.root|{}root[0]
+        final fun <get-root>(): com.adamglin.compose.markdown.core.model/BlockNode.Document // com.adamglin.compose.markdown.core.model/MarkdownDocument.root.<get-root>|<get-root>(){}[0]
+    final val sourceLength // com.adamglin.compose.markdown.core.model/MarkdownDocument.sourceLength|{}sourceLength[0]
+        final fun <get-sourceLength>(): kotlin/Int // com.adamglin.compose.markdown.core.model/MarkdownDocument.sourceLength.<get-sourceLength>|<get-sourceLength>(){}[0]
+    final val sourceRange // com.adamglin.compose.markdown.core.model/MarkdownDocument.sourceRange|{}sourceRange[0]
+        final fun <get-sourceRange>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/MarkdownDocument.sourceRange.<get-sourceRange>|<get-sourceRange>(){}[0]
+
+    final fun component1(): kotlin/Int // com.adamglin.compose.markdown.core.model/MarkdownDocument.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // com.adamglin.compose.markdown.core.model/MarkdownDocument.component2|component2(){}[0]
+    final fun component3(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> // com.adamglin.compose.markdown.core.model/MarkdownDocument.component3|component3(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockNode> = ...): com.adamglin.compose.markdown.core.model/MarkdownDocument // com.adamglin.compose.markdown.core.model/MarkdownDocument.copy|copy(kotlin.Int;kotlin.Int;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockNode>){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/MarkdownDocument.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/MarkdownDocument.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/MarkdownDocument.toString|toString(){}[0]
+}
+
+final class com.adamglin.compose.markdown.core.model/MarkdownSnapshot { // com.adamglin.compose.markdown.core.model/MarkdownSnapshot|null[0]
+    constructor <init>(kotlin/Long, com.adamglin.compose.markdown.core.dialect/MarkdownDialect, com.adamglin.compose.markdown.core.model/MarkdownDocument, com.adamglin.compose.markdown.core.model/TextRange, kotlin/Boolean) // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.<init>|<init>(kotlin.Long;com.adamglin.compose.markdown.core.dialect.MarkdownDialect;com.adamglin.compose.markdown.core.model.MarkdownDocument;com.adamglin.compose.markdown.core.model.TextRange;kotlin.Boolean){}[0]
+
+    final val dialect // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.dialect|{}dialect[0]
+        final fun <get-dialect>(): com.adamglin.compose.markdown.core.dialect/MarkdownDialect // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.dialect.<get-dialect>|<get-dialect>(){}[0]
+    final val document // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.document|{}document[0]
+        final fun <get-document>(): com.adamglin.compose.markdown.core.model/MarkdownDocument // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.document.<get-document>|<get-document>(){}[0]
+    final val isFinal // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.isFinal|{}isFinal[0]
+        final fun <get-isFinal>(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.isFinal.<get-isFinal>|<get-isFinal>(){}[0]
+    final val stablePrefixEnd // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.stablePrefixEnd|{}stablePrefixEnd[0]
+        final fun <get-stablePrefixEnd>(): kotlin/Int // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.stablePrefixEnd.<get-stablePrefixEnd>|<get-stablePrefixEnd>(){}[0]
+    final val stablePrefixRange // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.stablePrefixRange|{}stablePrefixRange[0]
+        final fun <get-stablePrefixRange>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.stablePrefixRange.<get-stablePrefixRange>|<get-stablePrefixRange>(){}[0]
+    final val version // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.version.<get-version>|<get-version>(){}[0]
+
+    final fun component1(): kotlin/Long // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.component1|component1(){}[0]
+    final fun component2(): com.adamglin.compose.markdown.core.dialect/MarkdownDialect // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.component2|component2(){}[0]
+    final fun component3(): com.adamglin.compose.markdown.core.model/MarkdownDocument // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.component3|component3(){}[0]
+    final fun component4(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.component4|component4(){}[0]
+    final fun component5(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.component5|component5(){}[0]
+    final fun copy(kotlin/Long = ..., com.adamglin.compose.markdown.core.dialect/MarkdownDialect = ..., com.adamglin.compose.markdown.core.model/MarkdownDocument = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., kotlin/Boolean = ...): com.adamglin.compose.markdown.core.model/MarkdownSnapshot // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.copy|copy(kotlin.Long;com.adamglin.compose.markdown.core.dialect.MarkdownDialect;com.adamglin.compose.markdown.core.model.MarkdownDocument;com.adamglin.compose.markdown.core.model.TextRange;kotlin.Boolean){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.toString|toString(){}[0]
+}
+
+final class com.adamglin.compose.markdown.core.model/ParseDelta { // com.adamglin.compose.markdown.core.model/ParseDelta|null[0]
+    constructor <init>(kotlin/Long, kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockChange>, kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockId>, com.adamglin.compose.markdown.core.model/TextRange, com.adamglin.compose.markdown.core.model/MarkdownSnapshot, com.adamglin.compose.markdown.core.model/ParseStats) // com.adamglin.compose.markdown.core.model/ParseDelta.<init>|<init>(kotlin.Long;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockChange>;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockId>;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.MarkdownSnapshot;com.adamglin.compose.markdown.core.model.ParseStats){}[0]
+
+    final val changedBlocks // com.adamglin.compose.markdown.core.model/ParseDelta.changedBlocks|{}changedBlocks[0]
+        final fun <get-changedBlocks>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockChange> // com.adamglin.compose.markdown.core.model/ParseDelta.changedBlocks.<get-changedBlocks>|<get-changedBlocks>(){}[0]
+    final val dirtyRegion // com.adamglin.compose.markdown.core.model/ParseDelta.dirtyRegion|{}dirtyRegion[0]
+        final fun <get-dirtyRegion>(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/ParseDelta.dirtyRegion.<get-dirtyRegion>|<get-dirtyRegion>(){}[0]
+    final val removedBlockIds // com.adamglin.compose.markdown.core.model/ParseDelta.removedBlockIds|{}removedBlockIds[0]
+        final fun <get-removedBlockIds>(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockId> // com.adamglin.compose.markdown.core.model/ParseDelta.removedBlockIds.<get-removedBlockIds>|<get-removedBlockIds>(){}[0]
+    final val snapshot // com.adamglin.compose.markdown.core.model/ParseDelta.snapshot|{}snapshot[0]
+        final fun <get-snapshot>(): com.adamglin.compose.markdown.core.model/MarkdownSnapshot // com.adamglin.compose.markdown.core.model/ParseDelta.snapshot.<get-snapshot>|<get-snapshot>(){}[0]
+    final val stats // com.adamglin.compose.markdown.core.model/ParseDelta.stats|{}stats[0]
+        final fun <get-stats>(): com.adamglin.compose.markdown.core.model/ParseStats // com.adamglin.compose.markdown.core.model/ParseDelta.stats.<get-stats>|<get-stats>(){}[0]
+    final val version // com.adamglin.compose.markdown.core.model/ParseDelta.version|{}version[0]
+        final fun <get-version>(): kotlin/Long // com.adamglin.compose.markdown.core.model/ParseDelta.version.<get-version>|<get-version>(){}[0]
+
+    final fun component1(): kotlin/Long // com.adamglin.compose.markdown.core.model/ParseDelta.component1|component1(){}[0]
+    final fun component2(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockChange> // com.adamglin.compose.markdown.core.model/ParseDelta.component2|component2(){}[0]
+    final fun component3(): kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockId> // com.adamglin.compose.markdown.core.model/ParseDelta.component3|component3(){}[0]
+    final fun component4(): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/ParseDelta.component4|component4(){}[0]
+    final fun component5(): com.adamglin.compose.markdown.core.model/MarkdownSnapshot // com.adamglin.compose.markdown.core.model/ParseDelta.component5|component5(){}[0]
+    final fun component6(): com.adamglin.compose.markdown.core.model/ParseStats // com.adamglin.compose.markdown.core.model/ParseDelta.component6|component6(){}[0]
+    final fun copy(kotlin/Long = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockChange> = ..., kotlin.collections/List<com.adamglin.compose.markdown.core.model/BlockId> = ..., com.adamglin.compose.markdown.core.model/TextRange = ..., com.adamglin.compose.markdown.core.model/MarkdownSnapshot = ..., com.adamglin.compose.markdown.core.model/ParseStats = ...): com.adamglin.compose.markdown.core.model/ParseDelta // com.adamglin.compose.markdown.core.model/ParseDelta.copy|copy(kotlin.Long;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockChange>;kotlin.collections.List<com.adamglin.compose.markdown.core.model.BlockId>;com.adamglin.compose.markdown.core.model.TextRange;com.adamglin.compose.markdown.core.model.MarkdownSnapshot;com.adamglin.compose.markdown.core.model.ParseStats){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/ParseDelta.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseDelta.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/ParseDelta.toString|toString(){}[0]
+}
+
+final class com.adamglin.compose.markdown.core.model/ParseStats { // com.adamglin.compose.markdown.core.model/ParseStats|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Int) // com.adamglin.compose.markdown.core.model/ParseStats.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+
+    final val appendedChars // com.adamglin.compose.markdown.core.model/ParseStats.appendedChars|{}appendedChars[0]
+        final fun <get-appendedChars>(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.appendedChars.<get-appendedChars>|<get-appendedChars>(){}[0]
+    final val builtBlocks // com.adamglin.compose.markdown.core.model/ParseStats.builtBlocks|{}builtBlocks[0]
+        final fun <get-builtBlocks>(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.builtBlocks.<get-builtBlocks>|<get-builtBlocks>(){}[0]
+    final val inlineCacheHitBlockCount // com.adamglin.compose.markdown.core.model/ParseStats.inlineCacheHitBlockCount|{}inlineCacheHitBlockCount[0]
+        final fun <get-inlineCacheHitBlockCount>(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.inlineCacheHitBlockCount.<get-inlineCacheHitBlockCount>|<get-inlineCacheHitBlockCount>(){}[0]
+    final val inlineParsedBlockCount // com.adamglin.compose.markdown.core.model/ParseStats.inlineParsedBlockCount|{}inlineParsedBlockCount[0]
+        final fun <get-inlineParsedBlockCount>(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.inlineParsedBlockCount.<get-inlineParsedBlockCount>|<get-inlineParsedBlockCount>(){}[0]
+    final val preservedBlocks // com.adamglin.compose.markdown.core.model/ParseStats.preservedBlocks|{}preservedBlocks[0]
+        final fun <get-preservedBlocks>(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.preservedBlocks.<get-preservedBlocks>|<get-preservedBlocks>(){}[0]
+    final val processedLines // com.adamglin.compose.markdown.core.model/ParseStats.processedLines|{}processedLines[0]
+        final fun <get-processedLines>(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.processedLines.<get-processedLines>|<get-processedLines>(){}[0]
+
+    final fun component1(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.component4|component4(){}[0]
+    final fun component5(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.component5|component5(){}[0]
+    final fun component6(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.component6|component6(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): com.adamglin.compose.markdown.core.model/ParseStats // com.adamglin.compose.markdown.core.model/ParseStats.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/ParseStats.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/ParseStats.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/ParseStats.toString|toString(){}[0]
+}
+
+final class com.adamglin.compose.markdown.core.model/TextRange { // com.adamglin.compose.markdown.core.model/TextRange|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int) // com.adamglin.compose.markdown.core.model/TextRange.<init>|<init>(kotlin.Int;kotlin.Int){}[0]
+
+    final val endExclusive // com.adamglin.compose.markdown.core.model/TextRange.endExclusive|{}endExclusive[0]
+        final fun <get-endExclusive>(): kotlin/Int // com.adamglin.compose.markdown.core.model/TextRange.endExclusive.<get-endExclusive>|<get-endExclusive>(){}[0]
+    final val isEmpty // com.adamglin.compose.markdown.core.model/TextRange.isEmpty|{}isEmpty[0]
+        final fun <get-isEmpty>(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/TextRange.isEmpty.<get-isEmpty>|<get-isEmpty>(){}[0]
+    final val length // com.adamglin.compose.markdown.core.model/TextRange.length|{}length[0]
+        final fun <get-length>(): kotlin/Int // com.adamglin.compose.markdown.core.model/TextRange.length.<get-length>|<get-length>(){}[0]
+    final val start // com.adamglin.compose.markdown.core.model/TextRange.start|{}start[0]
+        final fun <get-start>(): kotlin/Int // com.adamglin.compose.markdown.core.model/TextRange.start.<get-start>|<get-start>(){}[0]
+
+    final fun component1(): kotlin/Int // com.adamglin.compose.markdown.core.model/TextRange.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // com.adamglin.compose.markdown.core.model/TextRange.component2|component2(){}[0]
+    final fun contains(kotlin/Int): kotlin/Boolean // com.adamglin.compose.markdown.core.model/TextRange.contains|contains(kotlin.Int){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ...): com.adamglin.compose.markdown.core.model/TextRange // com.adamglin.compose.markdown.core.model/TextRange.copy|copy(kotlin.Int;kotlin.Int){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/TextRange.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/TextRange.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/TextRange.toString|toString(){}[0]
+}
+
+final value class com.adamglin.compose.markdown.core.model/BlockId { // com.adamglin.compose.markdown.core.model/BlockId|null[0]
+    constructor <init>(kotlin/Long) // com.adamglin.compose.markdown.core.model/BlockId.<init>|<init>(kotlin.Long){}[0]
+
+    final val raw // com.adamglin.compose.markdown.core.model/BlockId.raw|{}raw[0]
+        final fun <get-raw>(): kotlin/Long // com.adamglin.compose.markdown.core.model/BlockId.raw.<get-raw>|<get-raw>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/BlockId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/BlockId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/BlockId.toString|toString(){}[0]
+
+    final object Companion { // com.adamglin.compose.markdown.core.model/BlockId.Companion|null[0]
+        final val Document // com.adamglin.compose.markdown.core.model/BlockId.Companion.Document|{}Document[0]
+            final fun <get-Document>(): com.adamglin.compose.markdown.core.model/BlockId // com.adamglin.compose.markdown.core.model/BlockId.Companion.Document.<get-Document>|<get-Document>(){}[0]
+    }
+}
+
+final value class com.adamglin.compose.markdown.core.model/InlineId { // com.adamglin.compose.markdown.core.model/InlineId|null[0]
+    constructor <init>(kotlin/Long) // com.adamglin.compose.markdown.core.model/InlineId.<init>|<init>(kotlin.Long){}[0]
+
+    final val raw // com.adamglin.compose.markdown.core.model/InlineId.raw|{}raw[0]
+        final fun <get-raw>(): kotlin/Long // com.adamglin.compose.markdown.core.model/InlineId.raw.<get-raw>|<get-raw>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/InlineId.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/InlineId.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/InlineId.toString|toString(){}[0]
+}
+
+sealed class com.adamglin.compose.markdown.core.dialect/MarkdownDialect { // com.adamglin.compose.markdown.core.dialect/MarkdownDialect|null[0]
+    final object ChatFast : com.adamglin.compose.markdown.core.dialect/MarkdownDialect { // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.ChatFast|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.ChatFast.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.ChatFast.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.ChatFast.toString|toString(){}[0]
+    }
+
+    final object CommonMarkCore : com.adamglin.compose.markdown.core.dialect/MarkdownDialect { // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.CommonMarkCore|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.CommonMarkCore.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.CommonMarkCore.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.CommonMarkCore.toString|toString(){}[0]
+    }
+
+    final object GfmCompat : com.adamglin.compose.markdown.core.dialect/MarkdownDialect { // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.GfmCompat|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.GfmCompat.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.GfmCompat.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.GfmCompat.toString|toString(){}[0]
+    }
+
+    final object GfmMath : com.adamglin.compose.markdown.core.dialect/MarkdownDialect { // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.GfmMath|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.GfmMath.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.GfmMath.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.dialect/MarkdownDialect.GfmMath.toString|toString(){}[0]
+    }
+}
+
+final fun com.adamglin.compose.markdown.core.api/MarkdownEngine(com.adamglin.compose.markdown.core.dialect/MarkdownDialect = ...): com.adamglin.compose.markdown.core.api/MarkdownEngine // com.adamglin.compose.markdown.core.api/MarkdownEngine|MarkdownEngine(com.adamglin.compose.markdown.core.dialect.MarkdownDialect){}[0]

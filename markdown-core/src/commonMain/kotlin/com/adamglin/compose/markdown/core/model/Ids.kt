@@ -1,23 +1,21 @@
 package com.adamglin.compose.markdown.core.model
 
-import androidx.compose.runtime.Immutable
 import kotlin.jvm.JvmInline
 
-@Immutable
 @JvmInline
-value class BlockId(val raw: Long) {
+public value class BlockId(public val raw: Long) {
     init {
         require(raw >= 0L) { "raw must be non-negative" }
     }
 
-    companion object {
-        val Document = BlockId(raw = 0L)
+    public companion object {
+        /** Id of [MarkdownDocument.root]. */
+        public val Document: BlockId = BlockId(raw = 0L)
     }
 }
 
-@Immutable
 @JvmInline
-value class InlineId(val raw: Long) {
+public value class InlineId(public val raw: Long) {
     init {
         require(raw >= 0L) { "raw must be non-negative" }
     }

@@ -1,7 +1,8 @@
-@file:OptIn(ExperimentalWasmDsl::class)
+@file:OptIn(ExperimentalWasmDsl::class, ExperimentalAbiValidation::class)
 
 import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -10,6 +11,13 @@ plugins {
 }
 
 kotlin {
+    explicitApi()
+    abiValidation {
+        enabled = true
+        // iOS dumps cannot be generated on Linux CI; they are carried over from the committed dump there.
+        klib { enabled = true }
+    }
+
     // The parser has no Java 21 dependencies; keep it consumable from Java 17.
     jvmToolchain(17)
 
@@ -40,10 +48,6 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies {
-            implementation(libs.compose.runtime)
-        }
-
         commonTest.dependencies {
             implementation(kotlin("test"))
         }

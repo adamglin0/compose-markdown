@@ -1,27 +1,25 @@
 package com.adamglin.compose.markdown.core.model
 
-import androidx.compose.runtime.Immutable
+public sealed interface BlockNode {
+    public val id: BlockId
+    public val range: TextRange
+    public val lineRange: LineRange
 
-sealed interface BlockNode {
-    val id: BlockId
-    val range: TextRange
-    val lineRange: LineRange
-
-    data class Document(
+    public data class Document(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val children: List<BlockNode>,
     ) : BlockNode
 
-    data class Paragraph(
+    public data class Paragraph(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val children: List<InlineNode>,
     ) : BlockNode
 
-    data class Heading(
+    public data class Heading(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -34,8 +32,7 @@ sealed interface BlockNode {
         }
     }
 
-    @Immutable
-    data class FencedCodeBlock(
+    public data class FencedCodeBlock(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -46,15 +43,14 @@ sealed interface BlockNode {
     ) : BlockNode
 
     /** A code block made of lines indented by four or more columns; it has no info string. */
-    @Immutable
-    data class IndentedCodeBlock(
+    public data class IndentedCodeBlock(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val literal: String,
     ) : BlockNode
 
-    data class BlockQuote(
+    public data class BlockQuote(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -66,7 +62,7 @@ sealed interface BlockNode {
      * delimiter); a list is loose when any of its items are separated by blank lines or any item directly
      * contains two block children with a blank line between them.
      */
-    data class ListBlock(
+    public data class ListBlock(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -75,7 +71,7 @@ sealed interface BlockNode {
         val isLoose: Boolean,
     ) : BlockNode
 
-    data class ListItem(
+    public data class ListItem(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -83,7 +79,7 @@ sealed interface BlockNode {
         val taskState: TaskState? = null,
     ) : BlockNode
 
-    data class TableBlock(
+    public data class TableBlock(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -92,7 +88,7 @@ sealed interface BlockNode {
         val rows: List<TableRow>,
     ) : BlockNode
 
-    data class TableRow(
+    public data class TableRow(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -100,23 +96,21 @@ sealed interface BlockNode {
         val isHeader: Boolean,
     ) : BlockNode
 
-    data class TableCell(
+    public data class TableCell(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val children: List<InlineNode>,
     ) : BlockNode
 
-    @Immutable
-    data class ThematicBreak(
+    public data class ThematicBreak(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val marker: String,
     ) : BlockNode
 
-    @Immutable
-    data class MathBlock(
+    public data class MathBlock(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -126,39 +120,37 @@ sealed interface BlockNode {
     ) : BlockNode
 }
 
-sealed interface ListType {
+public sealed interface ListType {
     /** A bullet list; [bulletChar] is `-`, `+` or `*`. */
-    @Immutable
-    data class Bullet(val bulletChar: Char) : ListType
+    public data class Bullet(val bulletChar: Char) : ListType
 
     /** An ordered list starting at [startNumber]; [delimiter] is `.` or `)`. */
-    @Immutable
-    data class Ordered(val startNumber: Int, val delimiter: Char) : ListType
+    public data class Ordered(val startNumber: Int, val delimiter: Char) : ListType
 }
 
-enum class HeadingStyle {
+public enum class HeadingStyle {
     Atx,
     Setext,
 }
 
-enum class TaskState {
+public enum class TaskState {
     Checked,
     Unchecked,
 }
 
-enum class TableAlignment {
+public enum class TableAlignment {
     Default,
     Left,
     Center,
     Right,
 }
 
-enum class MathBlockDelimiter {
+public enum class MathBlockDelimiter {
     Dollar,
     Bracket,
 }
 
-data class BlockChange(
+public data class BlockChange(
     val id: BlockId,
     val oldIndex: Int?,
     val newIndex: Int,

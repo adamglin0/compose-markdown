@@ -1,9 +1,6 @@
 package com.adamglin.compose.markdown.core.model
 
-import androidx.compose.runtime.Immutable
-
-@Immutable
-data class TextRange(
+public data class TextRange(
     val start: Int,
     val endExclusive: Int,
 ) {
@@ -12,27 +9,15 @@ data class TextRange(
         require(endExclusive >= start) { "endExclusive must be >= start" }
     }
 
-    val length: Int
+    public val length: Int
         get() = endExclusive - start
 
-    val isEmpty: Boolean
+    public val isEmpty: Boolean
         get() = start == endExclusive
 
-    fun contains(offset: Int): Boolean = offset in start until endExclusive
+    public fun contains(offset: Int): Boolean = offset in start until endExclusive
 
-    fun intersects(other: TextRange): Boolean = start < other.endExclusive && other.start < endExclusive
-
-    fun union(other: TextRange): TextRange = TextRange(
-        start = minOf(start, other.start),
-        endExclusive = maxOf(endExclusive, other.endExclusive),
-    )
-
-    fun shift(delta: Int): TextRange = TextRange(
-        start = start + delta,
-        endExclusive = endExclusive + delta,
-    )
-
-    companion object {
+    internal companion object {
         val Empty = TextRange(start = 0, endExclusive = 0)
     }
 }

@@ -24,19 +24,19 @@ import kotlinx.coroutines.withContext
  * Called off the main thread; must be pure. Return `null` when [language] is not supported, and
  * the block renders as plain text. Results are cached by code, language, colors and highlighter.
  */
-fun interface CodeHighlighter {
-    fun highlight(code: String, language: String, colors: MarkdownColors): List<HighlightToken>?
+public fun interface CodeHighlighter {
+    public fun highlight(code: String, language: String, colors: MarkdownColors): List<HighlightToken>?
 }
 
 /** Colors `code[start, endExclusive)`. */
-data class HighlightToken(
+public data class HighlightToken(
     val start: Int,
     val endExclusive: Int,
     val color: Color,
 )
 
 /** [CodeHighlighter] backed by `dev.snipme:highlights`, using [MarkdownColors]' code colors. */
-object DefaultCodeHighlighter : CodeHighlighter {
+public object DefaultCodeHighlighter : CodeHighlighter {
     override fun highlight(code: String, language: String, colors: MarkdownColors): List<HighlightToken>? {
         val syntaxLanguage = resolveSyntaxLanguage(language) ?: return null
         val highlights = Highlights.Builder()

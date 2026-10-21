@@ -1,7 +1,8 @@
-@file:OptIn(ExperimentalWasmDsl::class)
+@file:OptIn(ExperimentalWasmDsl::class, ExperimentalAbiValidation::class)
 
 import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -12,6 +13,13 @@ plugins {
 }
 
 kotlin {
+    explicitApi()
+    abiValidation {
+        enabled = true
+        // iOS dumps cannot be generated on Linux CI; they are carried over from the committed dump there.
+        klib { enabled = true }
+    }
+
     // dev.snipme:highlights ships Java 21 bytecode, so JVM consumers of this module need Java 21.
     jvmToolchain(21)
 
@@ -50,4 +58,8 @@ kotlin {
             implementation(compose.desktop.currentOs)
         }
     }
+}
+
+composeCompiler {
+    stabilityConfigurationFiles.add(layout.projectDirectory.file("compose-stability.conf"))
 }

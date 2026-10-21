@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
  * The `code*` colors feed the syntax highlighter; everything else styles the rendered blocks.
  */
 @Immutable
-data class MarkdownColors(
+public data class MarkdownColors(
     val text: Color,
     val textSecondary: Color,
     val link: Color,
@@ -31,8 +31,8 @@ data class MarkdownColors(
     val codeLiteral: Color,
     val codeComment: Color,
 ) {
-    companion object {
-        val Light: MarkdownColors = MarkdownColors(
+    public companion object {
+        public val Light: MarkdownColors = MarkdownColors(
             text = Color(0xFF2C241B),
             textSecondary = Color(0xFF635748),
             link = Color(0xFF1F6D63),
@@ -45,7 +45,7 @@ data class MarkdownColors(
             codeComment = Color(0xFF7C705F),
         )
 
-        val Dark: MarkdownColors = MarkdownColors(
+        public val Dark: MarkdownColors = MarkdownColors(
             text = Color(0xFFF3EEDF),
             textSecondary = Color(0xFFD3CBBC),
             link = Color(0xFF7BC5B8),
@@ -68,7 +68,7 @@ data class MarkdownColors(
  * language label.
  */
 @Immutable
-data class MarkdownTypography(
+public data class MarkdownTypography(
     val heading1: TextStyle,
     val heading2: TextStyle,
     val heading3: TextStyle,
@@ -89,8 +89,8 @@ data class MarkdownTypography(
         else -> heading6
     }
 
-    companion object {
-        val Default: MarkdownTypography = MarkdownTypography(
+    public companion object {
+        public val Default: MarkdownTypography = MarkdownTypography(
             heading1 = TextStyle(fontSize = 30.sp, lineHeight = 38.sp, fontWeight = FontWeight.Bold),
             heading2 = TextStyle(fontSize = 26.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold),
             heading3 = TextStyle(fontSize = 22.sp, lineHeight = 30.sp, fontWeight = FontWeight.SemiBold),
@@ -117,7 +117,7 @@ private val LocalMarkdownBlockSpacing = staticCompositionLocalOf { 12.dp }
  * block spacing; pick [MarkdownColors.Dark] (or your own colors) from your app's theme.
  */
 @Composable
-fun MarkdownTheme(
+public fun MarkdownTheme(
     colors: MarkdownColors = MarkdownTheme.colors,
     typography: MarkdownTypography = MarkdownTheme.typography,
     blockSpacing: Dp = MarkdownTheme.blockSpacing,
@@ -131,14 +131,14 @@ fun MarkdownTheme(
     )
 }
 
-object MarkdownTheme {
-    val colors: MarkdownColors
+public object MarkdownTheme {
+    public val colors: MarkdownColors
         @Composable @ReadOnlyComposable get() = LocalMarkdownColors.current
 
-    val typography: MarkdownTypography
+    public val typography: MarkdownTypography
         @Composable @ReadOnlyComposable get() = LocalMarkdownTypography.current
 
     /** Vertical space between sibling blocks. */
-    val blockSpacing: Dp
+    public val blockSpacing: Dp
         @Composable @ReadOnlyComposable get() = LocalMarkdownBlockSpacing.current
 }

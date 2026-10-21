@@ -1,38 +1,34 @@
 package com.adamglin.compose.markdown.core.model
 
-import androidx.compose.runtime.Immutable
+public sealed interface InlineNode {
+    public val id: InlineId
+    public val range: TextRange
 
-sealed interface InlineNode {
-    val id: InlineId
-    val range: TextRange
-
-    @Immutable
-    data class Text(
+    public data class Text(
         override val id: InlineId,
         override val range: TextRange,
         val literal: String,
     ) : InlineNode
 
-    data class Emphasis(
+    public data class Emphasis(
         override val id: InlineId,
         override val range: TextRange,
         val children: List<InlineNode>,
     ) : InlineNode
 
-    data class Strong(
+    public data class Strong(
         override val id: InlineId,
         override val range: TextRange,
         val children: List<InlineNode>,
     ) : InlineNode
 
-    @Immutable
-    data class CodeSpan(
+    public data class CodeSpan(
         override val id: InlineId,
         override val range: TextRange,
         val literal: String,
     ) : InlineNode
 
-    data class Link(
+    public data class Link(
         override val id: InlineId,
         override val range: TextRange,
         val destination: String,
@@ -41,7 +37,7 @@ sealed interface InlineNode {
         val referenceLabel: String? = null,
     ) : InlineNode
 
-    data class Image(
+    public data class Image(
         override val id: InlineId,
         override val range: TextRange,
         val destination: String,
@@ -50,34 +46,30 @@ sealed interface InlineNode {
         val referenceLabel: String? = null,
     ) : InlineNode
 
-    @Immutable
-    data class SoftBreak(
+    public data class SoftBreak(
         override val id: InlineId,
         override val range: TextRange,
     ) : InlineNode
 
-    @Immutable
-    data class HardBreak(
+    public data class HardBreak(
         override val id: InlineId,
         override val range: TextRange,
     ) : InlineNode
 
-    data class Strikethrough(
+    public data class Strikethrough(
         override val id: InlineId,
         override val range: TextRange,
         val children: List<InlineNode>,
     ) : InlineNode
 
-    @Immutable
-    data class UnsupportedInline(
+    public data class UnsupportedInline(
         override val id: InlineId,
         override val range: TextRange,
         val literal: String,
         val reason: String? = null,
     ) : InlineNode
 
-    @Immutable
-    data class MathSpan(
+    public data class MathSpan(
         override val id: InlineId,
         override val range: TextRange,
         val latex: String,
@@ -85,7 +77,7 @@ sealed interface InlineNode {
     ) : InlineNode
 }
 
-enum class MathInlineDelimiter {
+public enum class MathInlineDelimiter {
     Dollar,
     Paren,
 }

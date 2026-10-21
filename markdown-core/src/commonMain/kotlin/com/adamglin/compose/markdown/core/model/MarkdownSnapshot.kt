@@ -2,7 +2,7 @@ package com.adamglin.compose.markdown.core.model
 
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
 
-data class MarkdownSnapshot(
+public data class MarkdownSnapshot(
     val version: Long,
     val dialect: MarkdownDialect,
     val document: MarkdownDocument,
@@ -23,6 +23,6 @@ data class MarkdownSnapshot(
         }
     }
 
-    val stablePrefixEnd: Int
+    public val stablePrefixEnd: Int
         get() = stablePrefixRange.endExclusive
 }

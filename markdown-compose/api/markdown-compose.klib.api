@@ -1,0 +1,196 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, js, wasmJs]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <com.adamglin.compose.markdown:markdown-compose>
+abstract fun interface com.adamglin.compose.markdown.compose/CodeHighlighter { // com.adamglin.compose.markdown.compose/CodeHighlighter|null[0]
+    abstract fun highlight(kotlin/String, kotlin/String, com.adamglin.compose.markdown.compose/MarkdownColors): kotlin.collections/List<com.adamglin.compose.markdown.compose/HighlightToken>? // com.adamglin.compose.markdown.compose/CodeHighlighter.highlight|highlight(kotlin.String;kotlin.String;com.adamglin.compose.markdown.compose.MarkdownColors){}[0]
+}
+
+abstract interface com.adamglin.compose.markdown.compose/MathRenderer { // com.adamglin.compose.markdown.compose/MathRenderer|null[0]
+    abstract fun BlockMath(kotlin/String, androidx.compose.ui/Modifier, androidx.compose.runtime/Composer?, kotlin/Int) // com.adamglin.compose.markdown.compose/MathRenderer.BlockMath|BlockMath(kotlin.String;androidx.compose.ui.Modifier;androidx.compose.runtime.Composer?;kotlin.Int){}[0]
+    abstract fun InlineMath(kotlin/String, androidx.compose.ui.text/TextStyle, androidx.compose.runtime/Composer?, kotlin/Int) // com.adamglin.compose.markdown.compose/MathRenderer.InlineMath|InlineMath(kotlin.String;androidx.compose.ui.text.TextStyle;androidx.compose.runtime.Composer?;kotlin.Int){}[0]
+}
+
+final class com.adamglin.compose.markdown.compose/HighlightToken { // com.adamglin.compose.markdown.compose/HighlightToken|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, androidx.compose.ui.graphics/Color) // com.adamglin.compose.markdown.compose/HighlightToken.<init>|<init>(kotlin.Int;kotlin.Int;androidx.compose.ui.graphics.Color){}[0]
+
+    final val color // com.adamglin.compose.markdown.compose/HighlightToken.color|{}color[0]
+        final fun <get-color>(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/HighlightToken.color.<get-color>|<get-color>(){}[0]
+    final val endExclusive // com.adamglin.compose.markdown.compose/HighlightToken.endExclusive|{}endExclusive[0]
+        final fun <get-endExclusive>(): kotlin/Int // com.adamglin.compose.markdown.compose/HighlightToken.endExclusive.<get-endExclusive>|<get-endExclusive>(){}[0]
+    final val start // com.adamglin.compose.markdown.compose/HighlightToken.start|{}start[0]
+        final fun <get-start>(): kotlin/Int // com.adamglin.compose.markdown.compose/HighlightToken.start.<get-start>|<get-start>(){}[0]
+
+    final fun component1(): kotlin/Int // com.adamglin.compose.markdown.compose/HighlightToken.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // com.adamglin.compose.markdown.compose/HighlightToken.component2|component2(){}[0]
+    final fun component3(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/HighlightToken.component3|component3(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., androidx.compose.ui.graphics/Color = ...): com.adamglin.compose.markdown.compose/HighlightToken // com.adamglin.compose.markdown.compose/HighlightToken.copy|copy(kotlin.Int;kotlin.Int;androidx.compose.ui.graphics.Color){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.compose/HighlightToken.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.compose/HighlightToken.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.compose/HighlightToken.toString|toString(){}[0]
+}
+
+final class com.adamglin.compose.markdown.compose/MarkdownColors { // com.adamglin.compose.markdown.compose/MarkdownColors|null[0]
+    constructor <init>(androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color) // com.adamglin.compose.markdown.compose/MarkdownColors.<init>|<init>(androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color){}[0]
+
+    final val accent // com.adamglin.compose.markdown.compose/MarkdownColors.accent|{}accent[0]
+        final fun <get-accent>(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.accent.<get-accent>|<get-accent>(){}[0]
+    final val border // com.adamglin.compose.markdown.compose/MarkdownColors.border|{}border[0]
+        final fun <get-border>(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.border.<get-border>|<get-border>(){}[0]
+    final val codeComment // com.adamglin.compose.markdown.compose/MarkdownColors.codeComment|{}codeComment[0]
+        final fun <get-codeComment>(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.codeComment.<get-codeComment>|<get-codeComment>(){}[0]
+    final val codeKeyword // com.adamglin.compose.markdown.compose/MarkdownColors.codeKeyword|{}codeKeyword[0]
+        final fun <get-codeKeyword>(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.codeKeyword.<get-codeKeyword>|<get-codeKeyword>(){}[0]
+    final val codeLiteral // com.adamglin.compose.markdown.compose/MarkdownColors.codeLiteral|{}codeLiteral[0]
+        final fun <get-codeLiteral>(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.codeLiteral.<get-codeLiteral>|<get-codeLiteral>(){}[0]
+    final val codeString // com.adamglin.compose.markdown.compose/MarkdownColors.codeString|{}codeString[0]
+        final fun <get-codeString>(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.codeString.<get-codeString>|<get-codeString>(){}[0]
+    final val link // com.adamglin.compose.markdown.compose/MarkdownColors.link|{}link[0]
+        final fun <get-link>(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.link.<get-link>|<get-link>(){}[0]
+    final val surface // com.adamglin.compose.markdown.compose/MarkdownColors.surface|{}surface[0]
+        final fun <get-surface>(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.surface.<get-surface>|<get-surface>(){}[0]
+    final val text // com.adamglin.compose.markdown.compose/MarkdownColors.text|{}text[0]
+        final fun <get-text>(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.text.<get-text>|<get-text>(){}[0]
+    final val textSecondary // com.adamglin.compose.markdown.compose/MarkdownColors.textSecondary|{}textSecondary[0]
+        final fun <get-textSecondary>(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.textSecondary.<get-textSecondary>|<get-textSecondary>(){}[0]
+
+    final fun component1(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.component1|component1(){}[0]
+    final fun component10(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.component10|component10(){}[0]
+    final fun component2(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.component2|component2(){}[0]
+    final fun component3(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.component3|component3(){}[0]
+    final fun component4(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.component4|component4(){}[0]
+    final fun component5(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.component5|component5(){}[0]
+    final fun component6(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.component6|component6(){}[0]
+    final fun component7(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.component7|component7(){}[0]
+    final fun component8(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.component8|component8(){}[0]
+    final fun component9(): androidx.compose.ui.graphics/Color // com.adamglin.compose.markdown.compose/MarkdownColors.component9|component9(){}[0]
+    final fun copy(androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.graphics/Color = ...): com.adamglin.compose.markdown.compose/MarkdownColors // com.adamglin.compose.markdown.compose/MarkdownColors.copy|copy(androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.compose/MarkdownColors.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.compose/MarkdownColors.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.compose/MarkdownColors.toString|toString(){}[0]
+
+    final object Companion { // com.adamglin.compose.markdown.compose/MarkdownColors.Companion|null[0]
+        final val Dark // com.adamglin.compose.markdown.compose/MarkdownColors.Companion.Dark|{}Dark[0]
+            final fun <get-Dark>(): com.adamglin.compose.markdown.compose/MarkdownColors // com.adamglin.compose.markdown.compose/MarkdownColors.Companion.Dark.<get-Dark>|<get-Dark>(){}[0]
+        final val Light // com.adamglin.compose.markdown.compose/MarkdownColors.Companion.Light|{}Light[0]
+            final fun <get-Light>(): com.adamglin.compose.markdown.compose/MarkdownColors // com.adamglin.compose.markdown.compose/MarkdownColors.Companion.Light.<get-Light>|<get-Light>(){}[0]
+    }
+}
+
+final class com.adamglin.compose.markdown.compose/MarkdownImage { // com.adamglin.compose.markdown.compose/MarkdownImage|null[0]
+    constructor <init>(kotlin/String, kotlin/String, kotlin/String?) // com.adamglin.compose.markdown.compose/MarkdownImage.<init>|<init>(kotlin.String;kotlin.String;kotlin.String?){}[0]
+
+    final val altText // com.adamglin.compose.markdown.compose/MarkdownImage.altText|{}altText[0]
+        final fun <get-altText>(): kotlin/String // com.adamglin.compose.markdown.compose/MarkdownImage.altText.<get-altText>|<get-altText>(){}[0]
+    final val title // com.adamglin.compose.markdown.compose/MarkdownImage.title|{}title[0]
+        final fun <get-title>(): kotlin/String? // com.adamglin.compose.markdown.compose/MarkdownImage.title.<get-title>|<get-title>(){}[0]
+    final val url // com.adamglin.compose.markdown.compose/MarkdownImage.url|{}url[0]
+        final fun <get-url>(): kotlin/String // com.adamglin.compose.markdown.compose/MarkdownImage.url.<get-url>|<get-url>(){}[0]
+
+    final fun component1(): kotlin/String // com.adamglin.compose.markdown.compose/MarkdownImage.component1|component1(){}[0]
+    final fun component2(): kotlin/String // com.adamglin.compose.markdown.compose/MarkdownImage.component2|component2(){}[0]
+    final fun component3(): kotlin/String? // com.adamglin.compose.markdown.compose/MarkdownImage.component3|component3(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String? = ...): com.adamglin.compose.markdown.compose/MarkdownImage // com.adamglin.compose.markdown.compose/MarkdownImage.copy|copy(kotlin.String;kotlin.String;kotlin.String?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.compose/MarkdownImage.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.compose/MarkdownImage.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.compose/MarkdownImage.toString|toString(){}[0]
+}
+
+final class com.adamglin.compose.markdown.compose/MarkdownState { // com.adamglin.compose.markdown.compose/MarkdownState|null[0]
+    constructor <init>(com.adamglin.compose.markdown.core.dialect/MarkdownDialect = ...) // com.adamglin.compose.markdown.compose/MarkdownState.<init>|<init>(com.adamglin.compose.markdown.core.dialect.MarkdownDialect){}[0]
+
+    final var document // com.adamglin.compose.markdown.compose/MarkdownState.document|{}document[0]
+        final fun <get-document>(): com.adamglin.compose.markdown.core.model/MarkdownDocument // com.adamglin.compose.markdown.compose/MarkdownState.document.<get-document>|<get-document>(){}[0]
+
+    final fun append(kotlin/String) // com.adamglin.compose.markdown.compose/MarkdownState.append|append(kotlin.String){}[0]
+    final fun finish() // com.adamglin.compose.markdown.compose/MarkdownState.finish|finish(){}[0]
+    final fun reset() // com.adamglin.compose.markdown.compose/MarkdownState.reset|reset(){}[0]
+}
+
+final class com.adamglin.compose.markdown.compose/MarkdownTypography { // com.adamglin.compose.markdown.compose/MarkdownTypography|null[0]
+    constructor <init>(androidx.compose.ui.text/TextStyle, androidx.compose.ui.text/TextStyle, androidx.compose.ui.text/TextStyle, androidx.compose.ui.text/TextStyle, androidx.compose.ui.text/TextStyle, androidx.compose.ui.text/TextStyle, androidx.compose.ui.text/TextStyle, androidx.compose.ui.text/TextStyle, androidx.compose.ui.text/TextStyle, androidx.compose.ui.text/TextStyle) // com.adamglin.compose.markdown.compose/MarkdownTypography.<init>|<init>(androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle){}[0]
+
+    final val body // com.adamglin.compose.markdown.compose/MarkdownTypography.body|{}body[0]
+        final fun <get-body>(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.body.<get-body>|<get-body>(){}[0]
+    final val code // com.adamglin.compose.markdown.compose/MarkdownTypography.code|{}code[0]
+        final fun <get-code>(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.code.<get-code>|<get-code>(){}[0]
+    final val heading1 // com.adamglin.compose.markdown.compose/MarkdownTypography.heading1|{}heading1[0]
+        final fun <get-heading1>(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.heading1.<get-heading1>|<get-heading1>(){}[0]
+    final val heading2 // com.adamglin.compose.markdown.compose/MarkdownTypography.heading2|{}heading2[0]
+        final fun <get-heading2>(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.heading2.<get-heading2>|<get-heading2>(){}[0]
+    final val heading3 // com.adamglin.compose.markdown.compose/MarkdownTypography.heading3|{}heading3[0]
+        final fun <get-heading3>(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.heading3.<get-heading3>|<get-heading3>(){}[0]
+    final val heading4 // com.adamglin.compose.markdown.compose/MarkdownTypography.heading4|{}heading4[0]
+        final fun <get-heading4>(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.heading4.<get-heading4>|<get-heading4>(){}[0]
+    final val heading5 // com.adamglin.compose.markdown.compose/MarkdownTypography.heading5|{}heading5[0]
+        final fun <get-heading5>(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.heading5.<get-heading5>|<get-heading5>(){}[0]
+    final val heading6 // com.adamglin.compose.markdown.compose/MarkdownTypography.heading6|{}heading6[0]
+        final fun <get-heading6>(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.heading6.<get-heading6>|<get-heading6>(){}[0]
+    final val label // com.adamglin.compose.markdown.compose/MarkdownTypography.label|{}label[0]
+        final fun <get-label>(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.label.<get-label>|<get-label>(){}[0]
+    final val table // com.adamglin.compose.markdown.compose/MarkdownTypography.table|{}table[0]
+        final fun <get-table>(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.table.<get-table>|<get-table>(){}[0]
+
+    final fun component1(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.component1|component1(){}[0]
+    final fun component10(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.component10|component10(){}[0]
+    final fun component2(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.component2|component2(){}[0]
+    final fun component3(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.component3|component3(){}[0]
+    final fun component4(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.component4|component4(){}[0]
+    final fun component5(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.component5|component5(){}[0]
+    final fun component6(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.component6|component6(){}[0]
+    final fun component7(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.component7|component7(){}[0]
+    final fun component8(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.component8|component8(){}[0]
+    final fun component9(): androidx.compose.ui.text/TextStyle // com.adamglin.compose.markdown.compose/MarkdownTypography.component9|component9(){}[0]
+    final fun copy(androidx.compose.ui.text/TextStyle = ..., androidx.compose.ui.text/TextStyle = ..., androidx.compose.ui.text/TextStyle = ..., androidx.compose.ui.text/TextStyle = ..., androidx.compose.ui.text/TextStyle = ..., androidx.compose.ui.text/TextStyle = ..., androidx.compose.ui.text/TextStyle = ..., androidx.compose.ui.text/TextStyle = ..., androidx.compose.ui.text/TextStyle = ..., androidx.compose.ui.text/TextStyle = ...): com.adamglin.compose.markdown.compose/MarkdownTypography // com.adamglin.compose.markdown.compose/MarkdownTypography.copy|copy(androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle;androidx.compose.ui.text.TextStyle){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.compose/MarkdownTypography.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.compose/MarkdownTypography.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // com.adamglin.compose.markdown.compose/MarkdownTypography.toString|toString(){}[0]
+
+    final object Companion { // com.adamglin.compose.markdown.compose/MarkdownTypography.Companion|null[0]
+        final val Default // com.adamglin.compose.markdown.compose/MarkdownTypography.Companion.Default|{}Default[0]
+            final fun <get-Default>(): com.adamglin.compose.markdown.compose/MarkdownTypography // com.adamglin.compose.markdown.compose/MarkdownTypography.Companion.Default.<get-Default>|<get-Default>(){}[0]
+    }
+}
+
+final object com.adamglin.compose.markdown.compose/DefaultCodeHighlighter : com.adamglin.compose.markdown.compose/CodeHighlighter { // com.adamglin.compose.markdown.compose/DefaultCodeHighlighter|null[0]
+    final fun highlight(kotlin/String, kotlin/String, com.adamglin.compose.markdown.compose/MarkdownColors): kotlin.collections/List<com.adamglin.compose.markdown.compose/HighlightToken>? // com.adamglin.compose.markdown.compose/DefaultCodeHighlighter.highlight|highlight(kotlin.String;kotlin.String;com.adamglin.compose.markdown.compose.MarkdownColors){}[0]
+}
+
+final object com.adamglin.compose.markdown.compose/MarkdownTheme { // com.adamglin.compose.markdown.compose/MarkdownTheme|null[0]
+    final val blockSpacing // com.adamglin.compose.markdown.compose/MarkdownTheme.blockSpacing|{}blockSpacing[0]
+        final fun <get-blockSpacing>(androidx.compose.runtime/Composer?, kotlin/Int): androidx.compose.ui.unit/Dp // com.adamglin.compose.markdown.compose/MarkdownTheme.blockSpacing.<get-blockSpacing>|<get-blockSpacing>(androidx.compose.runtime.Composer?;kotlin.Int){}[0]
+    final val colors // com.adamglin.compose.markdown.compose/MarkdownTheme.colors|{}colors[0]
+        final fun <get-colors>(androidx.compose.runtime/Composer?, kotlin/Int): com.adamglin.compose.markdown.compose/MarkdownColors // com.adamglin.compose.markdown.compose/MarkdownTheme.colors.<get-colors>|<get-colors>(androidx.compose.runtime.Composer?;kotlin.Int){}[0]
+    final val typography // com.adamglin.compose.markdown.compose/MarkdownTheme.typography|{}typography[0]
+        final fun <get-typography>(androidx.compose.runtime/Composer?, kotlin/Int): com.adamglin.compose.markdown.compose/MarkdownTypography // com.adamglin.compose.markdown.compose/MarkdownTheme.typography.<get-typography>|<get-typography>(androidx.compose.runtime.Composer?;kotlin.Int){}[0]
+}
+
+final val com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_DefaultCodeHighlighter$stableprop // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_DefaultCodeHighlighter$stableprop|#static{}com_adamglin_compose_markdown_compose_DefaultCodeHighlighter$stableprop[0]
+final val com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_HighlightToken$stableprop // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_HighlightToken$stableprop|#static{}com_adamglin_compose_markdown_compose_HighlightToken$stableprop[0]
+final val com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_InlineEmbed_Image$stableprop // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_InlineEmbed_Image$stableprop|#static{}com_adamglin_compose_markdown_compose_InlineEmbed_Image$stableprop[0]
+final val com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_InlineEmbed_Math$stableprop // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_InlineEmbed_Math$stableprop|#static{}com_adamglin_compose_markdown_compose_InlineEmbed_Math$stableprop[0]
+final val com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownColors$stableprop // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownColors$stableprop|#static{}com_adamglin_compose_markdown_compose_MarkdownColors$stableprop[0]
+final val com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownImage$stableprop // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownImage$stableprop|#static{}com_adamglin_compose_markdown_compose_MarkdownImage$stableprop[0]
+final val com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownState$stableprop // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownState$stableprop|#static{}com_adamglin_compose_markdown_compose_MarkdownState$stableprop[0]
+final val com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTheme$stableprop // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTheme$stableprop|#static{}com_adamglin_compose_markdown_compose_MarkdownTheme$stableprop[0]
+final val com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTypography$stableprop // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTypography$stableprop|#static{}com_adamglin_compose_markdown_compose_MarkdownTypography$stableprop[0]
+
+final fun (androidx.compose.foundation.lazy/LazyListScope).com.adamglin.compose.markdown.compose/markdown(com.adamglin.compose.markdown.core.model/MarkdownDocument, kotlin/Any, com.adamglin.compose.markdown.compose/CodeHighlighter? = ..., com.adamglin.compose.markdown.compose/MathRenderer? = ..., kotlin/Function3<com.adamglin.compose.markdown.compose/MarkdownImage, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>? = ..., kotlin/Function1<kotlin/String, kotlin/Unit>? = ...) // com.adamglin.compose.markdown.compose/markdown|markdown@androidx.compose.foundation.lazy.LazyListScope(com.adamglin.compose.markdown.core.model.MarkdownDocument;kotlin.Any;com.adamglin.compose.markdown.compose.CodeHighlighter?;com.adamglin.compose.markdown.compose.MathRenderer?;kotlin.Function3<com.adamglin.compose.markdown.compose.MarkdownImage,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;kotlin.Function1<kotlin.String,kotlin.Unit>?){}[0]
+final fun com.adamglin.compose.markdown.compose/Markdown(com.adamglin.compose.markdown.core.model/MarkdownDocument, androidx.compose.ui/Modifier?, com.adamglin.compose.markdown.compose/CodeHighlighter?, com.adamglin.compose.markdown.compose/MathRenderer?, kotlin/Function3<com.adamglin.compose.markdown.compose/MarkdownImage, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>?, kotlin/Function1<kotlin/String, kotlin/Unit>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // com.adamglin.compose.markdown.compose/Markdown|Markdown(com.adamglin.compose.markdown.core.model.MarkdownDocument;androidx.compose.ui.Modifier?;com.adamglin.compose.markdown.compose.CodeHighlighter?;com.adamglin.compose.markdown.compose.MathRenderer?;kotlin.Function3<com.adamglin.compose.markdown.compose.MarkdownImage,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;kotlin.Function1<kotlin.String,kotlin.Unit>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun com.adamglin.compose.markdown.compose/Markdown(kotlin/String, androidx.compose.ui/Modifier?, com.adamglin.compose.markdown.core.dialect/MarkdownDialect?, com.adamglin.compose.markdown.compose/CodeHighlighter?, com.adamglin.compose.markdown.compose/MathRenderer?, kotlin/Function3<com.adamglin.compose.markdown.compose/MarkdownImage, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>?, kotlin/Function1<kotlin/String, kotlin/Unit>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // com.adamglin.compose.markdown.compose/Markdown|Markdown(kotlin.String;androidx.compose.ui.Modifier?;com.adamglin.compose.markdown.core.dialect.MarkdownDialect?;com.adamglin.compose.markdown.compose.CodeHighlighter?;com.adamglin.compose.markdown.compose.MathRenderer?;kotlin.Function3<com.adamglin.compose.markdown.compose.MarkdownImage,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;kotlin.Function1<kotlin.String,kotlin.Unit>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun com.adamglin.compose.markdown.compose/MarkdownTheme(com.adamglin.compose.markdown.compose/MarkdownColors?, com.adamglin.compose.markdown.compose/MarkdownTypography?, androidx.compose.ui.unit/Dp, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // com.adamglin.compose.markdown.compose/MarkdownTheme|MarkdownTheme(com.adamglin.compose.markdown.compose.MarkdownColors?;com.adamglin.compose.markdown.compose.MarkdownTypography?;androidx.compose.ui.unit.Dp;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_DefaultCodeHighlighter$stableprop_getter(): kotlin/Int // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_DefaultCodeHighlighter$stableprop_getter|com_adamglin_compose_markdown_compose_DefaultCodeHighlighter$stableprop_getter(){}[0]
+final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_HighlightToken$stableprop_getter(): kotlin/Int // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_HighlightToken$stableprop_getter|com_adamglin_compose_markdown_compose_HighlightToken$stableprop_getter(){}[0]
+final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_InlineEmbed_Image$stableprop_getter(): kotlin/Int // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_InlineEmbed_Image$stableprop_getter|com_adamglin_compose_markdown_compose_InlineEmbed_Image$stableprop_getter(){}[0]
+final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_InlineEmbed_Math$stableprop_getter(): kotlin/Int // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_InlineEmbed_Math$stableprop_getter|com_adamglin_compose_markdown_compose_InlineEmbed_Math$stableprop_getter(){}[0]
+final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownColors$stableprop_getter(): kotlin/Int // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownColors$stableprop_getter|com_adamglin_compose_markdown_compose_MarkdownColors$stableprop_getter(){}[0]
+final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownImage$stableprop_getter(): kotlin/Int // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownImage$stableprop_getter|com_adamglin_compose_markdown_compose_MarkdownImage$stableprop_getter(){}[0]
+final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownState$stableprop_getter(): kotlin/Int // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownState$stableprop_getter|com_adamglin_compose_markdown_compose_MarkdownState$stableprop_getter(){}[0]
+final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTheme$stableprop_getter(): kotlin/Int // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTheme$stableprop_getter|com_adamglin_compose_markdown_compose_MarkdownTheme$stableprop_getter(){}[0]
+final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTypography$stableprop_getter(): kotlin/Int // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTypography$stableprop_getter|com_adamglin_compose_markdown_compose_MarkdownTypography$stableprop_getter(){}[0]
+final fun com.adamglin.compose.markdown.compose/rememberMarkdownDocument(kotlin/String, com.adamglin.compose.markdown.core.dialect/MarkdownDialect?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): com.adamglin.compose.markdown.core.model/MarkdownDocument // com.adamglin.compose.markdown.compose/rememberMarkdownDocument|rememberMarkdownDocument(kotlin.String;com.adamglin.compose.markdown.core.dialect.MarkdownDialect?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun com.adamglin.compose.markdown.compose/rememberMarkdownState(com.adamglin.compose.markdown.core.dialect/MarkdownDialect?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): com.adamglin.compose.markdown.compose/MarkdownState // com.adamglin.compose.markdown.compose/rememberMarkdownState|rememberMarkdownState(com.adamglin.compose.markdown.core.dialect.MarkdownDialect?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]

@@ -28,7 +28,7 @@ import com.adamglin.compose.markdown.core.model.MarkdownDocument
  * @param onLinkClick handles link clicks; `null` opens links with `LocalUriHandler`.
  */
 @Composable
-fun Markdown(
+public fun Markdown(
     document: MarkdownDocument,
     modifier: Modifier = Modifier,
     codeHighlighter: CodeHighlighter? = DefaultCodeHighlighter,
@@ -48,7 +48,7 @@ fun Markdown(
 
 /** Parses [text] (once per distinct text) and renders it. See the [MarkdownDocument] overload. */
 @Composable
-fun Markdown(
+public fun Markdown(
     text: String,
     modifier: Modifier = Modifier,
     dialect: MarkdownDialect = MarkdownDialect.ChatFast,
@@ -75,7 +75,7 @@ fun Markdown(
  *   keys are `"$key:<block id>"`, so every document in one list needs a distinct key.
  * @see Markdown for the other parameters.
  */
-fun LazyListScope.markdown(
+public fun LazyListScope.markdown(
     document: MarkdownDocument,
     key: Any,
     codeHighlighter: CodeHighlighter? = DefaultCodeHighlighter,

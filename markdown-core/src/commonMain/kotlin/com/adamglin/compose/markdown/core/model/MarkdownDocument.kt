@@ -1,6 +1,6 @@
 package com.adamglin.compose.markdown.core.model
 
-data class MarkdownDocument(
+public data class MarkdownDocument(
     val sourceLength: Int,
     val lineCount: Int,
     val blocks: List<BlockNode>,
@@ -10,13 +10,13 @@ data class MarkdownDocument(
         require(lineCount >= 0) { "lineCount must be non-negative" }
     }
 
-    val sourceRange: TextRange
+    public val sourceRange: TextRange
         get() = TextRange(start = 0, endExclusive = sourceLength)
 
-    val lineRange: LineRange
+    public val lineRange: LineRange
         get() = LineRange(startLine = 0, endLineExclusive = lineCount)
 
-    val root: BlockNode.Document
+    public val root: BlockNode.Document
         get() = BlockNode.Document(
             id = BlockId.Document,
             range = sourceRange,

@@ -33,7 +33,7 @@ import com.adamglin.compose.markdown.core.model.InlineNode
 
 /** An image referenced by the document, handed to the `imageContent` slot of the renderer. */
 @Immutable
-data class MarkdownImage(
+public data class MarkdownImage(
     val url: String,
     val altText: String,
     val title: String?,
