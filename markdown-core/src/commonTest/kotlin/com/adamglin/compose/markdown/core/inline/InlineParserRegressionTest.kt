@@ -54,6 +54,10 @@ class InlineParserRegressionTest {
         assertEquals("text(~~~Hi~~~)", inlineShape("~~~Hi~~~"))
         assertEquals("del(text(Hi))text( and )del(text(there))", inlineShape("~~Hi~~ and ~there~"))
         assertEquals("text(~~Hi~)", inlineShape("~~Hi~"))
+        // A tilde closer only tries the nearest tilde opener (cmark-gfm), which must have the same length.
+        assertEquals("text(~a ~~b~)", inlineShape("~a ~~b~"))
+        assertEquals("del(text(a )del(text(b))text( c))", inlineShape("~~a ~b~ c~~"))
+        assertEquals("del(text(a )del(text(b c~ d))text( e))", inlineShape("~a ~~b c~ d~~ e~"))
         assertEquals("text(e)sbtext(***x)", inlineShape("e\n***x"))
     }
 

@@ -420,7 +420,9 @@ internal class InlineParser(
                 var openerFound = false
                 while (opener != null && opener != stackBottom && opener != bottom) {
                     if (opener.char == closer.char && opener.canOpen && !isOddMatch(opener, closer)) {
-                        openerFound = true
+                        // GFM (cmark-gfm): a tilde closer only tries the nearest tilde opener, and
+                        // strikes through only when both runs have the same length.
+                        openerFound = closer.char != '~' || opener.count == closer.count
                         break
                     }
                     opener = opener.previous
@@ -446,7 +448,7 @@ internal class InlineParser(
         }
 
         private fun openersBottomKey(closer: Delimiter): Int = if (closer.char == '~') {
-            closer.char.code shl 3
+            (closer.char.code shl 3) or closer.count
         } else {
             (closer.char.code shl 3) or (if (closer.canOpen) 4 else 0) or (closer.originalCount % 3)
         }
@@ -497,9 +499,6 @@ internal class InlineParser(
         }
 
         private fun matchStrikethrough(opener: Delimiter, closer: Delimiter): Delimiter? {
-            if (opener.count != closer.count) {
-                return closer.next
-            }
             val openerNode = opener.node
             val closerNode = closer.node
             val container = ContainerDraft(kind = ContainerKind.Strikethrough, start = openerNode.start, end = closerNode.end)

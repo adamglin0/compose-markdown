@@ -40,6 +40,7 @@ class InlineParserPerformanceTest {
         assertFast("*a _b ".repeat(40_000))
         assertFast("**a *b ".repeat(40_000))
         assertFast("~a ~~b ".repeat(40_000))
+        assertFast("~~a " + "*a ".repeat(40_000) + "b~ ".repeat(40_000))
         assertFast("*".repeat(10_000) + "a" + "*".repeat(10_000))
         assertFast("a**b".repeat(50_000))
         assertFast("*a ".repeat(40_000) + "[a](b) ".repeat(40_000))
