@@ -39,7 +39,7 @@ internal class BlockParser(
         isFinal: Boolean,
         range: TextRange = TextRange(start = 0, endExclusive = sourceBuffer.length),
     ): BlockParseResult {
-        val source = sourceBuffer.snapshot()
+        val source = sourceBuffer.content
         val lines = if (source.isEmpty() || range.isEmpty) {
             emptyList()
         } else {

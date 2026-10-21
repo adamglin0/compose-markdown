@@ -46,8 +46,12 @@ internal class LineIndex {
         return LineRange(startLine = startLine, endLineExclusive = endLineExclusive)
     }
 
+    /** Offset where the last line starts: just after the last line ending, or 0 without one. */
+    fun lastLineStart(): Int = if (_newlineOffsets.isEmpty()) 0 else _newlineOffsets.last() + 1
+
+    /** Lines of [source] within [startOffset, endExclusive); only the lines are copied, never the whole source. */
     fun lines(
-        source: String,
+        source: CharSequence,
         startOffset: Int = 0,
         endExclusive: Int = source.length,
     ): List<IndexedLine> {

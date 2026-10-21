@@ -54,7 +54,7 @@ class DialectExtensionTest {
         val paragraph = assertIs<BlockNode.Paragraph>(delta.snapshot.document.blocks.single())
         val link = paragraph.children.filterIsInstance<InlineNode.Link>().single()
         assertEquals("https://example.com/guide", link.destination)
-        assertTrue(delta.updatedBlockIds.contains(firstBlockId))
+        assertEquals(listOf(firstBlockId), delta.changedBlocks.map { it.id })
         assertEquals(1, delta.snapshot.document.blocks.size)
         assertTrue(delta.stats.reparsedBlocks in 1..2)
     }
@@ -70,8 +70,8 @@ class DialectExtensionTest {
 
         val delta = engine.append("\n[docs]: https://example.com/guide\n")
 
-        assertEquals(listOf(dependentBlockId), delta.updatedBlockIds)
-        assertFalse(delta.updatedBlockIds.contains(stableTailBlockId))
+        assertEquals(listOf(dependentBlockId), delta.changedBlocks.map { it.id })
+        assertEquals(stableTailBlockId, delta.snapshot.document.blocks.last().id)
         assertEquals(2, delta.snapshot.document.blocks.size)
         assertEquals(2, delta.stats.reparsedBlocks)
 
@@ -151,8 +151,10 @@ class DialectExtensionTest {
         val gfm = MarkdownEngine(dialect = MarkdownDialect.GfmCompat)
         val markdown = "See [guide][docs]\n\n[docs]: https://example.com/guide"
 
-        val commonMarkSnapshot = commonMark.append(markdown).snapshot
-        val gfmSnapshot = gfm.append(markdown).snapshot
+        commonMark.append(markdown)
+        gfm.append(markdown)
+        val commonMarkSnapshot = commonMark.finish().snapshot
+        val gfmSnapshot = gfm.finish().snapshot
 
         assertEquals(1, commonMarkSnapshot.document.blocks.size)
         assertEquals(1, gfmSnapshot.document.blocks.size)
@@ -161,21 +163,24 @@ class DialectExtensionTest {
     }
 
     @Test
-    fun streamingReferenceDefinitionCanExtendDestinationAcrossChunks() {
+    fun streamingReferenceDefinitionTakesEffectOnceItsLineIsComplete() {
         val engine = MarkdownEngine(dialect = MarkdownDialect.CommonMarkCore)
 
         val first = engine.append("See [guide][docs]\n")
         val firstBlockId = first.snapshot.document.blocks.single().id
         engine.append("\n[docs]: ")
-        engine.append("https://example.")
-        val delta = engine.append("com/guide")
+        val partial = engine.append("https://example.")
+        val pending = engine.append("com/guide")
 
-        val paragraph = assertIs<BlockNode.Paragraph>(delta.snapshot.document.blocks.single())
-        val link = paragraph.children.filterIsInstance<InlineNode.Link>().single()
-        assertEquals("https://example.com/guide", link.destination)
-        assertTrue(delta.updatedBlockIds.contains(firstBlockId))
+        // A definition on the unterminated last line is not resolved yet, so dependent blocks do not churn.
+        assertTrue(partial.changedBlocks.isEmpty())
+        assertTrue(pending.changedBlocks.isEmpty())
+        val pendingParagraph = assertIs<BlockNode.Paragraph>(pending.snapshot.document.blocks.single())
+        assertFalse(pendingParagraph.children.any { it is InlineNode.Link })
 
-        val finalParagraph = assertIs<BlockNode.Paragraph>(engine.finish().snapshot.document.blocks.single())
+        val finished = engine.finish()
+        assertEquals(listOf(firstBlockId), finished.changedBlocks.map { it.id })
+        val finalParagraph = assertIs<BlockNode.Paragraph>(finished.snapshot.document.blocks.single())
         val finalLink = finalParagraph.children.filterIsInstance<InlineNode.Link>().single()
         assertEquals("https://example.com/guide", finalLink.destination)
     }

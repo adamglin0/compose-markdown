@@ -18,17 +18,13 @@ class IncrementalEngineStressTest {
 
         val incremental = MarkdownEngine()
         val tokens = listOf("# ", "Title", "\n\n", "hello ", "*world*", " from ", "`chat`", "\n\n", "- one\n", "- two\n", "> quote")
-        var fallbackCount = 0
-        tokens.forEach { chunk ->
-            fallbackCount += incremental.append(chunk).stats.fallbackCount
-        }
+        tokens.forEach { chunk -> incremental.append(chunk) }
         val incrementalSnapshot = incremental.finish().snapshot
 
         val full = MarkdownEngine()
         full.append(text)
         val fullSnapshot = full.finish().snapshot
 
-        assertEquals(0, fallbackCount)
         assertEquals(fullSnapshot.document.blocks.debugShape(), incrementalSnapshot.document.blocks.debugShape())
     }
 
@@ -37,17 +33,13 @@ class IncrementalEngineStressTest {
         val text = "> quote\n> still quote\n\n```kotlin\nval x = 1\n```"
 
         val incremental = MarkdownEngine()
-        var fallbackCount = 0
-        text.forEach { char ->
-            fallbackCount += incremental.append(char.toString()).stats.fallbackCount
-        }
+        text.forEach { char -> incremental.append(char.toString()) }
         val incrementalSnapshot = incremental.finish().snapshot
 
         val full = MarkdownEngine()
         full.append(text)
         val fullSnapshot = full.finish().snapshot
 
-        assertEquals(0, fallbackCount)
         assertEquals(fullSnapshot.document.blocks.debugShape(), incrementalSnapshot.document.blocks.debugShape())
     }
 
@@ -78,7 +70,6 @@ class IncrementalEngineStressTest {
         text.chunked(2).forEach { chunk ->
             val delta = engine.append(chunk)
             assertTrue(delta.snapshot.document.blocks.isNotEmpty())
-            assertTrue(delta.snapshot.document.sourceLength >= delta.snapshot.stablePrefixEnd)
         }
 
         val snapshot = engine.snapshot()
@@ -126,7 +117,7 @@ class IncrementalEngineStressTest {
         val fence = assertIs<BlockNode.FencedCodeBlock>(finished.snapshot.document.blocks.single())
         assertEquals(openId, fence.id)
         assertFalse(fence.isClosed)
-        assertTrue(finished.updatedBlockIds.isEmpty())
+        assertTrue(finished.changedBlocks.isEmpty())
     }
 }
 

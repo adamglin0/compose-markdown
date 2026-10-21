@@ -58,8 +58,8 @@ class BlockParserOpenFrameTest {
     fun streamingParagraphStaysOutOfTheStablePrefixUntilItCannotChange() {
         val engine = MarkdownEngine(dialect = MarkdownDialect.CommonMarkCore)
 
-        assertEquals(TextRange(start = 0, endExclusive = 0), engine.append("Foo\n").stablePrefixRange)
-        assertEquals(TextRange(start = 0, endExclusive = 8), engine.append("===\n").stablePrefixRange)
+        assertEquals(TextRange(start = 0, endExclusive = 0), engine.append("Foo\n").snapshot.stablePrefixRange)
+        assertEquals(TextRange(start = 0, endExclusive = 8), engine.append("===\n").snapshot.stablePrefixRange)
     }
 
     @Test

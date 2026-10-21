@@ -3,7 +3,6 @@ package com.adamglin.compose.markdown.core.model
 import com.adamglin.compose.markdown.core.api.MarkdownEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ParseDeltaTest {
@@ -17,11 +16,9 @@ class ParseDeltaTest {
         assertEquals(delta.version, delta.snapshot.version)
         assertEquals(0, delta.dirtyRegion.start)
         assertEquals(delta.snapshot.document.sourceLength, delta.dirtyRegion.endExclusive)
-        assertEquals(delta.snapshot.stablePrefixRange, delta.stablePrefixRange)
-        assertTrue(delta.insertedBlockIds.isEmpty())
-        assertTrue(delta.updatedBlockIds.isEmpty())
+        assertEquals(TextRange(0, 5), delta.snapshot.stablePrefixRange)
+        assertTrue(delta.changedBlocks.isEmpty())
         assertTrue(delta.snapshot.isFinal)
-        assertFalse(delta.isNoOp)
     }
 
     @Test
@@ -30,7 +27,10 @@ class ParseDeltaTest {
 
         val delta = engine.append("")
 
-        assertTrue(delta.isNoOp)
+        assertEquals(0L, delta.version)
+        assertTrue(delta.changedBlocks.isEmpty())
+        assertTrue(delta.removedBlockIds.isEmpty())
+        assertTrue(delta.dirtyRegion.isEmpty)
         assertEquals(ParseStats.Empty, delta.stats)
     }
 }

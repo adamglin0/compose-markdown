@@ -3,10 +3,9 @@ package com.adamglin.compose.markdown.sample.chat
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.InlineNode
 import com.adamglin.compose.markdown.core.model.MarkdownSnapshot
-import com.adamglin.compose.markdown.core.model.ParseDelta
 
 internal fun MarkdownSnapshot.toDebugText(): String = buildString {
-    appendLine("version=$version final=$isFinal stablePrefixEnd=$stablePrefixEnd dirty=${dirtyRegion.start}..${dirtyRegion.endExclusive}")
+    appendLine("version=$version final=$isFinal stablePrefixEnd=$stablePrefixEnd")
     appendLine("lines=${document.lineCount} sourceLength=${document.sourceLength}")
     if (document.blocks.isEmpty()) {
         append("(no blocks)")
@@ -15,19 +14,6 @@ internal fun MarkdownSnapshot.toDebugText(): String = buildString {
     document.blocks.forEach { block ->
         appendBlock(block = block, depth = 0)
     }
-}
-
-internal fun ParseDelta.toDebugText(): String = buildString {
-    appendLine("version=$version stateChange=$hasStateChange dirty=${dirtyRegion.start}..${dirtyRegion.endExclusive}")
-    appendLine(
-        "inserted=${insertedBlockIds.joinToString { it.raw.toString() }} updated=${updatedBlockIds.joinToString { it.raw.toString() }} removed=${removedBlockIds.joinToString { it.raw.toString() }}",
-    )
-    appendLine(
-        "preserved=${stats.preservedBlocks} reparsed=${stats.reparsedBlocks} lines=${stats.processedLines} appended=${stats.appendedChars}",
-    )
-    append(
-        "inlineParsed=${stats.inlineParsedBlockCount} inlineCacheHit=${stats.inlineCacheHitBlockCount} fallback=${stats.fallbackCount}:${stats.fallbackReason ?: "-"}",
-    )
 }
 
 private fun StringBuilder.appendBlock(block: BlockNode, depth: Int) {

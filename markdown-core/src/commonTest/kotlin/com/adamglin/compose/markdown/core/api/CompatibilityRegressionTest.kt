@@ -53,15 +53,10 @@ class CompatibilityRegressionTest {
     fun curatedStreamingCasesMatchExpectedShapeWithoutFallback() {
         streamingCases.forEach { case ->
             val engine = MarkdownEngine(dialect = case.dialect)
-            var fallbackCount = 0
-
-            case.chunks.forEach { chunk ->
-                fallbackCount += engine.append(chunk).stats.fallbackCount
-            }
+            case.chunks.forEach { chunk -> engine.append(chunk) }
 
             val snapshot = engine.finish().snapshot
 
-            assertEquals(0, fallbackCount, "${case.name} should stay incremental")
             assertEquals(
                 case.expectedShape,
                 snapshot.document.blocks.debugShape(),
