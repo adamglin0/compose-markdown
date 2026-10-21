@@ -170,3 +170,64 @@ Not part of the initial public API:
 ## Stage 5 Stop Point
 
 Stage 5 freezes the append-only incremental contract: stable prefix reuse, mutable-tail reparsing, newline normalization before parsing, and explicit dirty-region reporting are now part of the expected engine behavior.
+
+## Compose Renderer API (`markdown-compose`)
+
+```kotlin
+package com.adamglin.compose.markdown.compose
+
+// Rendering
+@Composable fun Markdown(
+    document: MarkdownDocument,
+    modifier: Modifier = Modifier,
+    codeHighlighter: CodeHighlighter? = DefaultCodeHighlighter, // null disables highlighting
+    mathRenderer: MathRenderer? = null,                         // null shows LaTeX source
+    imageContent: (@Composable (MarkdownImage) -> Unit)? = null, // null shows alt text
+    onLinkClick: ((url: String) -> Unit)? = null,               // null opens via LocalUriHandler
+)
+@Composable fun Markdown(text: String, modifier: Modifier = Modifier, dialect: MarkdownDialect = MarkdownDialect.ChatFast, /* same plug-ins */)
+fun LazyListScope.markdown(document: MarkdownDocument, key: String = "markdown", /* same plug-ins */)
+
+// Documents
+@Composable fun rememberMarkdownDocument(text: String, dialect: MarkdownDialect = MarkdownDialect.ChatFast): MarkdownDocument
+
+@Stable class MarkdownState(dialect: MarkdownDialect = MarkdownDialect.ChatFast) {
+    val document: MarkdownDocument
+    fun append(chunk: String)
+    fun finish()
+    fun reset()
+}
+@Composable fun rememberMarkdownState(dialect: MarkdownDialect = MarkdownDialect.ChatFast): MarkdownState
+
+// Theming
+@Composable fun MarkdownTheme(
+    colors: MarkdownColors = MarkdownTheme.colors,
+    typography: MarkdownTypography = MarkdownTheme.typography,
+    blockSpacing: Dp = MarkdownTheme.blockSpacing,
+    content: @Composable () -> Unit,
+)
+object MarkdownTheme { val colors: MarkdownColors; val typography: MarkdownTypography; val blockSpacing: Dp }
+data class MarkdownColors(text, textSecondary, link, accent, surface, border, codeKeyword, codeString, codeLiteral, codeComment) // .Light, .Dark
+data class MarkdownTypography(heading1..heading6, body, table, code, label) // .Default
+
+// Plug-ins
+fun interface CodeHighlighter { fun highlight(code: String, language: String, colors: MarkdownColors): List<HighlightToken>? }
+data class HighlightToken(val start: Int, val endExclusive: Int, val color: Color)
+object DefaultCodeHighlighter : CodeHighlighter // dev.snipme:highlights
+interface MathRenderer {
+    @Composable fun BlockMath(latex: String, modifier: Modifier)
+    @Composable fun InlineMath(latex: String, style: TextStyle)
+}
+data class MarkdownImage(val url: String, val altText: String, val title: String?)
+```
+
+Renderer rules:
+
+- `MarkdownState` publishes every `append`/`finish` synchronously and keeps the previous instance of every block that did not change, so only touched blocks recompose. It only reads `ParseDelta.snapshot`.
+- `Markdown(text)` parses once per distinct `text`/`dialect` in `remember`; no engine is mutated during composition.
+- Without a `MarkdownTheme`, the renderer uses `MarkdownColors.Light`; dark mode is the app's choice (`MarkdownTheme(colors = MarkdownColors.Dark)`), never `isSystemInDarkTheme()`.
+- Typography styles normally leave `color` unspecified; `MarkdownColors.text` applies unless a style sets its own color. `MarkdownTypography.code.lineHeight` is the code block line height.
+- Highlighters run off the main thread for closed fences only; results are cached by code, language, colors and highlighter.
+- Inline math and images are composed, measured at natural size (capped to the text width) and given exact placeholders. Unclosed math blocks show source text and never reach `MathRenderer`.
+- The renderer does not add a `SelectionContainer`; wrap it when text should be selectable.
+- Lazy item keys are `"$key:${blockId}"`; give each document in one list a distinct `key`.

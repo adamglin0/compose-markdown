@@ -29,47 +29,64 @@ implementation(libs.compose.markdown.compose)
 
 ## Example
 
+Render a complete string (parsed once per distinct text):
+
 ```kotlin
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import com.adamglin.compose.markdown.compose.Markdown
-import com.adamglin.compose.markdown.compose.MarkdownStyle
-import com.adamglin.compose.markdown.compose.MarkdownThemeDefaults
-import com.adamglin.compose.markdown.compose.ProvideMarkdownTheme
-import com.adamglin.compose.markdown.core.api.MarkdownEngine
-import com.adamglin.compose.markdown.core.model.MarkdownSnapshot
+import com.adamglin.compose.markdown.compose.MarkdownColors
+import com.adamglin.compose.markdown.compose.MarkdownTheme
 
 @Composable
 fun Message(content: String) {
-    val engine = remember { MarkdownEngine() }
-    engine.reset()
-    val snapshot = engine.append(content).snapshot
-    val colors = MarkdownThemeDefaults.LightColors.copy(accent = Color(0xFF0A7A5C))
-    val baseTypography = MarkdownThemeDefaults.typography(colors)
-    val typography = baseTypography.copy(
-        bodyLarge = baseTypography.bodyLarge.copy(lineHeight = 26.sp),
-    )
-
-    Markdown(
-        snapshot = snapshot,
-        style = MarkdownStyle(
-            colors = colors,
-            typography = typography,
-        ),
-    )
-}
-
-@Composable
-fun Thread(snapshot: MarkdownSnapshot) {
-    val colors = MarkdownThemeDefaults.DarkColors.copy(accent = Color(0xFF7EC7A2))
-
-    ProvideMarkdownTheme(colors = colors) {
-        Markdown(snapshot = snapshot)
+    MarkdownTheme(colors = if (isSystemInDarkTheme()) MarkdownColors.Dark else MarkdownColors.Light) {
+        SelectionContainer {
+            Markdown(content)
+        }
     }
 }
 ```
+
+Stream chunks as they arrive. `MarkdownState` owns the parser and updates only the blocks a chunk touched:
+
+```kotlin
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import com.adamglin.compose.markdown.compose.Markdown
+import com.adamglin.compose.markdown.compose.markdown
+import com.adamglin.compose.markdown.compose.rememberMarkdownState
+import kotlinx.coroutines.flow.Flow
+
+@Composable
+fun StreamingReply(chunks: Flow<String>) {
+    val state = rememberMarkdownState()
+    LaunchedEffect(chunks) {
+        state.reset()
+        chunks.collect { state.append(it) }
+        state.finish()
+    }
+    Markdown(state.document)
+}
+
+// Long documents: one lazy item per top-level block, keyed by stable block id.
+@Composable
+fun LongReply(chunks: Flow<String>) {
+    val state = rememberMarkdownState()
+    LaunchedEffect(chunks) {
+        state.reset()
+        chunks.collect { state.append(it) }
+        state.finish()
+    }
+    LazyColumn {
+        markdown(state.document)
+    }
+}
+```
+
+Links open through `LocalUriHandler`; pass `onLinkClick` to handle them yourself. Optional slots: `codeHighlighter` (`null` disables highlighting), `mathRenderer` (LaTeX, e.g. with the `GfmMath` dialect), and `imageContent` (render images with your own loader; alt text by default).
 
 ## Modules
 

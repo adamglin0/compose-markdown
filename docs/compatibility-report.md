@@ -33,7 +33,7 @@ This repository targets predictable append-only rendering first, not full spec p
 | Reference links / definitions | Not supported | disabled by preset |
 | Raw HTML | Not supported | HTML stays literal text |
 | Incremental streaming | Supported | regression covers text, quote, list, fence, table |
-| Compose renderer | Partial | readable output, lightweight image/table/task handling |
+| Compose renderer | Partial | readable output; images via the `imageContent` slot (alt text by default) |
 
 ### CommonMarkCore
 
@@ -62,7 +62,7 @@ This repository targets predictable append-only rendering first, not full spec p
 | Autolinks / bare URLs | Supported | GFM extended autolinks; all GFM autolink extension examples pass |
 | Raw HTML | Not supported | HTML stays literal text |
 | Incremental streaming | Supported | regression covers text, quote, list, fence, table, reference links |
-| Compose renderer | Partial | table layout uses content-based column widths and alignment; not full GitHub chrome |
+| Compose renderer | Partial | content-sized table columns with alignment and horizontal scrolling; not full GitHub chrome |
 
 ## Spec Conformance
 
@@ -110,14 +110,14 @@ Pass counts from `SpecConformanceTest` (`CommonMarkCore` for CommonMark 0.31.2, 
 - GFM strikethrough and extended autolinks where enabled; inline math (`$...$`, `\(...\)`) in `GfmMath`
 - linear-time inline parsing on pathological input (nested brackets, unmatched backticks, `$`, `\(`, `[`)
 - localized invalidation for setext upgrades, table delimiter upgrades, and late reference-definition resolution
-- Compose block rendering for paragraphs, headings, quotes, lists, fenced code blocks, thematic breaks, tables, and clickable links
+- Compose block rendering for paragraphs, headings, quotes, lists, fenced code blocks, math, thematic breaks, tables, and clickable links (opened through `LocalUriHandler` by default)
 
 ## Partially Supported
 
 - GFM compatibility: tables, task lists, strikethrough and extended autolinks are covered; other GFM extensions (footnotes, raw HTML filtering) are not
-- Compose tables measure preferred cell widths, keep short columns when space remains, shrink tall columns first on overflow, and apply left/center/right alignment
+- Compose tables measure preferred and minimum (longest word) cell widths, keep short columns when space remains, shrink the widest columns first on overflow, scroll horizontally when even the minimum widths do not fit, and apply left/center/right alignment
 - reference-style links: supported only in `CommonMarkCore` and `GfmCompat`
-- images: parsed in the core model, but renderer intentionally falls back to alt-text only
+- images: parsed in the core model; the renderer shows alt text unless the app passes an `imageContent` composable (no image loading ships with the library)
 - Compose rendering: optimized for correctness and stable identity reuse, not for GitHub-style visual fidelity
 
 ## Explicitly Unsupported
@@ -134,7 +134,8 @@ Pass counts from `SpecConformanceTest` (`CommonMarkCore` for CommonMark 0.31.2, 
 - raw HTML stays literal text, so the HTML block examples and the three list / definition examples that contain HTML comments render the tags as text
 - a task marker alone on an item's line (`- [ ]`) is an empty task item, where cmark-gfm requires a space or tab after the marker
 - task list rendering uses read-only checkbox UI rather than plain textual markers
-- image rendering currently emits alt text only; no built-in image fetching or sizing pipeline exists
+- image rendering emits alt text unless the app supplies `imageContent`; no built-in image fetching pipeline exists
+- link titles are parsed but not shown by the renderer
 
 ## Regression Suite
 
@@ -159,10 +160,15 @@ Current curated sources:
 
 ## Renderer Audit
 
-- block rendering is stable-ID keyed and updates changed blocks instead of rebuilding the whole renderer state list
-- inline annotations preserve links, emphasis, strong, code, and strike text styling
-- code blocks, quotes, and tables render readably in the sample app
-- renderer remains intentionally lightweight: no HTML, no image pipeline, no interactive task toggles; tables size columns from content and honor alignment
+- blocks (including nested quote/list children and lazy items) are keyed by stable block id; `MarkdownState` keeps unchanged block instances across appends so only touched blocks recompose
+- `Markdown(text)` parses once per distinct text; `MarkdownState` publishes each append synchronously, so a new document never shows stale content
+- inline annotations preserve links, emphasis, strong, code (inheriting the surrounding font size), and strike text styling
+- links open through `LocalUriHandler` unless `onLinkClick` is supplied
+- ordered lists number from their start; bullets vary by depth; markers share an aligned, baseline-matched column; task checkboxes expose checkbox role and state; headings expose heading semantics
+- code blocks scroll horizontally; closed fences are highlighted off the main thread with a shared cache keyed by code, language, colors and highlighter; `codeHighlighter = null` disables highlighting
+- inline math and images are measured and get exact placeholders; unclosed math blocks show source and never reach the `MathRenderer`
+- tables inside block quotes (and any layout asking for intrinsics) are supported; quotes draw their bar instead of using intrinsic measurement
+- renderer remains intentionally lightweight: no HTML, no image loading, no interactive task toggles
 
 ## Acceptance Summary
 
