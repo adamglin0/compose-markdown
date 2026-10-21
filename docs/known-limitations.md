@@ -31,8 +31,8 @@
 
 ## Tooling And Distribution
 
-- CI is intentionally minimal and does not publish artifacts
+- CI runs the full check suite on Linux plus library iOS simulator tests on macOS; `v*` tags publish `markdown-core` and `markdown-compose` to Maven Central (see `docs/maven-central-publishing.md`)
 - benchmark tasks are for local measurement and smoke verification, not for hard pass/fail release gating
-- release planning exists, but publication metadata and signing are intentionally deferred until there is a real publish target
+- `markdown-compose` requires Java 21 on desktop JVM because `dev.snipme:highlights` ships Java 21 bytecode; `markdown-core` targets Java 17
 
 For the final support audit, see `docs/compatibility-report.md`. For follow-up priorities, see `docs/next-steps.md`.

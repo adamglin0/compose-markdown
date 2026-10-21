@@ -3,7 +3,7 @@
 ## Coordinates
 
 - Gradle group: `com.adamglin.compose.markdown`
-- planned artifact IDs:
+- published artifact IDs:
   - `markdown-core`
   - `markdown-compose`
   - `sample-chat` is sample-only and should not be published by default
@@ -17,14 +17,12 @@
   - bump `y` when snapshot/delta semantics or renderer-facing behavior change materially
   - bump `z` for compatible fixes, docs, and performance-only releases
 
-## Publishing Plan
+## Publishing
 
-- add `maven-publish` only when artifact metadata and API docs are ready;
-- publish `markdown-core` and `markdown-compose` first;
+- `markdown-core` and `markdown-compose` are published to Maven Central with signed artifacts; pushing a `v*` tag runs `.github/workflows/publish.yml` (details in `docs/maven-central-publishing.md`);
+- `sample-chat` and `benchmarks` are not published;
 - document supported Kotlin / Compose / Gradle versions in release notes;
-- generate a minimal changelog from stage checkpoints;
-- add artifact signing only when there is a real publication target;
-- keep benchmark and sample modules excluded from default publication.
+- generate a minimal changelog from stage checkpoints.
 
 ## Pre-Release Checklist
 
