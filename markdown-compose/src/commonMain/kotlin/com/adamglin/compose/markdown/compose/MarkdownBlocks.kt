@@ -63,7 +63,8 @@ internal fun MarkdownBlock(
         is BlockNode.Heading -> HeadingSlot(block, context)
         is BlockNode.BlockQuote -> BlockQuoteSlot(block, context, listDepth)
         is BlockNode.ListBlock -> ListSlot(block, context, listDepth)
-        is BlockNode.FencedCodeBlock, is BlockNode.IndentedCodeBlock -> CodeBlockSlot(block, context)
+        is BlockNode.FencedCodeBlock -> CodeBlockSlot(block.literal, block.languageHint, block.infoString, block.isClosed, context)
+        is BlockNode.IndentedCodeBlock -> CodeBlockSlot(block.literal, language = null, infoString = null, isClosed = true, context)
         is BlockNode.MathBlock -> MathBlockSlot(block, context)
         is BlockNode.TableBlock -> TableSlot(block, context)
         is BlockNode.ThematicBreak -> ThematicBreakSlot(block, context)
@@ -118,13 +119,15 @@ private fun ListSlot(block: BlockNode.ListBlock, context: MarkdownRenderContext,
 }
 
 @Composable
-private fun CodeBlockSlot(block: BlockNode, context: MarkdownRenderContext) {
-    val scope = remember(block, context) {
-        when (block) {
-            is BlockNode.FencedCodeBlock -> CodeBlockScope(block.literal, block.languageHint, block.infoString, block.isClosed, context)
-            is BlockNode.IndentedCodeBlock -> CodeBlockScope(block.literal, null, null, true, context)
-            else -> error("not a code block: $block")
-        }
+private fun CodeBlockSlot(
+    code: String,
+    language: String?,
+    infoString: String?,
+    isClosed: Boolean,
+    context: MarkdownRenderContext,
+) {
+    val scope = remember(code, language, infoString, isClosed, context) {
+        CodeBlockScope(code, language, infoString, isClosed, context)
     }
     context.components.codeBlock(scope)
 }

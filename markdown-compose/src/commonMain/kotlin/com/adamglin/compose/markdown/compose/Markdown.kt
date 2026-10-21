@@ -25,7 +25,8 @@ import com.adamglin.compose.markdown.core.model.MarkdownDocument
  *   long-lived instance: highlight results are cached per highlighter instance.
  * @param mathRenderer renders LaTeX; `null` shows math source text. Pass a long-lived instance
  *   (e.g. `remember`ed): a new instance recomposes every block.
- * @param components renders each kind of element; the defaults are the built-in rendering.
+ * @param components renders each kind of element; the defaults are the built-in rendering. May
+ *   be a new instance on every call: a new instance re-runs the slots, not the blocks.
  * @param onLinkClick handles link clicks; `null` opens links with `LocalUriHandler`.
  */
 @Composable
