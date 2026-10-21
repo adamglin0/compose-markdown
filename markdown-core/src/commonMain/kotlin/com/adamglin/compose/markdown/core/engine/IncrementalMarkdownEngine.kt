@@ -32,8 +32,7 @@ import com.adamglin.compose.markdown.core.source.SourceBuffer
  *
  * Each call therefore parses from the end of the stable prefix to the end of input, moves the blocks
  * before the first open frame into the stable prefix, and keeps the rest as the new tail. Per-call work is
- * proportional to the tail (plus a copy of the top-level block list for the snapshot), not to the
- * document.
+ * proportional to the tail, not to the document.
  */
 internal class IncrementalMarkdownEngine(
     override val dialect: MarkdownDialect,
@@ -134,7 +133,7 @@ internal class IncrementalMarkdownEngine(
         // Stable blocks are only touched when a definition they use changed.
         val rehydratedIndexes = stable.indexesUsing(changedLabels)
         rehydratedIndexes.forEach { index ->
-            val previous = stable.blocks[index]
+            val previous = stable[index]
             val current = stable.rehydrate(index = index, hydrator = hydrator)
             if (current != previous) {
                 changedBlocks += BlockChange(id = current.id, oldIndex = index, newIndex = index, block = current)
@@ -158,9 +157,7 @@ internal class IncrementalMarkdownEngine(
         // Only blocks from the previous tail onward can be new, moved, changed or removed.
         val previousById = HashMap<BlockId, Int>(previousTail.size * 2)
         previousTail.forEachIndexed { offset, block -> previousById[block.id] = previousStableCount + offset }
-        val blocks = ArrayList<BlockNode>(stable.size + tail.size)
-        blocks.addAll(stable.blocks)
-        blocks.addAll(tail)
+        val blocks = stable.followedBy(tail)
         for (index in previousStableCount until blocks.size) {
             val block = blocks[index]
             val oldIndex = previousById[block.id]

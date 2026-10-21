@@ -24,6 +24,21 @@ class IncrementalEngineTest {
     }
 
     @Test
+    fun laterDefinitionUpdatesStableBlockWithoutTouchingEarlierSnapshots() {
+        val engine = MarkdownEngine(dialect = MarkdownDialect.GfmCompat)
+
+        val before = engine.append("See [a]\n\npara\n\n").snapshot
+        val delta = engine.append("[a]: /u\n")
+        val after = assertIs<BlockNode.Paragraph>(delta.snapshot.document.blocks.first())
+        val earlier = assertIs<BlockNode.Paragraph>(before.document.blocks.first())
+
+        assertEquals(listOf(after.id), delta.changedBlocks.map { it.id })
+        assertEquals("/u", after.children.filterIsInstance<InlineNode.Link>().single().destination)
+        assertTrue(earlier.children.none { it is InlineNode.Link })
+        assertEquals(before.document.blocks[1], delta.snapshot.document.blocks[1])
+    }
+
+    @Test
     fun paragraphStaysMutableUntilItCannotBecomeAHeading() {
         val engine = MarkdownEngine(dialect = MarkdownDialect.GfmCompat)
 
