@@ -163,7 +163,7 @@ Not part of the initial public API:
 
 ## Stage 5 Stop Point
 
-Stage 5 freezes the append-only incremental contract: the stable prefix contract above, mutable-tail reparsing, newline normalization before parsing, and explicit dirty-region reporting are part of the expected engine behavior.
+Stage 5 freezes the append-only incremental contract: the stable prefix contract above, resumable block parsing (each line parsed once), newline normalization before parsing, and explicit dirty-region reporting are part of the expected engine behavior.
 
 ## Compose Renderer API (`markdown-compose`)
 
