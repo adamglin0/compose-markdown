@@ -19,6 +19,9 @@ import com.adamglin.compose.markdown.core.model.MarkdownDocument
  * as before, so the renderer only recomposes the blocks the chunk touched, and an append costs the
  * engine's work on the new text, not the length of the document. The class is plain observable
  * state: it can live in composition ([rememberMarkdownState]) or in a view model.
+ *
+ * Call [append], [finish] and [reset] from one thread at a time: the engine is not thread-safe.
+ * A published [document] never changes afterwards, so it can be read from any thread.
  */
 @Stable
 class MarkdownState(dialect: MarkdownDialect = MarkdownDialect.ChatFast) {
