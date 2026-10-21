@@ -127,6 +127,14 @@ class StreamingDifferentialTest {
             listOf("> a\n\n", "> b\n"),
             listOf("```\ncode\n``", "`\nafter\n"),
             listOf("# h\n", "   ", "\n    code\n"),
+            // A definition arriving in the call that closes a container whose closed children were cached.
+            listOf("- [r]\n\n", "[r]: /q\n"),
+            listOf("- [r]\n\n", "- [r]: /q\n"),
+            listOf("> - [r]\n>\n", "> [r]: /q\n"),
+            listOf("- | [r] |\n  |---|\n  | [r] |\n\n", "[r]: /q\n"),
+            charChunks("- [r]\n\n[r]:q\n"),
+            charChunks(">>[r]\n>>\n[r]:l\n"),
+            charChunks("-\n  [r]\n  ```\n[r]:q\n"),
         )
         val failures = allDialects.flatMap { dialect ->
             cases.mapNotNull { chunks ->

@@ -32,8 +32,20 @@ class StreamingFuzzTest {
         "> > > - a", "1. - a", "- > a", "   ```", "~~~ ~", "  \$\$", "\$\$ ", "> \$\$", "- \$\$", "[a]", "[ref]", "  ", "\t\t", " - x", "[ref]: /o \"t\"",
     ).map { "$it\n" }
 
+    /** Uses of a label inside containers and tables, with definitions arriving inside and after them. */
+    private val definitionFragments = listOf(
+        "- [r]\n", "> [r]\n", ">> [r]\n", "- > [r]\n", "  [r]\n", "| [r] |\n", "|---|\n", "- | [r] |\n", "  |---|\n",
+        "[r]: /q\n", "- [r]: /q\n", "> [r]: /q\n", "[r]: /w \"t\"\n", "[r]:\n", "/x\n", "```\n", "  ```\n",
+        "\n", "\n", ">\n", "-\n", "text [r]\n",
+    )
+
     @Test
-    fun randomDocumentsStreamLikeOneShotParse() {
+    fun randomDocumentsStreamLikeOneShotParse() = fuzz(fragments)
+
+    @Test
+    fun lateDefinitionsStreamLikeOneShotParse() = fuzz(definitionFragments)
+
+    private fun fuzz(fragments: List<String>) {
         val failures = mutableListOf<String>()
         allDialects.forEach { dialect ->
             for (seed in 0 until SEEDS) {

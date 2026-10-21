@@ -48,8 +48,9 @@ internal class BlockTreeBuilder(
     fun build(block: OpenBlock): BlockNode? = build(block, labels = null)
 
     /**
-     * Marks the cached nodes in [block] (closed or open) that use any of [labels] as stale and rebuilds the
-     * cached children among them, so that the next [build] resolves their inline content again.
+     * Marks the cached nodes in [block] (closed or open) and its descendants that use any of [labels] as
+     * stale and rebuilds the cached children among them, so that the next [build] resolves their inline
+     * content again.
      */
     fun invalidate(block: OpenBlock, labels: Set<String>) {
         if (block.isBuilt) {
@@ -78,7 +79,11 @@ internal class BlockTreeBuilder(
                 }
             }
         }
-        block.children.lastOrNull()?.takeIf { it.isOpen }?.let { invalidate(it, labels) }
+        // Children not cached here yet (the open one, and any that closed since this block was last built)
+        // may still hold cached nodes of their own.
+        for (index in cache.consumed until block.children.size) {
+            invalidate(block.children[index], labels)
+        }
     }
 
     private fun build(block: OpenBlock, labels: MutableSet<String>?): BlockNode? {
