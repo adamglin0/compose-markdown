@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.adamglin.compose.markdown.compose.MarkdownCodeBlockScope
 import com.adamglin.compose.markdown.compose.MarkdownComponents
@@ -78,7 +79,7 @@ private fun CopyButton(code: String) {
         style = MarkdownTheme.typography.label.copy(color = MarkdownTheme.colors.link),
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
-            .clickable {
+            .clickable(role = Role.Button) {
                 coroutineScope.launch {
                     clipboard.setClipEntry(plainTextClipEntry(code))
                     copied = true
