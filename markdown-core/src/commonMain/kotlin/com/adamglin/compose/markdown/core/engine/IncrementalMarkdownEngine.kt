@@ -302,7 +302,9 @@ internal class IncrementalMarkdownEngine(
         val boundary = previousRecords.firstOrNull { record ->
             mutableTailStart >= record.block.range.start && mutableTailStart < record.block.range.endExclusive
         }?.block?.range?.start
-        return ReparsePlan(dirtyStart = boundary ?: 0)
+        // Outside every block (blank lines, or an open paragraph holding only link reference definitions,
+        // which has no block node), the stable prefix end is already a top-level line boundary.
+        return ReparsePlan(dirtyStart = boundary ?: mutableTailStart)
     }
 
     private fun shouldBackUpForRetroactiveInterpretation(block: BlockNode): Boolean = when (block) {

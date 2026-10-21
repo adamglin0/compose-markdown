@@ -7,6 +7,7 @@ import com.adamglin.compose.markdown.core.model.BlockId
 import com.adamglin.compose.markdown.core.model.TextRange
 import com.adamglin.compose.markdown.core.source.LineIndex
 import com.adamglin.compose.markdown.core.source.SourceBuffer
+import com.adamglin.compose.markdown.core.spec.SpecHtmlRenderer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -59,6 +60,20 @@ class BlockParserOpenFrameTest {
 
         assertEquals(TextRange(start = 0, endExclusive = 0), engine.append("Foo\n").stablePrefixRange)
         assertEquals(TextRange(start = 0, endExclusive = 8), engine.append("===\n").stablePrefixRange)
+    }
+
+    @Test
+    fun streamingDefinitionsReparseOnlyFromTheOpenDefinitionParagraph() {
+        val engine = MarkdownEngine(dialect = MarkdownDialect.CommonMarkCore)
+        engine.append("# Notes\n\nSee [a] and [b].\n\n")
+
+        val firstDefinition = engine.append("[a]: /a\n")
+        val secondDefinition = engine.append("[b]: /b\n")
+
+        assertEquals(TextRange(start = 27, endExclusive = 35), firstDefinition.dirtyRegion)
+        assertEquals(27, secondDefinition.dirtyRegion.start)
+        val paragraph = engine.finish().snapshot.document.blocks[1]
+        assertEquals("<p>See <a href=\"/a\">a</a> and <a href=\"/b\">b</a>.</p>\n", SpecHtmlRenderer.render(listOf(paragraph)))
     }
 
     private fun openFrames(
