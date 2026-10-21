@@ -79,6 +79,34 @@ class MarkdownStreamingCostTest {
         }
     }
 
+    @Test
+    fun growingContainerRecomposesOnlyItsOpenChildren() = mapOf(
+        "list" to { item: Int -> "- item $item with *emphasis* and `code`\n" },
+        "nested list in a quote" to { item: Int -> "> - item $item with *emphasis*\n" },
+    ).forEach { (name, line) ->
+        runComposeUiTest {
+            val state = MarkdownState(dialect)
+            setContent { Markdown(state.document) }
+            state.append((0 until 200).joinToString("") { line(it) })
+            waitForIdle()
+            val counter = BlockCounter()
+            var worst = 0
+            withTracer(counter) {
+                (200 until 210).joinToString("") { line(it) }.chunked(TOKEN).forEach { chunk ->
+                    counter.blocks = 0
+                    state.append(chunk)
+                    waitForIdle()
+                    worst = maxOf(worst, counter.blocks)
+                }
+            }
+            println("$name of 200 items: at most $worst blocks composed per append")
+            onNodeWithText("item 209", substring = true).assertExists()
+            // The top-level container and the blocks on the path to the open item's paragraph; closed
+            // items keep their instances and skip.
+            assertTrue(worst in 1..4, "$name: an append composed $worst blocks")
+        }
+    }
+
     /**
      * Streams a tail into the document [state] holds, token by token, and checks that every append
      * composes the changed tail block (at most the two last top-level blocks) and never a closed formula.

@@ -77,6 +77,8 @@ renderers, counting composed `MarkdownBlock` calls with a composition tracer. Ap
 - Unchanged blocks skip recomposition in both renderers. The lazy entry composes only the visible items whose
   block changed; its frame time does not depend on the document length (the frame times above include the test
   harness).
+- Inside a growing container, closed children are the engine's cached nodes, so they keep their instances too:
+  streaming items into a 200-item list, alone or inside a quote, composes at most 4 blocks per append.
 - `Markdown(document)` is one `Column`, which checks, measures and draws every top-level block on each frame,
   so its frame time grows with the number of blocks. Use `LazyListScope.markdown` for long documents.
 
