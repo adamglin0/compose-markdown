@@ -115,7 +115,7 @@ class IncrementalEngineTest {
         assertTrue(empty.changedBlocks.isEmpty())
         assertEquals(finished.snapshot.version, again.snapshot.version)
         assertTrue(again.changedBlocks.isEmpty())
-        assertTrue(again.dirtyRegion.isEmpty)
+        assertEquals(again.dirtyRegion.start, again.dirtyRegion.endExclusive)
     }
 
     @Test

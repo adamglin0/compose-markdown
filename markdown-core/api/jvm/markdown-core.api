@@ -59,7 +59,6 @@ public final class com/adamglin/compose/markdown/core/model/BlockChange {
 
 public final class com/adamglin/compose/markdown/core/model/BlockId {
 	public static final synthetic fun box-impl (J)Lcom/adamglin/compose/markdown/core/model/BlockId;
-	public static fun constructor-impl (J)J
 	public fun equals (Ljava/lang/Object;)Z
 	public static fun equals-impl (JLjava/lang/Object;)Z
 	public static final fun equals-impl0 (JJ)Z
@@ -78,13 +77,10 @@ public abstract interface class com/adamglin/compose/markdown/core/model/BlockNo
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$BlockQuote : com/adamglin/compose/markdown/core/model/BlockNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public final fun component4 ()Ljava/util/List;
-	public final fun copy--iBrWDo (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;)Lcom/adamglin/compose/markdown/core/model/BlockNode$BlockQuote;
-	public static synthetic fun copy--iBrWDo$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$BlockQuote;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$BlockQuote;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public fun getId-dG1Ao-A ()J
@@ -95,7 +91,6 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$BlockQuote
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$FencedCodeBlock : com/adamglin/compose/markdown/core/model/BlockNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
@@ -103,8 +98,6 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$FencedCode
 	public final fun component5 ()Ljava/lang/String;
 	public final fun component6 ()Ljava/lang/String;
 	public final fun component7 ()Z
-	public final fun copy-zz70M08 (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lcom/adamglin/compose/markdown/core/model/BlockNode$FencedCodeBlock;
-	public static synthetic fun copy-zz70M08$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$FencedCodeBlock;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$FencedCodeBlock;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getId-dG1Ao-A ()J
 	public final fun getInfoString ()Ljava/lang/String;
@@ -119,15 +112,12 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$FencedCode
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$Heading : com/adamglin/compose/markdown/core/model/BlockNode {
 	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;ILjava/util/List;Lcom/adamglin/compose/markdown/core/model/HeadingStyle;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;ILjava/util/List;Lcom/adamglin/compose/markdown/core/model/HeadingStyle;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public final fun component4 ()I
 	public final fun component5 ()Ljava/util/List;
 	public final fun component6 ()Lcom/adamglin/compose/markdown/core/model/HeadingStyle;
-	public final fun copy-3n1gtqI (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;ILjava/util/List;Lcom/adamglin/compose/markdown/core/model/HeadingStyle;)Lcom/adamglin/compose/markdown/core/model/BlockNode$Heading;
-	public static synthetic fun copy-3n1gtqI$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$Heading;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;ILjava/util/List;Lcom/adamglin/compose/markdown/core/model/HeadingStyle;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$Heading;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public fun getId-dG1Ao-A ()J
@@ -140,13 +130,10 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$Heading : 
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$IndentedCodeBlock : com/adamglin/compose/markdown/core/model/BlockNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public final fun component4 ()Ljava/lang/String;
-	public final fun copy--iBrWDo (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/BlockNode$IndentedCodeBlock;
-	public static synthetic fun copy--iBrWDo$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$IndentedCodeBlock;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$IndentedCodeBlock;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getId-dG1Ao-A ()J
 	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
@@ -157,15 +144,12 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$IndentedCo
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$ListBlock : com/adamglin/compose/markdown/core/model/BlockNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Lcom/adamglin/compose/markdown/core/model/ListType;Ljava/util/List;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/ListType;
 	public final fun component5 ()Ljava/util/List;
 	public final fun component6 ()Z
-	public final fun copy-3n1gtqI (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Lcom/adamglin/compose/markdown/core/model/ListType;Ljava/util/List;Z)Lcom/adamglin/compose/markdown/core/model/BlockNode$ListBlock;
-	public static synthetic fun copy-3n1gtqI$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$ListBlock;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Lcom/adamglin/compose/markdown/core/model/ListType;Ljava/util/List;ZILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$ListBlock;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getId-dG1Ao-A ()J
 	public final fun getItems ()Ljava/util/List;
@@ -179,14 +163,11 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$ListBlock 
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$ListItem : com/adamglin/compose/markdown/core/model/BlockNode {
 	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;Lcom/adamglin/compose/markdown/core/model/TaskState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;Lcom/adamglin/compose/markdown/core/model/TaskState;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public final fun component4 ()Ljava/util/List;
 	public final fun component5 ()Lcom/adamglin/compose/markdown/core/model/TaskState;
-	public final fun copy-QFcYiH8 (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;Lcom/adamglin/compose/markdown/core/model/TaskState;)Lcom/adamglin/compose/markdown/core/model/BlockNode$ListItem;
-	public static synthetic fun copy-QFcYiH8$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$ListItem;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;Lcom/adamglin/compose/markdown/core/model/TaskState;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$ListItem;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public fun getId-dG1Ao-A ()J
@@ -198,15 +179,12 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$ListItem :
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$MathBlock : com/adamglin/compose/markdown/core/model/BlockNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;ZLcom/adamglin/compose/markdown/core/model/MathBlockDelimiter;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Z
 	public final fun component6 ()Lcom/adamglin/compose/markdown/core/model/MathBlockDelimiter;
-	public final fun copy-3n1gtqI (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;ZLcom/adamglin/compose/markdown/core/model/MathBlockDelimiter;)Lcom/adamglin/compose/markdown/core/model/BlockNode$MathBlock;
-	public static synthetic fun copy-3n1gtqI$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$MathBlock;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;ZLcom/adamglin/compose/markdown/core/model/MathBlockDelimiter;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$MathBlock;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDelimiter ()Lcom/adamglin/compose/markdown/core/model/MathBlockDelimiter;
 	public fun getId-dG1Ao-A ()J
@@ -219,13 +197,10 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$MathBlock 
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$Paragraph : com/adamglin/compose/markdown/core/model/BlockNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public final fun component4 ()Ljava/util/List;
-	public final fun copy--iBrWDo (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;)Lcom/adamglin/compose/markdown/core/model/BlockNode$Paragraph;
-	public static synthetic fun copy--iBrWDo$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$Paragraph;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$Paragraph;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public fun getId-dG1Ao-A ()J
@@ -236,15 +211,12 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$Paragraph 
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$TableBlock : com/adamglin/compose/markdown/core/model/BlockNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Lcom/adamglin/compose/markdown/core/model/BlockNode$TableRow;Ljava/util/List;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/BlockNode$TableRow;
 	public final fun component5 ()Ljava/util/List;
 	public final fun component6 ()Ljava/util/List;
-	public final fun copy-3n1gtqI (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Lcom/adamglin/compose/markdown/core/model/BlockNode$TableRow;Ljava/util/List;Ljava/util/List;)Lcom/adamglin/compose/markdown/core/model/BlockNode$TableBlock;
-	public static synthetic fun copy-3n1gtqI$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$TableBlock;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Lcom/adamglin/compose/markdown/core/model/BlockNode$TableRow;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$TableBlock;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAlignments ()Ljava/util/List;
 	public final fun getHeader ()Lcom/adamglin/compose/markdown/core/model/BlockNode$TableRow;
@@ -257,13 +229,10 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$TableBlock
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$TableCell : com/adamglin/compose/markdown/core/model/BlockNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public final fun component4 ()Ljava/util/List;
-	public final fun copy--iBrWDo (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;)Lcom/adamglin/compose/markdown/core/model/BlockNode$TableCell;
-	public static synthetic fun copy--iBrWDo$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$TableCell;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$TableCell;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public fun getId-dG1Ao-A ()J
@@ -274,14 +243,11 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$TableCell 
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$TableRow : com/adamglin/compose/markdown/core/model/BlockNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public final fun component4 ()Ljava/util/List;
 	public final fun component5 ()Z
-	public final fun copy-QFcYiH8 (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;Z)Lcom/adamglin/compose/markdown/core/model/BlockNode$TableRow;
-	public static synthetic fun copy-QFcYiH8$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$TableRow;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;ZILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$TableRow;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCells ()Ljava/util/List;
 	public fun getId-dG1Ao-A ()J
@@ -293,13 +259,10 @@ public final class com/adamglin/compose/markdown/core/model/BlockNode$TableRow :
 }
 
 public final class com/adamglin/compose/markdown/core/model/BlockNode$ThematicBreak : com/adamglin/compose/markdown/core/model/BlockNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-dG1Ao-A ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public final fun component4 ()Ljava/lang/String;
-	public final fun copy--iBrWDo (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/BlockNode$ThematicBreak;
-	public static synthetic fun copy--iBrWDo$default (Lcom/adamglin/compose/markdown/core/model/BlockNode$ThematicBreak;JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/lang/String;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/BlockNode$ThematicBreak;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getId-dG1Ao-A ()J
 	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
@@ -319,7 +282,6 @@ public final class com/adamglin/compose/markdown/core/model/HeadingStyle : java/
 
 public final class com/adamglin/compose/markdown/core/model/InlineId {
 	public static final synthetic fun box-impl (J)Lcom/adamglin/compose/markdown/core/model/InlineId;
-	public static fun constructor-impl (J)J
 	public fun equals (Ljava/lang/Object;)Z
 	public static fun equals-impl (JLjava/lang/Object;)Z
 	public static final fun equals-impl0 (JJ)Z
@@ -337,12 +299,9 @@ public abstract interface class com/adamglin/compose/markdown/core/model/InlineN
 }
 
 public final class com/adamglin/compose/markdown/core/model/InlineNode$CodeSpan : com/adamglin/compose/markdown/core/model/InlineNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-i23UNoQ ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Ljava/lang/String;
-	public final fun copy-cZVBCDQ (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/InlineNode$CodeSpan;
-	public static synthetic fun copy-cZVBCDQ$default (Lcom/adamglin/compose/markdown/core/model/InlineNode$CodeSpan;JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/InlineNode$CodeSpan;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getId-i23UNoQ ()J
 	public final fun getLiteral ()Ljava/lang/String;
@@ -352,12 +311,9 @@ public final class com/adamglin/compose/markdown/core/model/InlineNode$CodeSpan 
 }
 
 public final class com/adamglin/compose/markdown/core/model/InlineNode$Emphasis : com/adamglin/compose/markdown/core/model/InlineNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-i23UNoQ ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Ljava/util/List;
-	public final fun copy-cZVBCDQ (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/util/List;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Emphasis;
-	public static synthetic fun copy-cZVBCDQ$default (Lcom/adamglin/compose/markdown/core/model/InlineNode$Emphasis;JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/util/List;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Emphasis;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public fun getId-i23UNoQ ()J
@@ -367,11 +323,8 @@ public final class com/adamglin/compose/markdown/core/model/InlineNode$Emphasis 
 }
 
 public final class com/adamglin/compose/markdown/core/model/InlineNode$HardBreak : com/adamglin/compose/markdown/core/model/InlineNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-i23UNoQ ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
-	public final fun copy-A1_UdZs (JLcom/adamglin/compose/markdown/core/model/TextRange;)Lcom/adamglin/compose/markdown/core/model/InlineNode$HardBreak;
-	public static synthetic fun copy-A1_UdZs$default (Lcom/adamglin/compose/markdown/core/model/InlineNode$HardBreak;JLcom/adamglin/compose/markdown/core/model/TextRange;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/InlineNode$HardBreak;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getId-i23UNoQ ()J
 	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
@@ -381,15 +334,12 @@ public final class com/adamglin/compose/markdown/core/model/InlineNode$HardBreak
 
 public final class com/adamglin/compose/markdown/core/model/InlineNode$Image : com/adamglin/compose/markdown/core/model/InlineNode {
 	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-i23UNoQ ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Ljava/util/List;
 	public final fun component6 ()Ljava/lang/String;
-	public final fun copy-I5unXck (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Image;
-	public static synthetic fun copy-I5unXck$default (Lcom/adamglin/compose/markdown/core/model/InlineNode$Image;JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Image;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAlt ()Ljava/util/List;
 	public final fun getDestination ()Ljava/lang/String;
@@ -403,15 +353,12 @@ public final class com/adamglin/compose/markdown/core/model/InlineNode$Image : c
 
 public final class com/adamglin/compose/markdown/core/model/InlineNode$Link : com/adamglin/compose/markdown/core/model/InlineNode {
 	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-i23UNoQ ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Ljava/util/List;
 	public final fun component6 ()Ljava/lang/String;
-	public final fun copy-I5unXck (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Link;
-	public static synthetic fun copy-I5unXck$default (Lcom/adamglin/compose/markdown/core/model/InlineNode$Link;JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Link;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public final fun getDestination ()Ljava/lang/String;
@@ -424,13 +371,10 @@ public final class com/adamglin/compose/markdown/core/model/InlineNode$Link : co
 }
 
 public final class com/adamglin/compose/markdown/core/model/InlineNode$MathSpan : com/adamglin/compose/markdown/core/model/InlineNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Lcom/adamglin/compose/markdown/core/model/MathInlineDelimiter;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-i23UNoQ ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/MathInlineDelimiter;
-	public final fun copy-qDeBd-A (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Lcom/adamglin/compose/markdown/core/model/MathInlineDelimiter;)Lcom/adamglin/compose/markdown/core/model/InlineNode$MathSpan;
-	public static synthetic fun copy-qDeBd-A$default (Lcom/adamglin/compose/markdown/core/model/InlineNode$MathSpan;JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Lcom/adamglin/compose/markdown/core/model/MathInlineDelimiter;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/InlineNode$MathSpan;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDelimiter ()Lcom/adamglin/compose/markdown/core/model/MathInlineDelimiter;
 	public fun getId-i23UNoQ ()J
@@ -441,11 +385,8 @@ public final class com/adamglin/compose/markdown/core/model/InlineNode$MathSpan 
 }
 
 public final class com/adamglin/compose/markdown/core/model/InlineNode$SoftBreak : com/adamglin/compose/markdown/core/model/InlineNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-i23UNoQ ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
-	public final fun copy-A1_UdZs (JLcom/adamglin/compose/markdown/core/model/TextRange;)Lcom/adamglin/compose/markdown/core/model/InlineNode$SoftBreak;
-	public static synthetic fun copy-A1_UdZs$default (Lcom/adamglin/compose/markdown/core/model/InlineNode$SoftBreak;JLcom/adamglin/compose/markdown/core/model/TextRange;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/InlineNode$SoftBreak;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getId-i23UNoQ ()J
 	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
@@ -454,12 +395,9 @@ public final class com/adamglin/compose/markdown/core/model/InlineNode$SoftBreak
 }
 
 public final class com/adamglin/compose/markdown/core/model/InlineNode$Strikethrough : com/adamglin/compose/markdown/core/model/InlineNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-i23UNoQ ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Ljava/util/List;
-	public final fun copy-cZVBCDQ (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/util/List;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Strikethrough;
-	public static synthetic fun copy-cZVBCDQ$default (Lcom/adamglin/compose/markdown/core/model/InlineNode$Strikethrough;JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/util/List;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Strikethrough;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public fun getId-i23UNoQ ()J
@@ -469,12 +407,9 @@ public final class com/adamglin/compose/markdown/core/model/InlineNode$Strikethr
 }
 
 public final class com/adamglin/compose/markdown/core/model/InlineNode$Strong : com/adamglin/compose/markdown/core/model/InlineNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-i23UNoQ ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Ljava/util/List;
-	public final fun copy-cZVBCDQ (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/util/List;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Strong;
-	public static synthetic fun copy-cZVBCDQ$default (Lcom/adamglin/compose/markdown/core/model/InlineNode$Strong;JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/util/List;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Strong;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public fun getId-i23UNoQ ()J
@@ -484,12 +419,9 @@ public final class com/adamglin/compose/markdown/core/model/InlineNode$Strong : 
 }
 
 public final class com/adamglin/compose/markdown/core/model/InlineNode$Text : com/adamglin/compose/markdown/core/model/InlineNode {
-	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1-i23UNoQ ()J
 	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public final fun component3 ()Ljava/lang/String;
-	public final fun copy-cZVBCDQ (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Text;
-	public static synthetic fun copy-cZVBCDQ$default (Lcom/adamglin/compose/markdown/core/model/InlineNode$Text;JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/InlineNode$Text;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getId-i23UNoQ ()J
 	public final fun getLiteral ()Ljava/lang/String;
@@ -499,14 +431,10 @@ public final class com/adamglin/compose/markdown/core/model/InlineNode$Text : co
 }
 
 public final class com/adamglin/compose/markdown/core/model/LineRange {
-	public fun <init> (II)V
 	public final fun component1 ()I
 	public final fun component2 ()I
-	public final fun copy (II)Lcom/adamglin/compose/markdown/core/model/LineRange;
-	public static synthetic fun copy$default (Lcom/adamglin/compose/markdown/core/model/LineRange;IIILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/LineRange;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEndLineExclusive ()I
-	public final fun getLineCount ()I
 	public final fun getStartLine ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -516,10 +444,7 @@ public abstract interface class com/adamglin/compose/markdown/core/model/ListTyp
 }
 
 public final class com/adamglin/compose/markdown/core/model/ListType$Bullet : com/adamglin/compose/markdown/core/model/ListType {
-	public fun <init> (C)V
 	public final fun component1 ()C
-	public final fun copy (C)Lcom/adamglin/compose/markdown/core/model/ListType$Bullet;
-	public static synthetic fun copy$default (Lcom/adamglin/compose/markdown/core/model/ListType$Bullet;CILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/ListType$Bullet;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBulletChar ()C
 	public fun hashCode ()I
@@ -527,11 +452,8 @@ public final class com/adamglin/compose/markdown/core/model/ListType$Bullet : co
 }
 
 public final class com/adamglin/compose/markdown/core/model/ListType$Ordered : com/adamglin/compose/markdown/core/model/ListType {
-	public fun <init> (IC)V
 	public final fun component1 ()I
 	public final fun component2 ()C
-	public final fun copy (IC)Lcom/adamglin/compose/markdown/core/model/ListType$Ordered;
-	public static synthetic fun copy$default (Lcom/adamglin/compose/markdown/core/model/ListType$Ordered;ICILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/ListType$Ordered;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDelimiter ()C
 	public final fun getStartNumber ()I
@@ -636,18 +558,12 @@ public final class com/adamglin/compose/markdown/core/model/TaskState : java/lan
 }
 
 public final class com/adamglin/compose/markdown/core/model/TextRange {
-	public fun <init> (II)V
 	public final fun component1 ()I
 	public final fun component2 ()I
-	public final fun contains (I)Z
-	public final fun copy (II)Lcom/adamglin/compose/markdown/core/model/TextRange;
-	public static synthetic fun copy$default (Lcom/adamglin/compose/markdown/core/model/TextRange;IIILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/model/TextRange;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEndExclusive ()I
-	public final fun getLength ()I
 	public final fun getStart ()I
 	public fun hashCode ()I
-	public final fun isEmpty ()Z
 	public fun toString ()Ljava/lang/String;
 }
 

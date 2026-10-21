@@ -4,31 +4,36 @@ public sealed interface InlineNode {
     public val id: InlineId
     public val range: TextRange
 
-    public data class Text(
+    @ConsistentCopyVisibility
+    public data class Text internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val literal: String,
     ) : InlineNode
 
-    public data class Emphasis(
+    @ConsistentCopyVisibility
+    public data class Emphasis internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val children: List<InlineNode>,
     ) : InlineNode
 
-    public data class Strong(
+    @ConsistentCopyVisibility
+    public data class Strong internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val children: List<InlineNode>,
     ) : InlineNode
 
-    public data class CodeSpan(
+    @ConsistentCopyVisibility
+    public data class CodeSpan internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val literal: String,
     ) : InlineNode
 
-    public data class Link(
+    @ConsistentCopyVisibility
+    public data class Link internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val destination: String,
@@ -37,7 +42,8 @@ public sealed interface InlineNode {
         val referenceLabel: String? = null,
     ) : InlineNode
 
-    public data class Image(
+    @ConsistentCopyVisibility
+    public data class Image internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val destination: String,
@@ -46,23 +52,27 @@ public sealed interface InlineNode {
         val referenceLabel: String? = null,
     ) : InlineNode
 
-    public data class SoftBreak(
+    @ConsistentCopyVisibility
+    public data class SoftBreak internal constructor(
         override val id: InlineId,
         override val range: TextRange,
     ) : InlineNode
 
-    public data class HardBreak(
+    @ConsistentCopyVisibility
+    public data class HardBreak internal constructor(
         override val id: InlineId,
         override val range: TextRange,
     ) : InlineNode
 
-    public data class Strikethrough(
+    @ConsistentCopyVisibility
+    public data class Strikethrough internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val children: List<InlineNode>,
     ) : InlineNode
 
-    public data class MathSpan(
+    @ConsistentCopyVisibility
+    public data class MathSpan internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val latex: String,

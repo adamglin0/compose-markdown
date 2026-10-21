@@ -1,6 +1,7 @@
 package com.adamglin.compose.markdown.core.model
 
-public data class LineRange(
+@ConsistentCopyVisibility
+public data class LineRange internal constructor(
     val startLine: Int,
     val endLineExclusive: Int,
 ) {
@@ -8,7 +9,4 @@ public data class LineRange(
         require(startLine >= 0) { "startLine must be non-negative" }
         require(endLineExclusive >= startLine) { "endLineExclusive must be >= startLine" }
     }
-
-    public val lineCount: Int
-        get() = endLineExclusive - startLine
 }

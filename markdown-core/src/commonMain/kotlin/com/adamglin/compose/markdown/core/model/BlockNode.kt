@@ -5,14 +5,16 @@ public sealed interface BlockNode {
     public val range: TextRange
     public val lineRange: LineRange
 
-    public data class Paragraph(
+    @ConsistentCopyVisibility
+    public data class Paragraph internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val children: List<InlineNode>,
     ) : BlockNode
 
-    public data class Heading(
+    @ConsistentCopyVisibility
+    public data class Heading internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -25,7 +27,8 @@ public sealed interface BlockNode {
         }
     }
 
-    public data class FencedCodeBlock(
+    @ConsistentCopyVisibility
+    public data class FencedCodeBlock internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -36,14 +39,16 @@ public sealed interface BlockNode {
     ) : BlockNode
 
     /** A code block made of lines indented by four or more columns; it has no info string. */
-    public data class IndentedCodeBlock(
+    @ConsistentCopyVisibility
+    public data class IndentedCodeBlock internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val literal: String,
     ) : BlockNode
 
-    public data class BlockQuote(
+    @ConsistentCopyVisibility
+    public data class BlockQuote internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -55,7 +60,8 @@ public sealed interface BlockNode {
      * delimiter); a list is loose when any of its items are separated by blank lines or any item directly
      * contains two block children with a blank line between them.
      */
-    public data class ListBlock(
+    @ConsistentCopyVisibility
+    public data class ListBlock internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -64,7 +70,8 @@ public sealed interface BlockNode {
         val isLoose: Boolean,
     ) : BlockNode
 
-    public data class ListItem(
+    @ConsistentCopyVisibility
+    public data class ListItem internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -72,7 +79,8 @@ public sealed interface BlockNode {
         val taskState: TaskState? = null,
     ) : BlockNode
 
-    public data class TableBlock(
+    @ConsistentCopyVisibility
+    public data class TableBlock internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -81,7 +89,8 @@ public sealed interface BlockNode {
         val rows: List<TableRow>,
     ) : BlockNode
 
-    public data class TableRow(
+    @ConsistentCopyVisibility
+    public data class TableRow internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -89,21 +98,24 @@ public sealed interface BlockNode {
         val isHeader: Boolean,
     ) : BlockNode
 
-    public data class TableCell(
+    @ConsistentCopyVisibility
+    public data class TableCell internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val children: List<InlineNode>,
     ) : BlockNode
 
-    public data class ThematicBreak(
+    @ConsistentCopyVisibility
+    public data class ThematicBreak internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val marker: String,
     ) : BlockNode
 
-    public data class MathBlock(
+    @ConsistentCopyVisibility
+    public data class MathBlock internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -115,10 +127,12 @@ public sealed interface BlockNode {
 
 public sealed interface ListType {
     /** A bullet list; [bulletChar] is `-`, `+` or `*`. */
-    public data class Bullet(val bulletChar: Char) : ListType
+    @ConsistentCopyVisibility
+    public data class Bullet internal constructor(val bulletChar: Char) : ListType
 
     /** An ordered list starting at [startNumber]; [delimiter] is `.` or `)`. */
-    public data class Ordered(val startNumber: Int, val delimiter: Char) : ListType
+    @ConsistentCopyVisibility
+    public data class Ordered internal constructor(val startNumber: Int, val delimiter: Char) : ListType
 }
 
 public enum class HeadingStyle {

@@ -29,7 +29,7 @@ class ParseDeltaTest {
         assertEquals(0L, delta.snapshot.version)
         assertTrue(delta.changedBlocks.isEmpty())
         assertTrue(delta.removedBlockIds.isEmpty())
-        assertTrue(delta.dirtyRegion.isEmpty)
+        assertEquals(delta.dirtyRegion.start, delta.dirtyRegion.endExclusive)
         assertEquals(ParseStats.Empty, delta.stats)
     }
 }

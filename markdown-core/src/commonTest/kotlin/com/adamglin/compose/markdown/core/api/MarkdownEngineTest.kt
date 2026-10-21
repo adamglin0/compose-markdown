@@ -206,7 +206,7 @@ class MarkdownEngineTest {
         assertEquals(1, first.snapshot.version)
         assertEquals(1, second.snapshot.version)
         assertTrue(second.changedBlocks.isEmpty())
-        assertTrue(second.dirtyRegion.isEmpty)
+        assertEquals(second.dirtyRegion.start, second.dirtyRegion.endExclusive)
         assertEquals(1, snapshot.document.sourceLength)
         assertEquals(2, snapshot.document.lineCount)
         assertTrue(snapshot.document.blocks.isEmpty())
