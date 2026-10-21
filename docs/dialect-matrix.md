@@ -38,9 +38,8 @@
 
 ## Incremental Invalidation Rules
 
-- setext headings: when the underline arrives, the engine backs up to the previous paragraph block;
-- tables: when the delimiter row arrives, the engine backs up to the candidate header paragraph only;
-- quote/list continuation: future lines can widen the reparse boundary to the surrounding top-level container;
+- the block parser reports every block a later line can still change (a paragraph that may get a setext underline or a table delimiter row, an open table, list, quote, fence or math block) as open, and the next append reparses from the earliest open top-level block;
+- an open table is reparsed from the start of the paragraph its header line came from;
 - reference definitions: new labels rehydrate only preserved blocks that previously reported unresolved references for that label.
 
 ## Practical Guidance

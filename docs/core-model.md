@@ -38,7 +38,7 @@ This document tracks the Stage 7 core model boundary in `markdown-core`.
 - `stablePrefixRange` tracks the prefix that the current engine implementation considers reusable without reinterpretation.
 - `ParseDelta.hasStateChange` marks snapshot-level mutations that remain observable even when block diffs are empty.
 - `dirtyRegion` marks the earliest source offset the engine actually reparsed for the latest operation.
-- Append-only reparsing stays localized to the mutable tail, plus small retroactive windows for setext headings, pipe tables, and quote/list continuation.
+- Append-only reparsing stays localized to the mutable tail, which starts at the earliest top-level block that later input can still change (for example a paragraph that may still become a setext heading or table header).
 - Late reference definitions do not trigger whole-document reparsing; the engine reprocesses only dependent preserved top-level blocks through the dependency index.
 
 ## Delta Metrics

@@ -17,7 +17,7 @@ For a normal `append(chunk)`:
 1. append text into `SourceBuffer`;
 2. normalize chunk newlines to `\n` before they reach `SourceBuffer`, `LineIndex`, or `BlockParser` (including CRLF pairs split across append boundaries);
 3. append newline offsets into `LineIndex` only for the normalized chunk;
-4. derive `dirtyRegion.start` from the previous mutable tail boundary;
+4. start `dirtyRegion` at the previous stable prefix end (the start of the earliest open top-level block);
 5. preserve cached blocks whose `range.endExclusive <= dirtyRegion.start`;
 6. reparse only `dirtyRegion` with `BlockParser(range = dirtyRegion)`;
 7. rehydrate inline nodes only for reparsed blocks, with inline cache reuse when block ID and text are unchanged;
