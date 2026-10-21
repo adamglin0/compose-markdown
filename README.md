@@ -10,6 +10,7 @@ This library is developing by AI.
 - CommonMark 0.31.2 and GFM tables, task lists, strikethrough and autolinks; every spec example passes except raw HTML, which is out of scope.
 - Streaming is invisible: after every chunk the document equals a one-shot parse of the same text. Earlier lines are never parsed again, so a chunk costs about as much as its own length.
 - Optional LaTeX math (`$…$`, `$$…$$`, `\(…\)`, `\[…\]`) rendered by a `MathRenderer` you plug in.
+- Every element can be replaced or decorated through `MarkdownComponents` slots, such as a code block header with a copy button.
 - Targets: Android, JVM desktop, iOS (arm64, simulator arm64), JS and Wasm.
 
 ## Install
@@ -141,10 +142,57 @@ Without a renderer, math shows its LaTeX source. A math block that has not been 
 ## Customization
 
 - `MarkdownTheme(colors, typography, blockSpacing)` styles every renderer inside it. Without it, the renderer uses `MarkdownColors.Light`, `MarkdownTypography.Default` and 12.dp block spacing.
+- `components = MarkdownComponents(...)` replaces or decorates how elements render (see below).
 - Links open through `LocalUriHandler`. Pass `onLinkClick` to handle them yourself.
 - `codeHighlighter` colors closed fenced code blocks. It defaults to `DefaultCodeHighlighter`, which is built on `dev.snipme:highlights`; pass `null` to turn highlighting off.
-- Images show their alt text. Pass `imageContent` to load them with your own image library.
-- Lambdas can be new on every call. `codeHighlighter` and `mathRenderer` should be long-lived instances, such as objects or values you `remember`.
+- Images show their alt text. Set `MarkdownComponents(image = { image -> ... })` to load them with your own image library.
+- Lambdas, including `MarkdownComponents` slots, can be new on every call. `codeHighlighter` and `mathRenderer` should be long-lived instances, such as objects or values you `remember`.
+
+### Components
+
+`MarkdownComponents` has one slot per element: `paragraph`, `heading`, `codeBlock`, `mathBlock`, `blockQuote`, `list`, `listItem`, `listMarker`, `taskCheckbox`, `table`, `thematicBreak` and `image`. A slot runs with a scope as receiver. The scope holds the element's data (`block`, the parsed node, or the fields of a code block or list marker) and `DefaultContent()`, the built-in rendering, so a slot can wrap the default or replace it. `blockQuote` and `listItem` also get `Children()`, which renders the nested blocks with their own slots. Slots you leave out keep the built-in rendering.
+
+A code block with a header that shows the language and a copy button, around the built-in highlighted code:
+
+```kotlin
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.adamglin.compose.markdown.compose.Markdown
+import com.adamglin.compose.markdown.compose.MarkdownComponents
+
+val ChatComponents = MarkdownComponents(
+    codeBlock = {
+        Column {
+            Row(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                BasicText(language ?: "text")
+                // `isClosed` is false while the fence is still streaming.
+                if (isClosed) BasicText("Copy", Modifier.clickable { copyToClipboard(code) })
+            }
+            HighlightedCode(contentPadding = PaddingValues(14.dp))
+        }
+    },
+    heading = {
+        Column {
+            DefaultContent()
+            if (block.level <= 2) Divider()
+        }
+    },
+)
+
+@Composable
+fun Message(content: String) {
+    Markdown(content, components = ChatComponents)
+}
+```
+
+`copyToClipboard` and `Divider` stand for your own code. `sample-chat` has a working version in `SampleMarkdownComponents.kt`. Each slot should emit one layout node; wrap several in a `Column` or `Box`, as above. `LazyListScope.markdown` takes the same `components`.
 
 ## Parse without Compose
 

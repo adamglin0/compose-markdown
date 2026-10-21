@@ -145,7 +145,7 @@ package com.adamglin.compose.markdown.compose
     modifier: Modifier = Modifier,
     codeHighlighter: CodeHighlighter? = DefaultCodeHighlighter, // null disables highlighting
     mathRenderer: MathRenderer? = null,                         // null shows LaTeX source
-    imageContent: (@Composable (MarkdownImage) -> Unit)? = null, // null shows alt text
+    components: MarkdownComponents = MarkdownComponents(),      // built-in rendering
     onLinkClick: ((url: String) -> Unit)? = null,               // null opens via LocalUriHandler
 )
 @Composable public fun Markdown(text: String, modifier: Modifier = Modifier, dialect: MarkdownDialect = MarkdownDialect.ChatFast, /* same plug-ins */)
@@ -182,7 +182,58 @@ public interface MathRenderer {
     @Composable fun InlineMath(latex: String, style: TextStyle)
 }
 public data class MarkdownImage(val url: String, val altText: String, val title: String?)
+
+// Components
+public class MarkdownComponents(
+    public val paragraph: @Composable MarkdownBlockScope<BlockNode.Paragraph>.() -> Unit = { DefaultContent() },
+    public val heading: @Composable MarkdownBlockScope<BlockNode.Heading>.() -> Unit = { DefaultContent() },
+    public val codeBlock: @Composable MarkdownCodeBlockScope.() -> Unit = { DefaultContent() },
+    public val mathBlock: @Composable MarkdownBlockScope<BlockNode.MathBlock>.() -> Unit = { DefaultContent() },
+    public val blockQuote: @Composable MarkdownContainerScope<BlockNode.BlockQuote>.() -> Unit = { DefaultContent() },
+    public val list: @Composable MarkdownBlockScope<BlockNode.ListBlock>.() -> Unit = { DefaultContent() },
+    public val listItem: @Composable MarkdownContainerScope<BlockNode.ListItem>.() -> Unit = { DefaultContent() },
+    public val listMarker: @Composable MarkdownListMarkerScope.() -> Unit = { DefaultContent() },
+    public val taskCheckbox: @Composable MarkdownBlockScope<BlockNode.ListItem>.() -> Unit = { DefaultContent() },
+    public val table: @Composable MarkdownBlockScope<BlockNode.TableBlock>.() -> Unit = { DefaultContent() },
+    public val thematicBreak: @Composable MarkdownBlockScope<BlockNode.ThematicBreak>.() -> Unit = { DefaultContent() },
+    public val image: (@Composable (MarkdownImage) -> Unit)? = null, // null shows alt text
+) // equal when all slots are equal
+@Stable public interface MarkdownBlockScope<out T : BlockNode> {
+    val block: T
+    @Composable fun DefaultContent(modifier: Modifier = Modifier)
+}
+@Stable public interface MarkdownContainerScope<out T : BlockNode> {
+    val block: T
+    @Composable fun DefaultContent(modifier: Modifier = Modifier)
+    @Composable fun Children(modifier: Modifier = Modifier) // the child blocks, with their own slots
+}
+@Stable public interface MarkdownCodeBlockScope {
+    val code: String
+    val language: String?   // FencedCodeBlock.languageHint; null for indented code
+    val infoString: String? // null for indented code
+    val isClosed: Boolean   // false while the fence streams; indented code is always closed
+    @Composable fun DefaultContent(modifier: Modifier = Modifier)
+    @Composable fun HighlightedCode(modifier: Modifier = Modifier, contentPadding: PaddingValues = PaddingValues())
+}
+@Stable public interface MarkdownListMarkerScope {
+    val listType: ListType // an ordered item's number is startNumber + index
+    val index: Int
+    val depth: Int         // 0 for a top-level list
+    @Composable fun DefaultContent(modifier: Modifier = Modifier)
+}
 ```
+
+Components rules:
+
+- Every slot runs with its scope as receiver. `DefaultContent()` is the built-in rendering, so a slot decorates by calling it inside its own layout and replaces by not calling it. A slot should emit one layout node (wrap several in a `Column` or `Box`): list markers and item bodies are each measured as one node, and a lazy item stacks the nodes of its block.
+- Block scopes expose the parsed node as `block` (see [Nodes](#nodes)); their slots only change presentation, never parsing. The code block scope unifies fenced and indented code, and the marker scope describes the marker of an item without a task checkbox; task items go through `taskCheckbox`, whose `block.taskState` is non-null.
+- `blockQuote` and `listItem` render their nested blocks through `Children()`, so nested content keeps its own slots and streaming behavior. A list item's `DefaultContent()` is its `Children()`; a quote's adds the quote surface.
+- `HighlightedCode()` is the code text of the built-in code block: theme code style, horizontal scroll with `contentPadding` inside it, colored by `codeHighlighter` once the fence is closed.
+- `mathBlock`'s `DefaultContent()` calls `MathRenderer.BlockMath` once the block is closed and shows the LaTeX source before. Inline math stays with `MathRenderer.InlineMath`: it is measured and embedded in its line of text, which a block slot cannot do.
+- `image` is the only nullable slot: without it, images are plain alt text in the line; with it, each image is composed, measured and embedded in the line.
+- Slots may be fresh lambdas on every call (as they are in a `LazyListScope` builder). The renderer reads the latest `MarkdownComponents` through state from the composable that invokes each slot: a new instance re-runs the slots of the composed blocks (in a lazy list, the visible ones), never the blocks around them, and an instance equal to the previous one (same slot lambdas, as non-capturing or remembered lambdas are) re-runs nothing.
+
+Why slots rather than plug-in interfaces: `CodeHighlighter` and `MathRenderer` stay interfaces because they are engines (code to colors, LaTeX to pixels) that the built-in rendering calls. Presentation is a slot API, the Compose convention used by Material components and other Compose Markdown renderers: one value holds a composable lambda per element, each lambda gets its element's data and the default content, and an app overrides only the slots it needs. Implementing an interface with a dozen composable methods for one changed element would be heavier and would not let a slot call back into the default.
 
 Renderer rules:
 
@@ -196,7 +247,7 @@ Renderer rules:
 - Inline math and images are composed, measured at natural size (capped to the text width) and given exact placeholders; sizes are remembered by content, so streaming a paragraph does not re-measure embeds already laid out. Unclosed math blocks show source text and never reach `MathRenderer`.
 - The renderer does not add a `SelectionContainer`; wrap it when text should be selectable.
 - Lazy item keys are `"$key:${block.id.raw}"`; `key` is required so every document in one list gets distinct item keys.
-- `onLinkClick` and `imageContent` may be fresh lambdas on every call (only their presence is a remember key); `codeHighlighter` and `mathRenderer` should be long-lived instances, since a new instance rebuilds the render context and misses the highlight cache.
+- `onLinkClick` and `components` may be fresh on every call (see the components rules); `codeHighlighter` and `mathRenderer` should be long-lived instances, since a new instance rebuilds the render context and misses the highlight cache.
 - Tables scroll with a standard `horizontalScroll` (fling, mouse wheel, RTL and accessibility scroll actions); the grid reads the viewport width captured in front of the scroll.
 
 ## Not part of the API
