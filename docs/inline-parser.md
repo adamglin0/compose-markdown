@@ -54,7 +54,7 @@ Every scan is bounded so that pathological input stays linear:
 - closing a link only visits the delimiters inside it when processing emphasis;
 - extended autolink domain scans are memoized per domain run.
 
-`InlineParserPerformanceTest` asserts this on inputs of 40k-300k characters (nested brackets, unmatched backticks, `\(`, `$`, `[`, delimiter runs, autolink-like text).
+`InlineParserPerformanceTest` asserts this on inputs of 40k-440k characters (nested brackets, link openers over deep delimiter and image stacks, unmatched backticks, `\(`, `$`, `[`, delimiter runs including mismatched tildes, autolink-like text).
 
 Inline nodes nested deeper than 32 levels (emphasis, links, images) are kept as literal source text so that the resulting tree, and every recursive consumer of it, has bounded depth.
 
