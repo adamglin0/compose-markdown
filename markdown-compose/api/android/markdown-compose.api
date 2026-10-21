@@ -2,6 +2,22 @@ public abstract interface class com/adamglin/compose/markdown/compose/CodeHighli
 	public abstract fun highlight (Ljava/lang/String;Ljava/lang/String;Lcom/adamglin/compose/markdown/compose/MarkdownColors;)Ljava/util/List;
 }
 
+public final class com/adamglin/compose/markdown/compose/ComposableSingletons$MarkdownComponentsKt {
+	public static final field INSTANCE Lcom/adamglin/compose/markdown/compose/ComposableSingletons$MarkdownComponentsKt;
+	public fun <init> ()V
+	public final fun getLambda$-1013461962$markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-13057324$markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1445704642$markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1754779817$markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-2084547395$markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-433979947$markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-56077015$markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-920795748$markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$142362785$markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1813587084$markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$562328501$markdown_compose ()Lkotlin/jvm/functions/Function3;
+}
+
 public final class com/adamglin/compose/markdown/compose/DefaultCodeHighlighter : com/adamglin/compose/markdown/compose/CodeHighlighter {
 	public static final field $stable I
 	public static final field INSTANCE Lcom/adamglin/compose/markdown/compose/DefaultCodeHighlighter;
@@ -22,6 +38,29 @@ public final class com/adamglin/compose/markdown/compose/HighlightToken {
 	public final fun getStart ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/adamglin/compose/markdown/compose/MarkdownBlockScope {
+	public abstract fun DefaultContent (Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/Composer;I)V
+	public abstract fun getBlock ()Lcom/adamglin/compose/markdown/core/model/BlockNode;
+}
+
+public final class com/adamglin/compose/markdown/compose/MarkdownBlockScope$ComposeDefaultImpls {
+	public static final fun DefaultContent$default (Landroidx/compose/ui/Modifier;Lcom/adamglin/compose/markdown/compose/MarkdownBlockScope;Landroidx/compose/runtime/Composer;II)V
+}
+
+public abstract interface class com/adamglin/compose/markdown/compose/MarkdownCodeBlockScope {
+	public abstract fun DefaultContent (Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/Composer;I)V
+	public abstract fun HighlightedCode (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/runtime/Composer;I)V
+	public abstract fun getCode ()Ljava/lang/String;
+	public abstract fun getInfoString ()Ljava/lang/String;
+	public abstract fun getLanguage ()Ljava/lang/String;
+	public abstract fun isClosed ()Z
+}
+
+public final class com/adamglin/compose/markdown/compose/MarkdownCodeBlockScope$ComposeDefaultImpls {
+	public static final fun DefaultContent$default (Landroidx/compose/ui/Modifier;Lcom/adamglin/compose/markdown/compose/MarkdownCodeBlockScope;Landroidx/compose/runtime/Composer;II)V
+	public static final fun HighlightedCode$default (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/PaddingValues;Lcom/adamglin/compose/markdown/compose/MarkdownCodeBlockScope;Landroidx/compose/runtime/Composer;II)V
 }
 
 public final class com/adamglin/compose/markdown/compose/MarkdownColors {
@@ -60,6 +99,38 @@ public final class com/adamglin/compose/markdown/compose/MarkdownColors$Companio
 	public final fun getLight ()Lcom/adamglin/compose/markdown/compose/MarkdownColors;
 }
 
+public final class com/adamglin/compose/markdown/compose/MarkdownComponents {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun <init> (Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBlockQuote ()Lkotlin/jvm/functions/Function3;
+	public final fun getCodeBlock ()Lkotlin/jvm/functions/Function3;
+	public final fun getHeading ()Lkotlin/jvm/functions/Function3;
+	public final fun getImage ()Lkotlin/jvm/functions/Function3;
+	public final fun getList ()Lkotlin/jvm/functions/Function3;
+	public final fun getListItem ()Lkotlin/jvm/functions/Function3;
+	public final fun getListMarker ()Lkotlin/jvm/functions/Function3;
+	public final fun getMathBlock ()Lkotlin/jvm/functions/Function3;
+	public final fun getParagraph ()Lkotlin/jvm/functions/Function3;
+	public final fun getTable ()Lkotlin/jvm/functions/Function3;
+	public final fun getTaskCheckbox ()Lkotlin/jvm/functions/Function3;
+	public final fun getThematicBreak ()Lkotlin/jvm/functions/Function3;
+	public fun hashCode ()I
+}
+
+public abstract interface class com/adamglin/compose/markdown/compose/MarkdownContainerScope {
+	public abstract fun Children (Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/Composer;I)V
+	public abstract fun DefaultContent (Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/Composer;I)V
+	public abstract fun getBlock ()Lcom/adamglin/compose/markdown/core/model/BlockNode;
+}
+
+public final class com/adamglin/compose/markdown/compose/MarkdownContainerScope$ComposeDefaultImpls {
+	public static final fun Children$default (Landroidx/compose/ui/Modifier;Lcom/adamglin/compose/markdown/compose/MarkdownContainerScope;Landroidx/compose/runtime/Composer;II)V
+	public static final fun DefaultContent$default (Landroidx/compose/ui/Modifier;Lcom/adamglin/compose/markdown/compose/MarkdownContainerScope;Landroidx/compose/runtime/Composer;II)V
+}
+
 public final class com/adamglin/compose/markdown/compose/MarkdownImage {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
@@ -77,10 +148,21 @@ public final class com/adamglin/compose/markdown/compose/MarkdownImage {
 }
 
 public final class com/adamglin/compose/markdown/compose/MarkdownKt {
-	public static final fun Markdown (Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;Landroidx/compose/ui/Modifier;Lcom/adamglin/compose/markdown/compose/CodeHighlighter;Lcom/adamglin/compose/markdown/compose/MathRenderer;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
-	public static final fun Markdown (Ljava/lang/String;Landroidx/compose/ui/Modifier;Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;Lcom/adamglin/compose/markdown/compose/CodeHighlighter;Lcom/adamglin/compose/markdown/compose/MathRenderer;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
-	public static final fun markdown (Landroidx/compose/foundation/lazy/LazyListScope;Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;Ljava/lang/Object;Lcom/adamglin/compose/markdown/compose/CodeHighlighter;Lcom/adamglin/compose/markdown/compose/MathRenderer;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun markdown$default (Landroidx/compose/foundation/lazy/LazyListScope;Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;Ljava/lang/Object;Lcom/adamglin/compose/markdown/compose/CodeHighlighter;Lcom/adamglin/compose/markdown/compose/MathRenderer;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun Markdown (Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;Landroidx/compose/ui/Modifier;Lcom/adamglin/compose/markdown/compose/CodeHighlighter;Lcom/adamglin/compose/markdown/compose/MathRenderer;Lcom/adamglin/compose/markdown/compose/MarkdownComponents;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+	public static final fun Markdown (Ljava/lang/String;Landroidx/compose/ui/Modifier;Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;Lcom/adamglin/compose/markdown/compose/CodeHighlighter;Lcom/adamglin/compose/markdown/compose/MathRenderer;Lcom/adamglin/compose/markdown/compose/MarkdownComponents;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+	public static final fun markdown (Landroidx/compose/foundation/lazy/LazyListScope;Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;Ljava/lang/Object;Lcom/adamglin/compose/markdown/compose/CodeHighlighter;Lcom/adamglin/compose/markdown/compose/MathRenderer;Lcom/adamglin/compose/markdown/compose/MarkdownComponents;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun markdown$default (Landroidx/compose/foundation/lazy/LazyListScope;Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;Ljava/lang/Object;Lcom/adamglin/compose/markdown/compose/CodeHighlighter;Lcom/adamglin/compose/markdown/compose/MathRenderer;Lcom/adamglin/compose/markdown/compose/MarkdownComponents;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public abstract interface class com/adamglin/compose/markdown/compose/MarkdownListMarkerScope {
+	public abstract fun DefaultContent (Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/Composer;I)V
+	public abstract fun getDepth ()I
+	public abstract fun getIndex ()I
+	public abstract fun getListType ()Lcom/adamglin/compose/markdown/core/model/ListType;
+}
+
+public final class com/adamglin/compose/markdown/compose/MarkdownListMarkerScope$ComposeDefaultImpls {
+	public static final fun DefaultContent$default (Landroidx/compose/ui/Modifier;Lcom/adamglin/compose/markdown/compose/MarkdownListMarkerScope;Landroidx/compose/runtime/Composer;II)V
 }
 
 public final class com/adamglin/compose/markdown/compose/MarkdownState {

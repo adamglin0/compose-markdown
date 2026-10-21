@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -46,33 +47,20 @@ internal fun ListBlock(
 ) {
     val itemSpacing = if (block.isLoose) context.blockSpacing else context.blockSpacing / 2
     val markerGap = 8.dp
-    val markers = listMarkers(block)
-    val bullet = bulletForDepth(listDepth)
     Layout(
         contents = listOf(
             {
                 block.items.forEachIndexed { index, item ->
                     key(item.id.raw) {
-                        when (val taskState = item.taskState) {
-                            null -> when (val marker = markers[index]) {
-                                null -> BulletMarker(bullet, context)
-                                else -> BasicText(text = marker, style = context.styles.body)
-                            }
-
-                            else -> TaskCheckbox(taskState = taskState, context = context)
-                        }
+                        // A box per marker and per body: the layout needs exactly one node for each.
+                        Box { ListMarkerSlot(block.type, item, index, listDepth, context) }
                     }
                 }
             },
             {
                 block.items.forEach { item ->
                     key(item.id.raw) {
-                        MarkdownBlocks(
-                            blocks = item.children,
-                            context = context,
-                            listDepth = listDepth + 1,
-                            spacing = context.blockSpacing / 2,
-                        )
+                        Box { ListItemSlot(item, context, listDepth) }
                     }
                 }
             },
@@ -119,18 +107,51 @@ internal fun ListBlock(
     }
 }
 
+@Composable
+private fun ListMarkerSlot(listType: ListType, item: BlockNode.ListItem, index: Int, depth: Int, context: MarkdownRenderContext) {
+    if (item.taskState != null) {
+        val scope = remember(item, context) { BlockScope(item) { modifier -> TaskCheckbox(item.taskState == TaskState.Checked, context, modifier) } }
+        context.components.taskCheckbox(scope)
+    } else {
+        val scope = remember(listType, index, depth, context) { ListMarkerScope(listType, index, depth, context) }
+        context.components.listMarker(scope)
+    }
+}
+
+@Composable
+private fun ListItemSlot(item: BlockNode.ListItem, context: MarkdownRenderContext, listDepth: Int) {
+    val scope = remember(item, context, listDepth) {
+        ContainerScope(item, children = { modifier ->
+            MarkdownBlocks(item.children, context, listDepth + 1, context.blockSpacing / 2, modifier)
+        })
+    }
+    context.components.listItem(scope)
+}
+
+private class ListMarkerScope(
+    override val listType: ListType,
+    override val index: Int,
+    override val depth: Int,
+    private val context: MarkdownRenderContext,
+) : MarkdownListMarkerScope {
+    @Composable
+    override fun DefaultContent(modifier: Modifier) = when (listType) {
+        is ListType.Ordered -> BasicText(text = orderedMarker(listType, index), modifier = modifier, style = context.styles.body)
+        is ListType.Bullet -> BulletMarker(bulletForDepth(depth), context, modifier)
+    }
+}
+
 /**
  * Task-list checkbox: read-only, exposed to accessibility as a checkbox with its state, centered
  * in the item's first line.
  */
 @Composable
-private fun TaskCheckbox(taskState: TaskState, context: MarkdownRenderContext) {
-    val isChecked = taskState == TaskState.Checked
+private fun TaskCheckbox(isChecked: Boolean, context: MarkdownRenderContext, modifier: Modifier) {
     val colors = context.colors
     val borderColor = if (isChecked) colors.accent else colors.border
     FirstLineBox(
         context = context,
-        modifier = Modifier.semantics {
+        modifier = modifier.semantics {
             role = Role.Checkbox
             toggleableState = ToggleableState(isChecked)
         },
@@ -153,11 +174,8 @@ private fun TaskCheckbox(taskState: TaskState, context: MarkdownRenderContext) {
     }
 }
 
-/** Number text for every item of an ordered [list], counted from its start; `null`s for bullets. */
-internal fun listMarkers(list: BlockNode.ListBlock): List<String?> = when (val type = list.type) {
-    is ListType.Ordered -> List(list.items.size) { index -> "${type.startNumber + index}${type.delimiter}" }
-    is ListType.Bullet -> List(list.items.size) { null }
-}
+/** Number text of the item at [index] of an ordered list, counted from its start. */
+internal fun orderedMarker(type: ListType.Ordered, index: Int): String = "${type.startNumber + index}${type.delimiter}"
 
 internal enum class Bullet { Disc, Circle, Square }
 
@@ -166,9 +184,9 @@ internal fun bulletForDepth(depth: Int): Bullet = Bullet.entries[depth % Bullet.
 
 /** A drawn bullet (glyph bullets vary too much between fonts), centered in the first body line. */
 @Composable
-private fun BulletMarker(bullet: Bullet, context: MarkdownRenderContext) {
+private fun BulletMarker(bullet: Bullet, context: MarkdownRenderContext, modifier: Modifier) {
     val color = context.colors.text
-    FirstLineBox(context, Modifier.width(14.dp)) {
+    FirstLineBox(context, modifier.width(14.dp)) {
         Canvas(Modifier.size(6.dp)) {
             when (bullet) {
                 Bullet.Disc -> drawCircle(color)

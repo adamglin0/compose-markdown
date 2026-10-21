@@ -1,5 +1,6 @@
 package com.adamglin.compose.markdown.compose
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -194,7 +195,10 @@ class MarkdownUiTest {
                     key = "doc",
                     mathRenderer = renderer,
                     // Capturing lambdas are fresh on every LazyListScope pass.
-                    imageContent = { image -> BasicText("image ${image.url} in ${document.blocks.size} blocks") },
+                    components = MarkdownComponents(
+                        image = { image -> BasicText("image ${image.url} in ${document.blocks.size} blocks") },
+                        paragraph = { Column { BasicText("${document.blocks.size} blocks"); DefaultContent() } },
+                    ),
                     onLinkClick = { url -> println("$url in ${document.blocks.size} blocks") },
                 )
             }
@@ -208,16 +212,19 @@ class MarkdownUiTest {
     @Test
     fun renderContextSurvivesFreshLambdas() = runComposeUiTest {
         // Lambdas built outside composition (as in a LazyListScope builder) are new instances.
-        fun imageLambda(tag: Int): @Composable (MarkdownImage) -> Unit = { image -> BasicText("${image.url} $tag") }
+        fun componentsFor(tag: Int) = MarkdownComponents(
+            image = { image -> BasicText("${image.url} $tag") },
+            codeBlock = { BasicText("$tag") },
+        )
         fun linkLambda(tag: Int): (String) -> Unit = { url -> println("$url $tag") }
-        var imageContent by mutableStateOf(imageLambda(0))
+        var components by mutableStateOf(componentsFor(0))
         var onLinkClick by mutableStateOf(linkLambda(0))
         val contexts = mutableSetOf<MarkdownRenderContext>()
         setContent {
-            contexts += rememberMarkdownRenderContext(DefaultCodeHighlighter, null, imageContent, onLinkClick)
+            contexts += rememberMarkdownRenderContext(DefaultCodeHighlighter, null, components, onLinkClick)
         }
         for (tag in 1..3) {
-            imageContent = imageLambda(tag)
+            components = componentsFor(tag)
             onLinkClick = linkLambda(tag)
             waitForIdle()
         }
@@ -256,10 +263,10 @@ class MarkdownUiTest {
         setContent {
             Markdown(
                 "![a cat](https://example.com/cat.png)",
-                imageContent = if (custom) {
-                    { image -> BasicText("image ${image.url}") }
+                components = if (custom) {
+                    MarkdownComponents(image = { image -> BasicText("image ${image.url}") })
                 } else {
-                    null
+                    MarkdownComponents()
                 },
             )
         }

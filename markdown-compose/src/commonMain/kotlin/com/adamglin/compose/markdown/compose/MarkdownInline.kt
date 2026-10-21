@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.em
 import com.adamglin.compose.markdown.core.model.InlineNode
 
-/** An image referenced by the document, handed to the `imageContent` slot of the renderer. */
+/** An image referenced by the document, handed to the [MarkdownComponents.image] slot. */
 @Immutable
 public data class MarkdownImage(
     val url: String,
@@ -65,7 +65,7 @@ internal fun rememberInlineRenderModel(
     context: MarkdownRenderContext,
 ): InlineRenderModel {
     val embedMath = context.mathRenderer != null
-    val embedImages = context.imageContent != null
+    val embedImages = context.embedImages
     return remember(nodes, context.styles, context.linkListener, embedMath, embedImages) {
         nodes.toInlineRenderModel(context.styles.inline, context.linkListener, embedMath, embedImages)
     }
@@ -195,7 +195,7 @@ private fun EmbeddingText(
                 ) {
                     when (embed) {
                         is InlineEmbed.Math -> context.mathRenderer?.InlineMath(embed.latex, style)
-                        is InlineEmbed.Image -> context.imageContent?.invoke(embed.image)
+                        is InlineEmbed.Image -> context.components.image?.invoke(embed.image)
                     }
                 }
             }

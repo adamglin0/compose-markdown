@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.CompositionTracer
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.InternalComposeTracingApi
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -49,10 +50,11 @@ class MarkdownStreamingCostTest {
         runComposeUiTest {
             val state = MarkdownState(dialect)
             val math = CountingMathRenderer()
-            setContent { Markdown(state.document, mathRenderer = math) }
+            val slots = CountingComponents()
+            setContent { Markdown(state.document, mathRenderer = math, components = slots.components) }
             state.append(documentOfSize(size))
             waitForIdle()
-            assertTailOnlyRecomposes(state, math, label = "Markdown(document)")
+            assertTailOnlyRecomposes(state, math, slots, label = "Markdown(document)")
         }
     }
 
@@ -61,11 +63,12 @@ class MarkdownStreamingCostTest {
         runComposeUiTest {
             val state = MarkdownState(dialect)
             val math = CountingMathRenderer()
+            val slots = CountingComponents()
             val listState = LazyListState()
             setContent {
                 Box(Modifier.width(400.dp).height(800.dp)) {
                     LazyColumn(state = listState) {
-                        markdown(state.document, key = "doc", mathRenderer = math)
+                        markdown(state.document, key = "doc", mathRenderer = math, components = slots.components)
                         // Room below the last block, so the streamed tail is visible once scrolled to it.
                         item(key = "end") { Spacer(Modifier.height(800.dp)) }
                     }
@@ -75,7 +78,7 @@ class MarkdownStreamingCostTest {
             waitForIdle()
             runOnIdle { listState.requestScrollToItem(state.document.blocks.lastIndex) }
             waitForIdle()
-            assertTailOnlyRecomposes(state, math, label = "LazyListScope.markdown")
+            assertTailOnlyRecomposes(state, math, slots, label = "LazyListScope.markdown")
         }
     }
 
@@ -86,9 +89,11 @@ class MarkdownStreamingCostTest {
     ).forEach { (name, line) ->
         runComposeUiTest {
             val state = MarkdownState(dialect)
-            setContent { Markdown(state.document) }
+            val slots = CountingComponents()
+            setContent { Markdown(state.document, components = slots.components) }
             state.append((0 until 200).joinToString("") { line(it) })
             waitForIdle()
+            val markersBefore = slots.markers
             val counter = BlockCounter()
             var worst = 0
             withTracer(counter) {
@@ -99,21 +104,30 @@ class MarkdownStreamingCostTest {
                     worst = maxOf(worst, counter.blocks)
                 }
             }
-            println("$name of 200 items: at most $worst blocks composed per append")
+            println("$name of 200 items: at most $worst blocks composed per append, ${slots.markers} marker slots run")
             onNodeWithText("item 209", substring = true).assertExists()
             // The top-level container and the blocks on the path to the open item's paragraph; closed
             // items keep their instances and skip.
             assertTrue(worst in 1..4, "$name: an append composed $worst blocks")
+            // Markers of closed items keep their slot; only the ten new items add theirs.
+            assertTrue(slots.markers - markersBefore <= 10, "$name: ${slots.markers - markersBefore} marker slots ran")
         }
     }
 
     /**
      * Streams a tail into the document [state] holds, token by token, and checks that every append
-     * composes the changed tail block (at most the two last top-level blocks) and never a closed formula.
+     * composes the changed tail block (at most the two last top-level blocks), never a closed
+     * formula and never the custom slot of a block the tail does not touch.
      */
-    private fun ComposeUiTest.assertTailOnlyRecomposes(state: MarkdownState, math: CountingMathRenderer, label: String) {
+    private fun ComposeUiTest.assertTailOnlyRecomposes(
+        state: MarkdownState,
+        math: CountingMathRenderer,
+        slots: CountingComponents,
+        label: String,
+    ) {
         val blocks = state.document.blocks.size
         val formulasBefore = math.blockCompositions
+        val closedSlotsBefore = slots.closedBlockSlots
         val tail = "\n\nThe tail paragraph grows token by token, with *emphasis* and `code` spans.\n\nA second one starts here and keeps going."
         val counter = BlockCounter()
         var worst = 0
@@ -133,6 +147,7 @@ class MarkdownStreamingCostTest {
         }
         println("$label, $blocks blocks: at most $worst blocks composed per append, ${nanos / chunks.size / 1000} us per append")
         assertEquals(formulasBefore, math.blockCompositions, "closed formulas recomposed")
+        assertEquals(closedSlotsBefore, slots.closedBlockSlots, "slots of untouched blocks ran")
         onNodeWithText("A second one starts here and keeps going.").assertExists()
         // Every chunk changes the tail paragraph, which must compose; nothing else may.
         assertTrue(fewest >= 1, "an append composed no block")
@@ -166,6 +181,36 @@ class MarkdownStreamingCostTest {
     private inline fun fastestOf(run: () -> Long): Long {
         repeat(3) { run() }
         return (1..5).minOf { run() }
+    }
+
+    /**
+     * Decorates every block kind and counts slot runs: [closedBlockSlots] for the kinds a streamed
+     * tail paragraph never touches (headings, formulas, lists), [markers] for list markers.
+     */
+    private class CountingComponents {
+        var closedBlockSlots = 0
+        var markers = 0
+        val components = MarkdownComponents(
+            paragraph = { Box { DefaultContent() } },
+            heading = {
+                SideEffect { closedBlockSlots++ }
+                DefaultContent()
+            },
+            mathBlock = {
+                SideEffect { closedBlockSlots++ }
+                DefaultContent()
+            },
+            list = {
+                SideEffect { closedBlockSlots++ }
+                DefaultContent()
+            },
+            blockQuote = { Box { Children() } },
+            listItem = { Box { DefaultContent() } },
+            listMarker = {
+                SideEffect { markers++ }
+                DefaultContent()
+            },
+        )
     }
 
     private class BlockCounter : CompositionTracer {
