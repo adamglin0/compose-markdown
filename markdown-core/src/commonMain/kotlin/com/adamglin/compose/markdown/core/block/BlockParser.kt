@@ -106,7 +106,7 @@ internal sealed class OpenBlock(val startLine: Int) {
         var isTight: Boolean = true
     }
 
-    class Item(startLine: Int, val marker: ListMarker, val markerOffset: Int, val padding: Int) : OpenBlock(startLine) {
+    class Item(startLine: Int, val markerOffset: Int, val padding: Int) : OpenBlock(startLine) {
         var taskState: TaskState? = null
     }
 
@@ -585,7 +585,7 @@ internal class BlockParserSession(
         if (currentList == null || !currentList.marker.continuesListOf(marker)) {
             addChild(OpenBlock.ListContainer(startLine = lineNumber, marker = marker))
         }
-        addChild(OpenBlock.Item(startLine = lineNumber, marker = marker, markerOffset = markerOffset, padding = padding))
+        addChild(OpenBlock.Item(startLine = lineNumber, markerOffset = markerOffset, padding = padding))
         return BlockStart.Container
     }
 
