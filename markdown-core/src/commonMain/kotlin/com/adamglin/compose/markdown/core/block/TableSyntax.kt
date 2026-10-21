@@ -4,7 +4,8 @@ import com.adamglin.compose.markdown.core.model.TableAlignment
 
 /**
  * GFM table row syntax, following cmark-gfm's table extension: a row is
- * `pipe? cell (pipe cell)* pipe?`, where a cell is any run of characters other than an unescaped `|`.
+ * `pipe? cell (pipe cell)* pipe?`, where a cell is any run of characters other than a `|` that is not
+ * preceded by a backslash. As in cmark-gfm, `\|` is always an escaped pipe, even after another backslash.
  */
 
 /** One cell of a row: [start, endExclusive) is the trimmed cell text in the scanned line. */
@@ -22,7 +23,7 @@ internal fun scanTableRow(line: String, start: Int): List<TableCellSpan>? {
     while (cursor < line.length) {
         val cellStart = cursor
         while (cursor < line.length && line[cursor] != '|') {
-            cursor += if (line[cursor] == '\\' && line.getOrNull(cursor + 1)?.isEscapableInTableCell() == true) 2 else 1
+            cursor += if (line[cursor] == '\\' && line.getOrNull(cursor + 1) == '|') 2 else 1
         }
         val cellEnd = cursor
         cells += trimmedCell(line, cellStart, cellEnd)
@@ -80,6 +81,3 @@ private fun trimmedCell(line: String, start: Int, endExclusive: Int): TableCellS
         text = line.substring(trimmedStart, trimmedEnd).replace("\\|", "|"),
     )
 }
-
-/** cmark-gfm's `escaped_char` set: an escaped pipe never separates cells. */
-private fun Char.isEscapableInTableCell(): Boolean = this in "|!\"#$%&'()*+,./:;<=>?@[\\]^_`{}~-"

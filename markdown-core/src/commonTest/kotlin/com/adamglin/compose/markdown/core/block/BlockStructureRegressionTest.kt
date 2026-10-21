@@ -172,6 +172,13 @@ class BlockStructureRegressionTest {
             "| a | b |\n|---|---|\n| x\\|y | `c\\|d` | dropped |\n",
             MarkdownDialect.GfmCompat,
         )
+        // cmark-gfm: a backslash before `|` always escapes it, even after another backslash.
+        assertHtml(
+            "<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n</tr>\n</thead>\n<tbody>\n" +
+                "<tr>\n<td>x|y</td>\n<td></td>\n</tr>\n<tr>\n<td>x\\|y</td>\n<td>z</td>\n</tr>\n</tbody>\n</table>\n",
+            "|a|b|\n|-|-|\n|x\\\\|y|\n|x\\\\\\|y|z|\n",
+            MarkdownDialect.GfmCompat,
+        )
     }
 
     @Test
