@@ -35,6 +35,7 @@ jobs:
     name: Library iOS tests
     # Compose Multiplatform 1.11 links against iOS 26 SDK symbols, so Xcode 26 is required.
     runs-on: macos-26
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
