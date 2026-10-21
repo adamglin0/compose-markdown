@@ -27,12 +27,7 @@ private class MarkdownBenchmarkRunner(
     private val allocationTracker = AllocationTracker.currentThread()
 
     fun run(): BenchmarkReport {
-        val scenarios = listOf(
-            BenchmarkScenario.OneShotLargeParagraph,
-            BenchmarkScenario.ChunkedMixedAppend,
-            BenchmarkScenario.OneShotMixedDocument,
-        )
-        val results = scenarios.map(::measureScenario)
+        val results = BenchmarkScenario.all(smoke = options.smoke).map(::measureScenario)
         return BenchmarkReport(
             generatedAt = java.time.Instant.now().toString(),
             mode = if (options.smoke) "smoke" else "full",
@@ -68,39 +63,17 @@ private class MarkdownBenchmarkRunner(
 
     private fun executeScenario(scenario: BenchmarkScenario): ScenarioMeasurement {
         val engine = MarkdownEngine(dialect = MarkdownDialect.GfmCompat)
-        val input = scenario.createInput(smoke = options.smoke)
+        val input = scenario.input
         var appendTotalTimeNanos = 0L
         var finishTimeNanos = 0L
-        var appendCount = 0
         var preservedBlocks = 0L
         var reparsedBlocks = 0L
         val allocatedBytes = allocationTracker.measureAllocatedBytes {
-            when (scenario) {
-                BenchmarkScenario.OneShotLargeParagraph -> {
-                    val delta = timedAppend(engine = engine, chunk = input.document)
-                    appendTotalTimeNanos += delta.elapsedNanos
-                    appendCount += 1
-                    preservedBlocks += delta.delta.stats.preservedBlocks.toLong()
-                    reparsedBlocks += delta.delta.stats.reparsedBlocks.toLong()
-                }
-
-                BenchmarkScenario.ChunkedMixedAppend -> {
-                    input.chunks.forEach { chunk ->
-                        val delta = timedAppend(engine = engine, chunk = chunk)
-                        appendTotalTimeNanos += delta.elapsedNanos
-                        appendCount += 1
-                        preservedBlocks += delta.delta.stats.preservedBlocks.toLong()
-                        reparsedBlocks += delta.delta.stats.reparsedBlocks.toLong()
-                    }
-                }
-
-                BenchmarkScenario.OneShotMixedDocument -> {
-                    val delta = timedAppend(engine = engine, chunk = input.document)
-                    appendTotalTimeNanos += delta.elapsedNanos
-                    appendCount += 1
-                    preservedBlocks += delta.delta.stats.preservedBlocks.toLong()
-                    reparsedBlocks += delta.delta.stats.reparsedBlocks.toLong()
-                }
+            input.chunks.forEach { chunk ->
+                val delta = timedAppend(engine = engine, chunk = chunk)
+                appendTotalTimeNanos += delta.elapsedNanos
+                preservedBlocks += delta.delta.stats.preservedBlocks.toLong()
+                reparsedBlocks += delta.delta.stats.reparsedBlocks.toLong()
             }
 
             finishTimeNanos = measureNanos {
@@ -110,6 +83,7 @@ private class MarkdownBenchmarkRunner(
             }
         }
 
+        val appendCount = input.chunks.size
         val totalBlocks = preservedBlocks + reparsedBlocks
         return ScenarioMeasurement(
             documentChars = input.document.length,
@@ -139,37 +113,52 @@ private class MarkdownBenchmarkRunner(
     }
 }
 
-private enum class BenchmarkScenario(
+private class BenchmarkScenario(
     val id: String,
     val description: String,
+    val input: ScenarioInput,
 ) {
-    OneShotLargeParagraph(
-        id = "one-shot-large-paragraph",
-        description = "Large paragraph-heavy document parsed in one append.",
-    ),
-    ChunkedMixedAppend(
-        id = "chunked-mixed-append",
-        description = "240 small appends over mixed paragraph/list/quote/code/table content.",
-    ),
-    OneShotMixedDocument(
-        id = "one-shot-mixed-document",
-        description = "Large mixed document parsed in one append.",
-    ),
-    ;
-
-    fun createInput(smoke: Boolean): ScenarioInput = when (this) {
-        OneShotLargeParagraph -> ScenarioInput(
-            document = BenchmarkCorpus.largeParagraphDocument(repetitions = if (smoke) 180 else 500),
-            chunks = emptyList(),
-        )
-        ChunkedMixedAppend -> {
-            val chunks = BenchmarkCorpus.chunkedMixedDocument(chunkCount = if (smoke) 120 else 240)
-            ScenarioInput(document = chunks.joinToString(separator = ""), chunks = chunks)
+    companion object {
+        fun all(smoke: Boolean): List<BenchmarkScenario> = buildList {
+            val largeParagraphs = BenchmarkCorpus.largeParagraphDocument(repetitions = if (smoke) 180 else 500)
+            add(BenchmarkScenario("one-shot-large-paragraph", "Large paragraph-heavy document parsed in one append.", ScenarioInput.oneShot(largeParagraphs)))
+            val chunkCount = if (smoke) 120 else 240
+            add(
+                BenchmarkScenario(
+                    "chunked-mixed-append",
+                    "$chunkCount small appends over mixed paragraph/list/quote/code/table content.",
+                    ScenarioInput.chunked(BenchmarkCorpus.chunkedMixedDocument(chunkCount = chunkCount)),
+                ),
+            )
+            val mixed = BenchmarkCorpus.mixedDocument(sections = if (smoke) 16 else 40)
+            add(BenchmarkScenario("one-shot-mixed-document", "Large mixed document parsed in one append.", ScenarioInput.oneShot(mixed)))
+            (if (smoke) listOf(25) else listOf(25, 50, 100, 200)).forEach { kilobytes ->
+                val document = BenchmarkCorpus.mixedDocumentOfSize(chars = kilobytes * 1_000)
+                add(
+                    BenchmarkScenario(
+                        "token-stream-${kilobytes}kb",
+                        "Mixed ${kilobytes}KB document streamed in 4-10 character tokens.",
+                        ScenarioInput.chunked(BenchmarkCorpus.tokenChunks(document)),
+                    ),
+                )
+            }
+            if (!smoke) {
+                add(
+                    BenchmarkScenario(
+                        "token-stream-open-fence-100kb",
+                        "One unclosed 100KB fenced code block streamed in 4-10 character tokens.",
+                        ScenarioInput.chunked(BenchmarkCorpus.tokenChunks(BenchmarkCorpus.unclosedFenceDocument(chars = 100_000))),
+                    ),
+                )
+                add(
+                    BenchmarkScenario(
+                        "token-stream-long-list-25kb",
+                        "One 25KB bullet list streamed in 4-10 character tokens.",
+                        ScenarioInput.chunked(BenchmarkCorpus.tokenChunks(BenchmarkCorpus.longListDocument(chars = 25_000))),
+                    ),
+                )
+            }
         }
-        OneShotMixedDocument -> ScenarioInput(
-            document = BenchmarkCorpus.mixedDocument(sections = if (smoke) 16 else 40),
-            chunks = emptyList(),
-        )
     }
 }
 
@@ -232,10 +221,17 @@ private data class TimedDelta(
     val elapsedNanos: Long,
 )
 
-private data class ScenarioInput(
-    val document: String,
+private class ScenarioInput(
     val chunks: List<String>,
-)
+) {
+    val document: String = chunks.joinToString(separator = "")
+
+    companion object {
+        fun oneShot(document: String) = ScenarioInput(chunks = listOf(document))
+
+        fun chunked(chunks: List<String>) = ScenarioInput(chunks = chunks)
+    }
+}
 
 private object BenchmarkReportRenderer {
     fun render(report: BenchmarkReport): String = buildString {
