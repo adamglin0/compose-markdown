@@ -21,7 +21,7 @@ class MarkdownEngineTest {
 
         val delta = engine.append("hello\nworld")
 
-        assertEquals(1L, delta.version)
+        assertEquals(1L, delta.snapshot.version)
         assertEquals(0, delta.snapshot.stablePrefixEnd)
         assertEquals(listOf(BlockChange(delta.snapshot.document.blocks.single().id, null, 0, delta.snapshot.document.blocks.single())), delta.changedBlocks)
         assertEquals(MarkdownDialect.ChatFast, delta.snapshot.dialect)
@@ -76,7 +76,6 @@ class MarkdownEngineTest {
         val delta = engine.append("> ```\n> code")
 
         assertFalse(delta.snapshot.isFinal)
-        assertEquals(0, delta.snapshot.stablePrefixRange.start)
         assertEquals(0, delta.snapshot.stablePrefixEnd)
     }
 
@@ -147,7 +146,6 @@ class MarkdownEngineTest {
         val delta = engine.append("# ok\n> ```\n> code")
 
         assertEquals(5, delta.snapshot.stablePrefixEnd)
-        assertEquals(0, delta.snapshot.stablePrefixRange.start)
         assertEquals(0, delta.stats.preservedBlocks)
         // The heading, the block quote and its fence.
         assertEquals(3, delta.stats.builtBlocks)
@@ -205,10 +203,10 @@ class MarkdownEngineTest {
         val snapshot = engine.finish().snapshot
 
         assertEquals(2, first.snapshot.document.lineCount)
-        assertEquals(1, first.version)
-        assertEquals(1, second.version)
+        assertEquals(1, first.snapshot.version)
+        assertEquals(1, second.snapshot.version)
         assertTrue(second.changedBlocks.isEmpty())
-        assertTrue(second.dirtyRegion.isEmpty)
+        assertEquals(second.dirtyRegion.start, second.dirtyRegion.endExclusive)
         assertEquals(1, snapshot.document.sourceLength)
         assertEquals(2, snapshot.document.lineCount)
         assertTrue(snapshot.document.blocks.isEmpty())
@@ -231,7 +229,6 @@ class MarkdownEngineTest {
 private fun List<BlockNode>.debugShape(): String = joinToString(separator = "\n") { block ->
     when (block) {
         is BlockNode.BlockQuote -> "quote(${block.children.debugShape()})"
-        is BlockNode.Document -> "document(${block.children.debugShape()})"
         is BlockNode.FencedCodeBlock -> "fence(${block.literal.replace("\n", "\\n")},${block.isClosed})"
         is BlockNode.Heading -> "heading(${block.level},${block.children.inlineLiteral()})"
         is BlockNode.ListBlock -> "list(${block.styleName},${block.items.withIndex().joinToString(separator = "\n") { (index, item) -> "item(${block.itemMarker(index)},${item.children.debugShape()})" }})"
@@ -257,7 +254,6 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.Strikethrough -> node.children.inlineLiteral()
         is InlineNode.Strong -> node.children.inlineLiteral()
         is InlineNode.Text -> node.literal
-        is InlineNode.UnsupportedInline -> node.literal
         is InlineNode.MathSpan -> node.latex
     }
 }

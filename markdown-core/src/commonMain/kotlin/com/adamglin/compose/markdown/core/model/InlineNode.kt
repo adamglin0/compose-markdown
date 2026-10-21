@@ -1,38 +1,39 @@
 package com.adamglin.compose.markdown.core.model
 
-import androidx.compose.runtime.Immutable
+public sealed interface InlineNode {
+    public val id: InlineId
+    public val range: TextRange
 
-sealed interface InlineNode {
-    val id: InlineId
-    val range: TextRange
-
-    @Immutable
-    data class Text(
+    @ConsistentCopyVisibility
+    public data class Text internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val literal: String,
     ) : InlineNode
 
-    data class Emphasis(
+    @ConsistentCopyVisibility
+    public data class Emphasis internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val children: List<InlineNode>,
     ) : InlineNode
 
-    data class Strong(
+    @ConsistentCopyVisibility
+    public data class Strong internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val children: List<InlineNode>,
     ) : InlineNode
 
-    @Immutable
-    data class CodeSpan(
+    @ConsistentCopyVisibility
+    public data class CodeSpan internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val literal: String,
     ) : InlineNode
 
-    data class Link(
+    @ConsistentCopyVisibility
+    public data class Link internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val destination: String,
@@ -41,7 +42,8 @@ sealed interface InlineNode {
         val referenceLabel: String? = null,
     ) : InlineNode
 
-    data class Image(
+    @ConsistentCopyVisibility
+    public data class Image internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val destination: String,
@@ -50,34 +52,27 @@ sealed interface InlineNode {
         val referenceLabel: String? = null,
     ) : InlineNode
 
-    @Immutable
-    data class SoftBreak(
+    @ConsistentCopyVisibility
+    public data class SoftBreak internal constructor(
         override val id: InlineId,
         override val range: TextRange,
     ) : InlineNode
 
-    @Immutable
-    data class HardBreak(
+    @ConsistentCopyVisibility
+    public data class HardBreak internal constructor(
         override val id: InlineId,
         override val range: TextRange,
     ) : InlineNode
 
-    data class Strikethrough(
+    @ConsistentCopyVisibility
+    public data class Strikethrough internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val children: List<InlineNode>,
     ) : InlineNode
 
-    @Immutable
-    data class UnsupportedInline(
-        override val id: InlineId,
-        override val range: TextRange,
-        val literal: String,
-        val reason: String? = null,
-    ) : InlineNode
-
-    @Immutable
-    data class MathSpan(
+    @ConsistentCopyVisibility
+    public data class MathSpan internal constructor(
         override val id: InlineId,
         override val range: TextRange,
         val latex: String,
@@ -85,7 +80,7 @@ sealed interface InlineNode {
     ) : InlineNode
 }
 
-enum class MathInlineDelimiter {
+public enum class MathInlineDelimiter {
     Dollar,
     Paren,
 }

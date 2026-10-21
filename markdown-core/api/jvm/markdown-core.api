@@ -1,0 +1,569 @@
+public abstract interface class com/adamglin/compose/markdown/core/api/MarkdownEngine {
+	public abstract fun append (Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/ParseDelta;
+	public abstract fun finish ()Lcom/adamglin/compose/markdown/core/model/ParseDelta;
+	public abstract fun getDialect ()Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;
+	public abstract fun reset ()V
+	public abstract fun snapshot ()Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;
+}
+
+public final class com/adamglin/compose/markdown/core/api/MarkdownEngineKt {
+	public static final fun MarkdownEngine (Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;)Lcom/adamglin/compose/markdown/core/api/MarkdownEngine;
+	public static synthetic fun MarkdownEngine$default (Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/api/MarkdownEngine;
+}
+
+public abstract class com/adamglin/compose/markdown/core/dialect/MarkdownDialect {
+	public synthetic fun <init> (Lcom/adamglin/compose/markdown/core/dialect/MarkdownBlockFeatures;Lcom/adamglin/compose/markdown/core/dialect/MarkdownInlineFeatures;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/adamglin/compose/markdown/core/dialect/MarkdownDialect$ChatFast : com/adamglin/compose/markdown/core/dialect/MarkdownDialect {
+	public static final field INSTANCE Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect$ChatFast;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/dialect/MarkdownDialect$CommonMarkCore : com/adamglin/compose/markdown/core/dialect/MarkdownDialect {
+	public static final field INSTANCE Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect$CommonMarkCore;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/dialect/MarkdownDialect$GfmCompat : com/adamglin/compose/markdown/core/dialect/MarkdownDialect {
+	public static final field INSTANCE Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect$GfmCompat;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/dialect/MarkdownDialect$GfmMath : com/adamglin/compose/markdown/core/dialect/MarkdownDialect {
+	public static final field INSTANCE Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect$GfmMath;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockChange {
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Ljava/lang/Integer;
+	public final fun component3 ()I
+	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/BlockNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBlock ()Lcom/adamglin/compose/markdown/core/model/BlockNode;
+	public final fun getId-dG1Ao-A ()J
+	public final fun getNewIndex ()I
+	public final fun getOldIndex ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockId {
+	public static final synthetic fun box-impl (J)Lcom/adamglin/compose/markdown/core/model/BlockId;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (JLjava/lang/Object;)Z
+	public static final fun equals-impl0 (JJ)Z
+	public final fun getRaw ()J
+	public fun hashCode ()I
+	public static fun hashCode-impl (J)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (J)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()J
+}
+
+public abstract interface class com/adamglin/compose/markdown/core/model/BlockNode {
+	public abstract fun getId-dG1Ao-A ()J
+	public abstract fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public abstract fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$BlockQuote : com/adamglin/compose/markdown/core/model/BlockNode {
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()Ljava/util/List;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildren ()Ljava/util/List;
+	public fun getId-dG1Ao-A ()J
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$FencedCodeBlock : com/adamglin/compose/markdown/core/model/BlockNode {
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Z
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-dG1Ao-A ()J
+	public final fun getInfoString ()Ljava/lang/String;
+	public final fun getLanguageHint ()Ljava/lang/String;
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun getLiteral ()Ljava/lang/String;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public final fun isClosed ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$Heading : com/adamglin/compose/markdown/core/model/BlockNode {
+	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;ILjava/util/List;Lcom/adamglin/compose/markdown/core/model/HeadingStyle;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()I
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Lcom/adamglin/compose/markdown/core/model/HeadingStyle;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildren ()Ljava/util/List;
+	public fun getId-dG1Ao-A ()J
+	public final fun getLevel ()I
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun getStyle ()Lcom/adamglin/compose/markdown/core/model/HeadingStyle;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$IndentedCodeBlock : com/adamglin/compose/markdown/core/model/BlockNode {
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-dG1Ao-A ()J
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun getLiteral ()Ljava/lang/String;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$ListBlock : com/adamglin/compose/markdown/core/model/BlockNode {
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/ListType;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Z
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-dG1Ao-A ()J
+	public final fun getItems ()Ljava/util/List;
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun getType ()Lcom/adamglin/compose/markdown/core/model/ListType;
+	public fun hashCode ()I
+	public final fun isLoose ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$ListItem : com/adamglin/compose/markdown/core/model/BlockNode {
+	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Lcom/adamglin/compose/markdown/core/model/LineRange;Ljava/util/List;Lcom/adamglin/compose/markdown/core/model/TaskState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Lcom/adamglin/compose/markdown/core/model/TaskState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildren ()Ljava/util/List;
+	public fun getId-dG1Ao-A ()J
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun getTaskState ()Lcom/adamglin/compose/markdown/core/model/TaskState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$MathBlock : com/adamglin/compose/markdown/core/model/BlockNode {
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Z
+	public final fun component6 ()Lcom/adamglin/compose/markdown/core/model/MathBlockDelimiter;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelimiter ()Lcom/adamglin/compose/markdown/core/model/MathBlockDelimiter;
+	public fun getId-dG1Ao-A ()J
+	public final fun getLatex ()Ljava/lang/String;
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public final fun isClosed ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$Paragraph : com/adamglin/compose/markdown/core/model/BlockNode {
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()Ljava/util/List;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildren ()Ljava/util/List;
+	public fun getId-dG1Ao-A ()J
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$TableBlock : com/adamglin/compose/markdown/core/model/BlockNode {
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/BlockNode$TableRow;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/util/List;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlignments ()Ljava/util/List;
+	public final fun getHeader ()Lcom/adamglin/compose/markdown/core/model/BlockNode$TableRow;
+	public fun getId-dG1Ao-A ()J
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun getRows ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$TableCell : com/adamglin/compose/markdown/core/model/BlockNode {
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()Ljava/util/List;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildren ()Ljava/util/List;
+	public fun getId-dG1Ao-A ()J
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$TableRow : com/adamglin/compose/markdown/core/model/BlockNode {
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Z
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCells ()Ljava/util/List;
+	public fun getId-dG1Ao-A ()J
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public final fun isHeader ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/BlockNode$ThematicBreak : com/adamglin/compose/markdown/core/model/BlockNode {
+	public final fun component1-dG1Ao-A ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun component4 ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-dG1Ao-A ()J
+	public fun getLineRange ()Lcom/adamglin/compose/markdown/core/model/LineRange;
+	public final fun getMarker ()Ljava/lang/String;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/HeadingStyle : java/lang/Enum {
+	public static final field Atx Lcom/adamglin/compose/markdown/core/model/HeadingStyle;
+	public static final field Setext Lcom/adamglin/compose/markdown/core/model/HeadingStyle;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/HeadingStyle;
+	public static fun values ()[Lcom/adamglin/compose/markdown/core/model/HeadingStyle;
+}
+
+public final class com/adamglin/compose/markdown/core/model/InlineId {
+	public static final synthetic fun box-impl (J)Lcom/adamglin/compose/markdown/core/model/InlineId;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (JLjava/lang/Object;)Z
+	public static final fun equals-impl0 (JJ)Z
+	public final fun getRaw ()J
+	public fun hashCode ()I
+	public static fun hashCode-impl (J)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (J)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()J
+}
+
+public abstract interface class com/adamglin/compose/markdown/core/model/InlineNode {
+	public abstract fun getId-i23UNoQ ()J
+	public abstract fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+}
+
+public final class com/adamglin/compose/markdown/core/model/InlineNode$CodeSpan : com/adamglin/compose/markdown/core/model/InlineNode {
+	public final fun component1-i23UNoQ ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-i23UNoQ ()J
+	public final fun getLiteral ()Ljava/lang/String;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/InlineNode$Emphasis : com/adamglin/compose/markdown/core/model/InlineNode {
+	public final fun component1-i23UNoQ ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Ljava/util/List;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildren ()Ljava/util/List;
+	public fun getId-i23UNoQ ()J
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/InlineNode$HardBreak : com/adamglin/compose/markdown/core/model/InlineNode {
+	public final fun component1-i23UNoQ ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-i23UNoQ ()J
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/InlineNode$Image : com/adamglin/compose/markdown/core/model/InlineNode {
+	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-i23UNoQ ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlt ()Ljava/util/List;
+	public final fun getDestination ()Ljava/lang/String;
+	public fun getId-i23UNoQ ()J
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun getReferenceLabel ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/InlineNode$Link : com/adamglin/compose/markdown/core/model/InlineNode {
+	public synthetic fun <init> (JLcom/adamglin/compose/markdown/core/model/TextRange;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-i23UNoQ ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildren ()Ljava/util/List;
+	public final fun getDestination ()Ljava/lang/String;
+	public fun getId-i23UNoQ ()J
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun getReferenceLabel ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/InlineNode$MathSpan : com/adamglin/compose/markdown/core/model/InlineNode {
+	public final fun component1-i23UNoQ ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/MathInlineDelimiter;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelimiter ()Lcom/adamglin/compose/markdown/core/model/MathInlineDelimiter;
+	public fun getId-i23UNoQ ()J
+	public final fun getLatex ()Ljava/lang/String;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/InlineNode$SoftBreak : com/adamglin/compose/markdown/core/model/InlineNode {
+	public final fun component1-i23UNoQ ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-i23UNoQ ()J
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/InlineNode$Strikethrough : com/adamglin/compose/markdown/core/model/InlineNode {
+	public final fun component1-i23UNoQ ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Ljava/util/List;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildren ()Ljava/util/List;
+	public fun getId-i23UNoQ ()J
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/InlineNode$Strong : com/adamglin/compose/markdown/core/model/InlineNode {
+	public final fun component1-i23UNoQ ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Ljava/util/List;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildren ()Ljava/util/List;
+	public fun getId-i23UNoQ ()J
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/InlineNode$Text : com/adamglin/compose/markdown/core/model/InlineNode {
+	public final fun component1-i23UNoQ ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component3 ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId-i23UNoQ ()J
+	public final fun getLiteral ()Ljava/lang/String;
+	public fun getRange ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/LineRange {
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEndLineExclusive ()I
+	public final fun getStartLine ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/adamglin/compose/markdown/core/model/ListType {
+}
+
+public final class com/adamglin/compose/markdown/core/model/ListType$Bullet : com/adamglin/compose/markdown/core/model/ListType {
+	public final fun component1 ()C
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBulletChar ()C
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/ListType$Ordered : com/adamglin/compose/markdown/core/model/ListType {
+	public final fun component1 ()I
+	public final fun component2 ()C
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelimiter ()C
+	public final fun getStartNumber ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/MarkdownDocument {
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/util/List;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBlocks ()Ljava/util/List;
+	public final fun getLineCount ()I
+	public final fun getSourceLength ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/MarkdownSnapshot {
+	public final fun component1 ()J
+	public final fun component2 ()Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;
+	public final fun component4 ()I
+	public final fun component5 ()Z
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDialect ()Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;
+	public final fun getDocument ()Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;
+	public final fun getStablePrefixEnd ()I
+	public final fun getVersion ()J
+	public fun hashCode ()I
+	public final fun isFinal ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/MathBlockDelimiter : java/lang/Enum {
+	public static final field Bracket Lcom/adamglin/compose/markdown/core/model/MathBlockDelimiter;
+	public static final field Dollar Lcom/adamglin/compose/markdown/core/model/MathBlockDelimiter;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/MathBlockDelimiter;
+	public static fun values ()[Lcom/adamglin/compose/markdown/core/model/MathBlockDelimiter;
+}
+
+public final class com/adamglin/compose/markdown/core/model/MathInlineDelimiter : java/lang/Enum {
+	public static final field Dollar Lcom/adamglin/compose/markdown/core/model/MathInlineDelimiter;
+	public static final field Paren Lcom/adamglin/compose/markdown/core/model/MathInlineDelimiter;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/MathInlineDelimiter;
+	public static fun values ()[Lcom/adamglin/compose/markdown/core/model/MathInlineDelimiter;
+}
+
+public final class com/adamglin/compose/markdown/core/model/ParseDelta {
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun component4 ()Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;
+	public final fun component5 ()Lcom/adamglin/compose/markdown/core/model/ParseStats;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChangedBlocks ()Ljava/util/List;
+	public final fun getDirtyRegion ()Lcom/adamglin/compose/markdown/core/model/TextRange;
+	public final fun getRemovedBlockIds ()Ljava/util/List;
+	public final fun getSnapshot ()Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;
+	public final fun getStats ()Lcom/adamglin/compose/markdown/core/model/ParseStats;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/ParseStats {
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppendedChars ()I
+	public final fun getBuiltBlocks ()I
+	public final fun getInlineCacheHitBlockCount ()I
+	public final fun getInlineParsedBlockCount ()I
+	public final fun getPreservedBlocks ()I
+	public final fun getProcessedLines ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/adamglin/compose/markdown/core/model/TableAlignment : java/lang/Enum {
+	public static final field Center Lcom/adamglin/compose/markdown/core/model/TableAlignment;
+	public static final field Default Lcom/adamglin/compose/markdown/core/model/TableAlignment;
+	public static final field Left Lcom/adamglin/compose/markdown/core/model/TableAlignment;
+	public static final field Right Lcom/adamglin/compose/markdown/core/model/TableAlignment;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/TableAlignment;
+	public static fun values ()[Lcom/adamglin/compose/markdown/core/model/TableAlignment;
+}
+
+public final class com/adamglin/compose/markdown/core/model/TaskState : java/lang/Enum {
+	public static final field Checked Lcom/adamglin/compose/markdown/core/model/TaskState;
+	public static final field Unchecked Lcom/adamglin/compose/markdown/core/model/TaskState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/TaskState;
+	public static fun values ()[Lcom/adamglin/compose/markdown/core/model/TaskState;
+}
+
+public final class com/adamglin/compose/markdown/core/model/TextRange {
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEndExclusive ()I
+	public final fun getStart ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

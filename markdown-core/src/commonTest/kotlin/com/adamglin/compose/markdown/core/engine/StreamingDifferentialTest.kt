@@ -73,7 +73,7 @@ class StreamingDifferentialTest {
                     add("with-empty" to text.chunked(3).flatMap { listOf("", it) })
                 }
                 strategies.forEach { (strategy, chunks) ->
-                    streamingViolation(dialect, chunks)?.let { failures += "${dialect.id} $name $strategy: $it" }
+                    streamingViolation(dialect, chunks)?.let { failures += "$dialect $name $strategy: $it" }
                 }
             }
         }
@@ -98,7 +98,7 @@ class StreamingDifferentialTest {
                 engine.finish()
                 published.forEachIndexed { step, (snapshot, dump) ->
                     if (snapshot.document.blocks.dump() != dump) {
-                        fail("${dialect.id} $name: snapshot of step $step changed after later appends")
+                        fail("$dialect $name: snapshot of step $step changed after later appends")
                     }
                 }
             }
@@ -138,7 +138,7 @@ class StreamingDifferentialTest {
         )
         val failures = allDialects.flatMap { dialect ->
             cases.mapNotNull { chunks ->
-                streamingViolation(dialect, chunks)?.let { "${dialect.id} ${chunks.map { it.escaped() }}: $it" }
+                streamingViolation(dialect, chunks)?.let { "$dialect ${chunks.map { it.escaped() }}: $it" }
             }
         }
         if (failures.isNotEmpty()) {

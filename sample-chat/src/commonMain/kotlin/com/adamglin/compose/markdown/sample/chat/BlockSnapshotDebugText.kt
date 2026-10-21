@@ -24,11 +24,6 @@ private fun StringBuilder.appendBlock(block: BlockNode, depth: Int) {
             block.children.forEach { child -> appendBlock(child, depth + 1) }
         }
 
-        is BlockNode.Document -> {
-            appendLine("${indent}Document id=${block.id.raw}")
-            block.children.forEach { child -> appendBlock(child, depth + 1) }
-        }
-
         is BlockNode.FencedCodeBlock -> appendLine(
             "${indent}FencedCodeBlock id=${block.id.raw} info=${block.infoString ?: "-"} closed=${block.isClosed} literal=${block.literal.debugLiteral()} range=${block.range.start}..${block.range.endExclusive}",
         )
@@ -91,7 +86,6 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.Strikethrough -> node.children.inlineLiteral()
         is InlineNode.Strong -> node.children.inlineLiteral()
         is InlineNode.Text -> node.literal
-        is InlineNode.UnsupportedInline -> node.literal
         is InlineNode.MathSpan -> node.latex
     }
 }

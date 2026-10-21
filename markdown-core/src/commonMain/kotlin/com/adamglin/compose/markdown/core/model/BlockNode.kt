@@ -1,27 +1,20 @@
 package com.adamglin.compose.markdown.core.model
 
-import androidx.compose.runtime.Immutable
+public sealed interface BlockNode {
+    public val id: BlockId
+    public val range: TextRange
+    public val lineRange: LineRange
 
-sealed interface BlockNode {
-    val id: BlockId
-    val range: TextRange
-    val lineRange: LineRange
-
-    data class Document(
-        override val id: BlockId,
-        override val range: TextRange,
-        override val lineRange: LineRange,
-        val children: List<BlockNode>,
-    ) : BlockNode
-
-    data class Paragraph(
+    @ConsistentCopyVisibility
+    public data class Paragraph internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val children: List<InlineNode>,
     ) : BlockNode
 
-    data class Heading(
+    @ConsistentCopyVisibility
+    public data class Heading internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -34,8 +27,8 @@ sealed interface BlockNode {
         }
     }
 
-    @Immutable
-    data class FencedCodeBlock(
+    @ConsistentCopyVisibility
+    public data class FencedCodeBlock internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -46,15 +39,16 @@ sealed interface BlockNode {
     ) : BlockNode
 
     /** A code block made of lines indented by four or more columns; it has no info string. */
-    @Immutable
-    data class IndentedCodeBlock(
+    @ConsistentCopyVisibility
+    public data class IndentedCodeBlock internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val literal: String,
     ) : BlockNode
 
-    data class BlockQuote(
+    @ConsistentCopyVisibility
+    public data class BlockQuote internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -66,7 +60,8 @@ sealed interface BlockNode {
      * delimiter); a list is loose when any of its items are separated by blank lines or any item directly
      * contains two block children with a blank line between them.
      */
-    data class ListBlock(
+    @ConsistentCopyVisibility
+    public data class ListBlock internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -75,7 +70,8 @@ sealed interface BlockNode {
         val isLoose: Boolean,
     ) : BlockNode
 
-    data class ListItem(
+    @ConsistentCopyVisibility
+    public data class ListItem internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -83,7 +79,8 @@ sealed interface BlockNode {
         val taskState: TaskState? = null,
     ) : BlockNode
 
-    data class TableBlock(
+    @ConsistentCopyVisibility
+    public data class TableBlock internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -92,7 +89,8 @@ sealed interface BlockNode {
         val rows: List<TableRow>,
     ) : BlockNode
 
-    data class TableRow(
+    @ConsistentCopyVisibility
+    public data class TableRow internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -100,23 +98,24 @@ sealed interface BlockNode {
         val isHeader: Boolean,
     ) : BlockNode
 
-    data class TableCell(
+    @ConsistentCopyVisibility
+    public data class TableCell internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val children: List<InlineNode>,
     ) : BlockNode
 
-    @Immutable
-    data class ThematicBreak(
+    @ConsistentCopyVisibility
+    public data class ThematicBreak internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
         val marker: String,
     ) : BlockNode
 
-    @Immutable
-    data class MathBlock(
+    @ConsistentCopyVisibility
+    public data class MathBlock internal constructor(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
@@ -126,39 +125,40 @@ sealed interface BlockNode {
     ) : BlockNode
 }
 
-sealed interface ListType {
+public sealed interface ListType {
     /** A bullet list; [bulletChar] is `-`, `+` or `*`. */
-    @Immutable
-    data class Bullet(val bulletChar: Char) : ListType
+    @ConsistentCopyVisibility
+    public data class Bullet internal constructor(val bulletChar: Char) : ListType
 
     /** An ordered list starting at [startNumber]; [delimiter] is `.` or `)`. */
-    @Immutable
-    data class Ordered(val startNumber: Int, val delimiter: Char) : ListType
+    @ConsistentCopyVisibility
+    public data class Ordered internal constructor(val startNumber: Int, val delimiter: Char) : ListType
 }
 
-enum class HeadingStyle {
+public enum class HeadingStyle {
     Atx,
     Setext,
 }
 
-enum class TaskState {
+public enum class TaskState {
     Checked,
     Unchecked,
 }
 
-enum class TableAlignment {
+public enum class TableAlignment {
     Default,
     Left,
     Center,
     Right,
 }
 
-enum class MathBlockDelimiter {
+public enum class MathBlockDelimiter {
     Dollar,
     Bracket,
 }
 
-data class BlockChange(
+@ConsistentCopyVisibility
+public data class BlockChange internal constructor(
     val id: BlockId,
     val oldIndex: Int?,
     val newIndex: Int,

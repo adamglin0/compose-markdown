@@ -57,7 +57,7 @@ class IncrementalEngineStressTest {
             assertEquals(
                 full.finish().snapshot.document.blocks.debugShape(),
                 incremental.finish().snapshot.document.blocks.debugShape(),
-                "dialect: ${dialect.id}",
+                "dialect: $dialect",
             )
         }
     }
@@ -137,14 +137,6 @@ private fun BlockNode.debugShape(depth: Int): String {
             }
         }
 
-        is BlockNode.Document -> buildString {
-            append("${indent}document")
-            children.forEach { child ->
-                append('\n')
-                append(child.debugShape(depth + 1))
-            }
-        }
-
         is BlockNode.FencedCodeBlock -> "${indent}fence(info=${infoString ?: "-"}, closed=$isClosed, literal=${literal.replace("\n", "\\n")})"
         is BlockNode.Heading -> "${indent}heading(level=$level, text=${children.inlineLiteral()})"
         is BlockNode.ListBlock -> buildString {
@@ -188,7 +180,6 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.Strikethrough -> node.children.inlineLiteral()
         is InlineNode.Strong -> node.children.inlineLiteral()
         is InlineNode.Text -> node.literal
-        is InlineNode.UnsupportedInline -> node.literal
         is InlineNode.MathSpan -> node.latex
     }
 }

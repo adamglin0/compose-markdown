@@ -33,7 +33,7 @@ import com.adamglin.compose.markdown.core.model.InlineNode
 
 /** An image referenced by the document, handed to the `imageContent` slot of the renderer. */
 @Immutable
-data class MarkdownImage(
+public data class MarkdownImage(
     val url: String,
     val altText: String,
     val title: String?,
@@ -96,7 +96,6 @@ private class InlineBuilder(
         nodes.forEach { node ->
             when (node) {
                 is InlineNode.Text -> append(node.literal)
-                is InlineNode.UnsupportedInline -> append(node.literal)
                 is InlineNode.SoftBreak, is InlineNode.HardBreak -> append("\n")
                 is InlineNode.CodeSpan -> withStyle(styles.code) { append(node.literal) }
                 is InlineNode.Emphasis -> withStyle(styles.emphasis) { append(node.children) }
@@ -134,7 +133,6 @@ internal fun List<InlineNode>.plainText(): String = buildString {
         nodes.forEach { node ->
             when (node) {
                 is InlineNode.Text -> append(node.literal)
-                is InlineNode.UnsupportedInline -> append(node.literal)
                 is InlineNode.CodeSpan -> append(node.literal)
                 is InlineNode.MathSpan -> append(node.latex)
                 is InlineNode.SoftBreak, is InlineNode.HardBreak -> append(' ')

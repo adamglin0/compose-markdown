@@ -71,7 +71,7 @@ class IncrementalEngineTest {
         engine.append("# Title\n\nparagraph\n\n")
         val delta = engine.append("- item")
 
-        assertEquals(TextRange(0, 20), delta.snapshot.stablePrefixRange)
+        assertEquals(20, delta.snapshot.stablePrefixEnd)
         assertEquals(TextRange(20, 26), delta.dirtyRegion)
         assertEquals(2, delta.stats.preservedBlocks)
         // The list, its item and the item's paragraph.
@@ -111,11 +111,11 @@ class IncrementalEngineTest {
         val finished = engine.finish()
         val again = engine.finish()
 
-        assertEquals(1L, empty.version)
+        assertEquals(1L, empty.snapshot.version)
         assertTrue(empty.changedBlocks.isEmpty())
-        assertEquals(finished.version, again.version)
+        assertEquals(finished.snapshot.version, again.snapshot.version)
         assertTrue(again.changedBlocks.isEmpty())
-        assertTrue(again.dirtyRegion.isEmpty)
+        assertEquals(again.dirtyRegion.start, again.dirtyRegion.endExclusive)
     }
 
     @Test
@@ -128,7 +128,7 @@ class IncrementalEngineTest {
 
         assertEquals(2, restarted.snapshot.document.sourceLength)
         assertEquals(first.snapshot.document.blocks.single().id, restarted.snapshot.document.blocks.single().id)
-        assertEquals(1L, restarted.version)
+        assertEquals(1L, restarted.snapshot.version)
     }
 
     /** Work per append is bounded by the mutable tail, so it does not grow with the document. */

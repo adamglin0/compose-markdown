@@ -36,7 +36,6 @@ internal object SpecHtmlRenderer {
 
         fun block(block: BlockNode, tight: Boolean) {
             when (block) {
-                is BlockNode.Document -> block.children.forEach { block(it, tight = false) }
                 is BlockNode.Paragraph -> if (tight) {
                     inlines(block.children)
                 } else {
@@ -187,7 +186,6 @@ internal object SpecHtmlRenderer {
                 }
 
                 is InlineNode.MathSpan -> builder.append("<span class=\"math\">").append(escape(node.latex)).append("</span>")
-                is InlineNode.UnsupportedInline -> builder.append(escape(node.literal))
             }
         }
 
@@ -211,7 +209,6 @@ internal object SpecHtmlRenderer {
                 is InlineNode.Link -> append(plainText(node.children))
                 is InlineNode.Image -> append(plainText(node.alt))
                 is InlineNode.MathSpan -> append(node.latex)
-                is InlineNode.UnsupportedInline -> append(node.literal)
             }
         }
     }

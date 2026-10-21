@@ -1,7 +1,5 @@
 package com.adamglin.compose.markdown.core.model
 
-import androidx.compose.runtime.Immutable
-
 /**
  * The change one [com.adamglin.compose.markdown.core.api.MarkdownEngine.append] or `finish` call made.
  *
@@ -9,8 +7,8 @@ import androidx.compose.runtime.Immutable
  * [snapshot], yields `snapshot.document.blocks`. Top-level blocks that are not listed are the same
  * instances as in the previous snapshot.
  */
-data class ParseDelta(
-    val version: Long,
+@ConsistentCopyVisibility
+public data class ParseDelta internal constructor(
     /** Top-level blocks that are new, moved, or whose content changed, in document order. */
     val changedBlocks: List<BlockChange>,
     /** Ids of blocks (at any depth) present in the previous snapshot and absent from this one. */
@@ -19,15 +17,11 @@ data class ParseDelta(
     val dirtyRegion: TextRange,
     val snapshot: MarkdownSnapshot,
     val stats: ParseStats,
-) {
-    init {
-        require(version >= 0L) { "version must be non-negative" }
-    }
-}
+)
 
 /** Work counters for one engine call. */
-@Immutable
-data class ParseStats(
+@ConsistentCopyVisibility
+public data class ParseStats internal constructor(
     /** Characters added to the source by this call, after line ending normalization. */
     val appendedChars: Int,
     /** Source lines the block parser processed: the lines completed by this call and the unterminated last line. */
@@ -50,7 +44,7 @@ data class ParseStats(
         require(inlineCacheHitBlockCount >= 0) { "inlineCacheHitBlockCount must be non-negative" }
     }
 
-    companion object {
+    internal companion object {
         val Empty = ParseStats(
             appendedChars = 0,
             processedLines = 0,

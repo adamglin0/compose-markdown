@@ -1,7 +1,8 @@
-@file:OptIn(ExperimentalWasmDsl::class)
+@file:OptIn(ExperimentalWasmDsl::class, ExperimentalAbiValidation::class)
 
 import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -12,6 +13,12 @@ plugins {
 }
 
 kotlin {
+    explicitApi()
+    abiValidation {
+        enabled = true
+        klib { enabled = true }
+    }
+
     // dev.snipme:highlights ships Java 21 bytecode, so JVM consumers of this module need Java 21.
     jvmToolchain(21)
 

@@ -11,7 +11,7 @@ Public API:
 
 Rendering covers paragraphs, headings, quotes, ordered/bullet/task lists, fenced code (highlighted, horizontally scrollable), math, thematic breaks and tables (horizontally scrollable when too wide).
 
-Streaming cost: `LazyListScope.markdown` composes only the visible blocks a chunk changed, whatever the length of the document. `Markdown(document)` renders one `Column`, which skips unchanged blocks but still checks, measures and draws every top-level block on each frame (about 4 ms per append at 25KB and 19 ms at 200KB on the JVM test harness), so use the lazy entry for long or streamed documents. `MarkdownStreamingCostTest` measures both.
+Streaming cost: `LazyListScope.markdown` composes only the visible blocks a chunk changed, whatever the length of the document. `Markdown(document)` renders one `Column`, which skips unchanged blocks but still checks, measures and draws every top-level block on each append (about 4 ms per append at 25KB and 19 ms at 200KB on the JVM test harness), so use the lazy entry for long or streamed documents. `MarkdownStreamingCostTest` measures both.
 
 Intentional limits:
 
@@ -19,4 +19,4 @@ Intentional limits:
 - task lists render as read-only checkboxes
 - no built-in image loading; supply `imageContent`
 
-See `../docs/api-draft.md` for signatures and `../docs/compatibility-report.md` for the renderer audit.
+See `../docs/api.md` for signatures and `../docs/compatibility-report.md` for the renderer audit.

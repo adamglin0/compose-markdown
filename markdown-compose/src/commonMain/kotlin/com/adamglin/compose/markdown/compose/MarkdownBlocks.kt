@@ -99,7 +99,6 @@ internal fun MarkdownBlock(
                 .background(context.colors.border),
         )
 
-        is BlockNode.Document -> MarkdownBlocks(block.children, context, listDepth, context.blockSpacing, modifier)
         // Rendered by their parents.
         is BlockNode.ListItem, is BlockNode.TableRow, is BlockNode.TableCell -> Unit
     }

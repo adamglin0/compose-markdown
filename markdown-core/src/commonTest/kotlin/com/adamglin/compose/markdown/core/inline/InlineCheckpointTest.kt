@@ -44,7 +44,7 @@ class InlineCheckpointTest {
                     val checkpoint = parser.parse(literal = text.substring(0, cut), range = TextRange(7, 7 + cut)).checkpoint ?: continue
                     val resumed = parser.parse(literal = text, range = range, resume = checkpoint)
                     if (resumed.nodes != full.nodes || resumed.referenceLabels != full.referenceLabels) {
-                        failures += "${dialect.id} '${text.replace("\n", "\\n")}' resumed at ${checkpoint.offset} (prefix of $cut)"
+                        failures += "$dialect '${text.replace("\n", "\\n")}' resumed at ${checkpoint.offset} (prefix of $cut)"
                         break
                     }
                 }

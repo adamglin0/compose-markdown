@@ -62,15 +62,15 @@ class StablePrefixTest {
         val engine = MarkdownEngine(dialect = MarkdownDialect.CommonMarkCore)
         engine.append("Foo\n")
 
-        assertEquals(TextRange(start = 0, endExclusive = 4), engine.finish().snapshot.stablePrefixRange)
+        assertEquals(4, engine.finish().snapshot.stablePrefixEnd)
     }
 
     @Test
     fun streamingParagraphStaysOutOfTheStablePrefixUntilItCannotChange() {
         val engine = MarkdownEngine(dialect = MarkdownDialect.CommonMarkCore)
 
-        assertEquals(TextRange(start = 0, endExclusive = 0), engine.append("Foo\n").snapshot.stablePrefixRange)
-        assertEquals(TextRange(start = 0, endExclusive = 8), engine.append("===\n").snapshot.stablePrefixRange)
+        assertEquals(0, engine.append("Foo\n").snapshot.stablePrefixEnd)
+        assertEquals(8, engine.append("===\n").snapshot.stablePrefixEnd)
     }
 
     @Test

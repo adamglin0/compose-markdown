@@ -1,157 +1,75 @@
 package com.adamglin.compose.markdown.core.dialect
 
-import androidx.compose.runtime.Immutable
-
-sealed interface MarkdownDialect {
-    val id: String
-    val preset: MarkdownPreset
-    val blockFeatures: MarkdownBlockFeatures
-    val inlineFeatures: MarkdownInlineFeatures
-
-    data object ChatFast : MarkdownDialect {
-        override val id: String = "chat-fast"
-        override val preset: MarkdownPreset = MarkdownPreset.ChatFast
-        override val blockFeatures: MarkdownBlockFeatures = preset.blockFeatures
-        override val inlineFeatures: MarkdownInlineFeatures = preset.inlineFeatures
-    }
-
-    data object CommonMarkCore : MarkdownDialect {
-        override val id: String = "commonmark-core"
-        override val preset: MarkdownPreset = MarkdownPreset.CommonMarkCore
-        override val blockFeatures: MarkdownBlockFeatures = preset.blockFeatures
-        override val inlineFeatures: MarkdownInlineFeatures = preset.inlineFeatures
-    }
-
-    data object GfmCompat : MarkdownDialect {
-        override val id: String = "gfm-compat"
-        override val preset: MarkdownPreset = MarkdownPreset.GfmCompat
-        override val blockFeatures: MarkdownBlockFeatures = preset.blockFeatures
-        override val inlineFeatures: MarkdownInlineFeatures = preset.inlineFeatures
-    }
-
-    data object GfmMath : MarkdownDialect {
-        override val id: String = "gfm-math"
-        override val preset: MarkdownPreset = MarkdownPreset.GfmMath
-        override val blockFeatures: MarkdownBlockFeatures = preset.blockFeatures
-        override val inlineFeatures: MarkdownInlineFeatures = preset.inlineFeatures
-    }
-}
-
-sealed class MarkdownPreset(
-    val id: String,
-    val blockFeatures: MarkdownBlockFeatures,
-    val inlineFeatures: MarkdownInlineFeatures,
+/**
+ * The Markdown syntax a parser session accepts. Every dialect parses CommonMark block structure; they differ
+ * in the GFM and math extensions they enable and in whether link reference definitions are resolved.
+ */
+public sealed class MarkdownDialect(
+    internal val blockFeatures: MarkdownBlockFeatures,
+    internal val inlineFeatures: MarkdownInlineFeatures,
 ) {
-    data object ChatFast : MarkdownPreset(
-        id = "chat-fast",
-        blockFeatures = MarkdownBlockFeatures(
-            taskListItems = true,
-            tables = true,
-        ),
+    /**
+     * GFM without link reference definitions: `[label]: url` lines stay paragraph text, so a streamed
+     * reference never rewrites links that were already rendered.
+     */
+    public data object ChatFast : MarkdownDialect(
+        blockFeatures = MarkdownBlockFeatures(taskListItems = true, tables = true),
         inlineFeatures = MarkdownInlineFeatures(
-            inlineCode = true,
-            emphasis = true,
-            strong = true,
             strikethrough = true,
-            inlineLinks = true,
             referenceLinks = false,
-            autolinks = true,
             bareAutolinks = true,
-            images = true,
-            softBreaks = true,
-            hardBreaks = true,
         ),
     )
 
-    data object CommonMarkCore : MarkdownPreset(
-        id = "commonmark-core",
-        blockFeatures = MarkdownBlockFeatures(
-            taskListItems = false,
-            tables = false,
-        ),
+    /** CommonMark only: no tables, task list items, strikethrough or bare autolinks. */
+    public data object CommonMarkCore : MarkdownDialect(
+        blockFeatures = MarkdownBlockFeatures(taskListItems = false, tables = false),
         inlineFeatures = MarkdownInlineFeatures(
-            inlineCode = true,
-            emphasis = true,
-            strong = true,
             strikethrough = false,
-            inlineLinks = true,
             referenceLinks = true,
-            autolinks = true,
             bareAutolinks = false,
-            images = true,
-            softBreaks = true,
-            hardBreaks = true,
         ),
     )
 
-    data object GfmCompat : MarkdownPreset(
-        id = "gfm-compat",
-        blockFeatures = MarkdownBlockFeatures(
-            taskListItems = true,
-            tables = true,
-        ),
+    /** CommonMark plus the GFM tables, task list items, strikethrough and extended autolinks. */
+    public data object GfmCompat : MarkdownDialect(
+        blockFeatures = MarkdownBlockFeatures(taskListItems = true, tables = true),
         inlineFeatures = MarkdownInlineFeatures(
-            inlineCode = true,
-            emphasis = true,
-            strong = true,
             strikethrough = true,
-            inlineLinks = true,
             referenceLinks = true,
-            autolinks = true,
             bareAutolinks = true,
-            images = true,
-            softBreaks = true,
-            hardBreaks = true,
         ),
     )
 
-    data object GfmMath : MarkdownPreset(
-        id = "gfm-math",
-        blockFeatures = MarkdownBlockFeatures(
-            taskListItems = true,
-            tables = true,
-            mathBlocks = true,
-        ),
+    /** [GfmCompat] plus LaTeX math: `$$…$$` / `\[…\]` blocks and `$…$` / `\(…\)` spans. */
+    public data object GfmMath : MarkdownDialect(
+        blockFeatures = MarkdownBlockFeatures(taskListItems = true, tables = true, mathBlocks = true),
         inlineFeatures = MarkdownInlineFeatures(
-            inlineCode = true,
-            emphasis = true,
-            strong = true,
             strikethrough = true,
-            inlineLinks = true,
             referenceLinks = true,
-            autolinks = true,
             bareAutolinks = true,
-            images = true,
-            softBreaks = true,
-            hardBreaks = true,
             inlineMath = true,
         ),
     )
 }
 
 /**
- * Block constructs that differ between presets. Paragraphs, headings, code blocks, block quotes, lists and
- * thematic breaks are part of every preset.
+ * Block constructs that differ between dialects. Paragraphs, headings, code blocks, block quotes, lists and
+ * thematic breaks are part of every dialect.
  */
-@Immutable
-data class MarkdownBlockFeatures(
+internal data class MarkdownBlockFeatures(
     val taskListItems: Boolean,
     val tables: Boolean,
     val mathBlocks: Boolean = false,
 )
 
-@Immutable
-data class MarkdownInlineFeatures(
-    val inlineCode: Boolean,
-    val emphasis: Boolean,
-    val strong: Boolean,
+/**
+ * Inline constructs that differ between dialects. Code spans, emphasis, inline links, images, autolinks and
+ * line breaks are part of every dialect.
+ */
+internal data class MarkdownInlineFeatures(
     val strikethrough: Boolean,
-    val inlineLinks: Boolean,
     val referenceLinks: Boolean,
-    val autolinks: Boolean,
     val bareAutolinks: Boolean,
-    val images: Boolean,
-    val softBreaks: Boolean,
-    val hardBreaks: Boolean,
     val inlineMath: Boolean = false,
 )

@@ -13,10 +13,10 @@ import androidx.compose.ui.text.TextStyle
  * streaming (unclosed) always show source text and are never passed to the renderer.
  */
 @Stable
-interface MathRenderer {
+public interface MathRenderer {
     /** Renders a display formula (`$$…$$` or `\[…\]`). */
     @Composable
-    fun BlockMath(latex: String, modifier: Modifier)
+    public fun BlockMath(latex: String, modifier: Modifier)
 
     /**
      * Renders an inline formula (`$…$` or `\(…\)`) at its natural size. The surrounding text
@@ -24,5 +24,5 @@ interface MathRenderer {
      * surrounding text style (font size and color).
      */
     @Composable
-    fun InlineMath(latex: String, style: TextStyle)
+    public fun InlineMath(latex: String, style: TextStyle)
 }

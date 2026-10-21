@@ -1,6 +1,6 @@
 # ADR-0001: Start With ChatFast Before Full CommonMark
 
-- Status: Accepted
+- Status: Superseded. Every dialect, `ChatFast` included, now parses the full CommonMark block and inline structure; `ChatFast` differs from `GfmCompat` only by leaving link reference definitions off (see `docs/dialects.md`).
 - Date: 2026-03-17
 
 ## Context

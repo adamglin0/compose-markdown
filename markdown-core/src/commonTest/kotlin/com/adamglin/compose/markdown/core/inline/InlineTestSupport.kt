@@ -44,6 +44,5 @@ internal fun List<InlineNode>.shape(): String = joinToString(separator = "") { n
         is InlineNode.MathSpan -> "math(${node.latex})"
         is InlineNode.SoftBreak -> "sb"
         is InlineNode.HardBreak -> "hb"
-        is InlineNode.UnsupportedInline -> "unsupported(${node.literal})"
     }
 }

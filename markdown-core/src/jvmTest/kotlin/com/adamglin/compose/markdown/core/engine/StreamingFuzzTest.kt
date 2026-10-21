@@ -55,7 +55,7 @@ class StreamingFuzzTest {
                 val chunkings = listOf(charChunks(text), randomChunks(text, random, minSize = 1, maxSize = 12))
                 if (chunkings.any { streamingViolation(dialect, it) != null }) {
                     val minimal = shrink(dialect, text)
-                    failures += "${dialect.id} '${minimal.escaped()}': ${streamingViolation(dialect, charChunks(minimal))}"
+                    failures += "$dialect '${minimal.escaped()}': ${streamingViolation(dialect, charChunks(minimal))}"
                 }
             }
         }

@@ -7,9 +7,10 @@
 
 ## Spec Coverage
 
-- raw HTML is not parsed in any preset: HTML blocks and inline tags stay literal text
-- footnotes and HTML export are not implemented
-- block and inline parsing follow the CommonMark 0.31.2 reference algorithms and pass every spec section except examples that need raw HTML; GFM tables pass in full (see `docs/compatibility-report.md`)
+- raw HTML is not parsed in any dialect: HTML blocks and inline tags stay literal text
+- footnotes, other GFM extensions beyond tables, task lists, strikethrough and autolinks, and HTML export are not implemented
+- `ChatFast` (the default) ignores link reference definitions, so `[text][label]` stays text; use another dialect for reference links
+- block and inline parsing follow the CommonMark 0.31.2 reference algorithms and pass every spec section except examples that need raw HTML; the GFM table, strikethrough and autolink examples pass in full (see `docs/compatibility-report.md`)
 - GFM extended `www.` / URL autolinks are not recognized while a `[` or `![` bracket is open (cmark-gfm behaviour), so URLs inside unmatched brackets stay text
 - inline nodes nested deeper than 32 levels are kept as literal text to bound tree depth
 - block quotes and list items nested deeper than 64 container levels (a list item counts twice) are kept as paragraph text for the same reason
@@ -24,8 +25,8 @@
 - the unterminated last line is parsed again on every append, so a single very long line (no line endings) costs its length per append
 - a growing paragraph is inline-parsed again from its last line start where nothing before can change; an unmatched emphasis opener, open bracket or unclosed code span early in a long paragraph makes every append parse it from there
 - a link reference definition on the unterminated last line takes effect only once the line ends (or at `finish()`)
-- performance measurements are documented from the JVM benchmark runner only; no equivalent native or JS benchmark suite ships yet
-- `ParseStats` is diagnostic surface area, not a hard complexity guarantee
+- performance is measured with the JVM benchmark runner only; there is no native or JS benchmark suite
+- `ParseStats` holds diagnostic counters, not a complexity guarantee
 
 ## Rendering
 
@@ -42,8 +43,9 @@
 
 ## Tooling And Distribution
 
-- CI runs the full check suite on Linux plus library iOS simulator tests on macOS; `v*` tags publish `markdown-core` and `markdown-compose` to Maven Central (see `docs/maven-central-publishing.md`)
+- CI runs `ciCheck` on Linux plus the library iOS simulator tests on macOS
 - benchmark tasks are for local measurement and smoke verification, not for hard pass/fail release gating
 - `markdown-compose` requires Java 21 on desktop JVM because `dev.snipme:highlights` ships Java 21 bytecode; `markdown-core` targets Java 17
+- both libraries are built against Compose Multiplatform 1.11.1, which is therefore the minimum Compose version for consumers
 
-For the final support audit, see `docs/compatibility-report.md`. For follow-up priorities, see `docs/next-steps.md`.
+For spec conformance, see [compatibility-report.md](compatibility-report.md).

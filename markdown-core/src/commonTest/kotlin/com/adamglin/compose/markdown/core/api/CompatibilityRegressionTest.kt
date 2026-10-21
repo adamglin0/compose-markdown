@@ -278,7 +278,6 @@ private val streamingCases = listOf(
 private fun List<BlockNode>.debugShape(): String = joinToString(separator = "\n") { block ->
     when (block) {
         is BlockNode.BlockQuote -> "quote(${block.children.debugShape()})"
-        is BlockNode.Document -> "document(${block.children.debugShape()})"
         is BlockNode.FencedCodeBlock -> "fence(${block.infoString ?: "-"},${if (block.isClosed) "closed" else "open"},${block.literal.replace("\n", "\\n")})"
         is BlockNode.Heading -> "heading(${block.level},${block.style.name.lowercase()},${block.children.debugInline()})"
         is BlockNode.ListBlock -> "list(${block.styleName},${if (block.isLoose) "loose" else "tight"},${block.debugItems()})"
@@ -317,7 +316,6 @@ private fun List<InlineNode>.debugInline(): String = joinToString(separator = ""
         is InlineNode.Strikethrough -> "strike(${node.children.debugInline()})"
         is InlineNode.Strong -> "strong(${node.children.debugInline()})"
         is InlineNode.Text -> "text(${node.literal.replace("\n", "\\n")})"
-        is InlineNode.UnsupportedInline -> "unsupported(${node.literal})"
         is InlineNode.MathSpan -> "math(${node.latex})"
     }
 }
@@ -333,7 +331,6 @@ private fun List<InlineNode>.inlineLiteral(): String = joinToString(separator = 
         is InlineNode.Strikethrough -> node.children.inlineLiteral()
         is InlineNode.Strong -> node.children.inlineLiteral()
         is InlineNode.Text -> node.literal
-        is InlineNode.UnsupportedInline -> node.literal
         is InlineNode.MathSpan -> node.latex
     }
 }
