@@ -71,7 +71,24 @@ internal fun MarkdownBlock(
 
         is BlockNode.BlockQuote -> QuoteBlock(block, context, listDepth, modifier)
         is BlockNode.ListBlock -> ListBlock(block, context, listDepth, modifier.fillMaxWidth())
-        is BlockNode.FencedCodeBlock -> CodeBlock(block, context, modifier)
+        is BlockNode.FencedCodeBlock -> CodeBlock(
+            code = if (block.isClosed) {
+                // Highlight only closed fences: a streaming fence changes every chunk.
+                rememberHighlightedCode(block.literal, block.languageHint, context.codeHighlighter, context.colors)
+            } else {
+                remember(block.literal) { AnnotatedString(block.literal) }
+            },
+            label = block.infoString?.trim().orEmpty(),
+            context = context,
+            modifier = modifier,
+        )
+
+        is BlockNode.IndentedCodeBlock -> CodeBlock(
+            code = remember(block.literal) { AnnotatedString(block.literal) },
+            label = "",
+            context = context,
+            modifier = modifier,
+        )
         is BlockNode.MathBlock -> MathBlock(block, context, modifier)
         is BlockNode.TableBlock -> TableBlock(block, context, modifier)
         is BlockNode.ThematicBreak -> Box(
@@ -83,8 +100,6 @@ internal fun MarkdownBlock(
         )
 
         is BlockNode.Document -> MarkdownBlocks(block.children, context, listDepth, context.blockSpacing, modifier)
-        is BlockNode.RawTextBlock -> BasicText(block.literal, modifier.fillMaxWidth(), context.styles.body)
-        is BlockNode.UnsupportedBlock -> BasicText(block.literal, modifier.fillMaxWidth(), context.styles.body)
         // Rendered by their parents.
         is BlockNode.ListItem, is BlockNode.TableRow, is BlockNode.TableCell -> Unit
     }
@@ -125,17 +140,12 @@ private fun QuoteBlock(
 
 @Composable
 private fun CodeBlock(
-    block: BlockNode.FencedCodeBlock,
+    code: AnnotatedString,
+    label: String,
     context: MarkdownRenderContext,
     modifier: Modifier,
 ) {
     val shape = RoundedCornerShape(14.dp)
-    // Highlight only closed fences: a streaming fence changes every chunk.
-    val code = if (block.isClosed) {
-        rememberHighlightedCode(block.literal, block.languageHint, context.codeHighlighter, context.colors)
-    } else {
-        remember(block.literal) { AnnotatedString(block.literal) }
-    }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -145,7 +155,6 @@ private fun CodeBlock(
             .padding(vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        val label = block.infoString?.trim().orEmpty()
         if (label.isNotEmpty()) {
             BasicText(label, Modifier.padding(horizontal = 14.dp), context.styles.label)
         }

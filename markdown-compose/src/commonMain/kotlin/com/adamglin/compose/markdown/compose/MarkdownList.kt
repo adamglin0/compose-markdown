@@ -30,7 +30,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.adamglin.compose.markdown.core.model.BlockNode
-import com.adamglin.compose.markdown.core.model.ListStyle
+import com.adamglin.compose.markdown.core.model.ListType
 import com.adamglin.compose.markdown.core.model.TaskState
 
 /**
@@ -154,9 +154,9 @@ private fun TaskCheckbox(taskState: TaskState, context: MarkdownRenderContext) {
 }
 
 /** Number text for every item of an ordered [list], counted from its start; `null`s for bullets. */
-internal fun listMarkers(list: BlockNode.ListBlock): List<String?> = when (val type = list.markerType()) {
-    is ListMarkerType.Ordered -> List(list.items.size) { index -> "${type.start + index}${type.delimiter}" }
-    ListMarkerType.Bullet -> List(list.items.size) { null }
+internal fun listMarkers(list: BlockNode.ListBlock): List<String?> = when (val type = list.type) {
+    is ListType.Ordered -> List(list.items.size) { index -> "${type.startNumber + index}${type.delimiter}" }
+    is ListType.Bullet -> List(list.items.size) { null }
 }
 
 internal enum class Bullet { Disc, Circle, Square }
@@ -190,24 +190,4 @@ private fun FirstLineBox(context: MarkdownRenderContext, modifier: Modifier = Mo
         BasicText(text = "", style = context.styles.body, modifier = Modifier.clearAndSetSemantics {})
         content()
     }
-}
-
-internal sealed interface ListMarkerType {
-    data object Bullet : ListMarkerType
-
-    data class Ordered(val start: Int, val delimiter: Char) : ListMarkerType
-}
-
-/**
- * Reads the list kind, start number and delimiter. The core model currently exposes only the raw
- * source marker of each item, so the start number is parsed from the first item's marker.
- */
-internal fun BlockNode.ListBlock.markerType(): ListMarkerType {
-    if (style == ListStyle.Unordered) return ListMarkerType.Bullet
-    val marker = items.firstOrNull()?.marker?.trim().orEmpty()
-    val digits = marker.takeWhile(Char::isDigit)
-    return ListMarkerType.Ordered(
-        start = digits.toIntOrNull() ?: 1,
-        delimiter = marker.getOrNull(digits.length)?.takeIf { it == '.' || it == ')' } ?: '.',
-    )
 }

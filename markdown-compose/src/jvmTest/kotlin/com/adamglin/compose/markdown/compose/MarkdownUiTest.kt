@@ -88,10 +88,17 @@ class MarkdownUiTest {
 
     @Test
     fun orderedListsAreNumberedFromTheirStart() = runComposeUiTest {
-        setContent { Markdown("1. one\n1. two\n1. three\n\nbreak\n\n7) seven\n7) eight") }
-        listOf("1.", "2.", "3.", "7)", "8)").forEach { marker ->
+        // A delimiter change starts a new list, numbered from its own start.
+        setContent { Markdown("3. three\n3. four\n1) one\n1) two") }
+        listOf("3.", "4.", "1)", "2)").forEach { marker ->
             onNodeWithText(marker).assertExists()
         }
+    }
+
+    @Test
+    fun indentedCodeRendersAsCodeBlock() = runComposeUiTest {
+        setContent { Markdown("para\n\n    val x = 1\n    val y = 2", dialect = MarkdownDialect.CommonMarkCore) }
+        onNodeWithText("val x = 1\nval y = 2").assertExists()
     }
 
     @Test

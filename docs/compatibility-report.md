@@ -165,7 +165,7 @@ Current curated sources:
 - inline annotations preserve links, emphasis, strong, code (inheriting the surrounding font size), and strike text styling
 - links open through `LocalUriHandler` unless `onLinkClick` is supplied
 - ordered lists number from their start; bullets vary by depth; markers share an aligned, baseline-matched column; task checkboxes expose checkbox role and state; headings expose heading semantics
-- code blocks scroll horizontally; closed fences are highlighted off the main thread with a shared cache keyed by code, language, colors and highlighter; `codeHighlighter = null` disables highlighting
+- code blocks scroll horizontally; closed fences are highlighted off the main thread with a shared cache keyed by code, language, colors and highlighter; `codeHighlighter = null` disables highlighting; indented code renders as an unlabeled, unhighlighted code block
 - inline math and images are measured and get exact placeholders; unclosed math blocks show source and never reach the `MathRenderer`
 - tables inside block quotes (and any layout asking for intrinsics) are supported; quotes draw their bar instead of using intrinsic measurement
 - renderer remains intentionally lightweight: no HTML, no image loading, no interactive task toggles

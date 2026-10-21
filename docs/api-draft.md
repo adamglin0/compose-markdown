@@ -227,7 +227,7 @@ Renderer rules:
 - `Markdown(text)` parses once per distinct `text`/`dialect` in `remember`; no engine is mutated during composition.
 - Without a `MarkdownTheme`, the renderer uses `MarkdownColors.Light`; dark mode is the app's choice (`MarkdownTheme(colors = MarkdownColors.Dark)`), never `isSystemInDarkTheme()`.
 - Typography styles normally leave `color` unspecified; `MarkdownColors.text` applies unless a style sets its own color. `MarkdownTypography.code.lineHeight` is the code block line height.
-- Highlighters run off the main thread for closed fences only; results are cached by code, language, colors and highlighter.
+- Highlighters run off the main thread for closed fences only; results are cached by code, language, colors and highlighter. Indented code renders as an unlabeled, unhighlighted code block.
 - Inline math and images are composed, measured at natural size (capped to the text width) and given exact placeholders; sizes are remembered by content, so streaming a paragraph does not re-measure embeds already laid out. Unclosed math blocks show source text and never reach `MathRenderer`.
 - The renderer does not add a `SelectionContainer`; wrap it when text should be selectable.
 - Lazy item keys are `"$key:${blockId}"`; `key` is required so every document in one list gets distinct item keys.
