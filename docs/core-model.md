@@ -59,14 +59,16 @@ The internal packages keep mutable append-time state for future incremental pars
 
 ## Stage 7 Block And Inline Notes
 
-- `BlockNode` snapshots come from a line-based parser that keeps the same append-only / snapshot / `ParseDelta` boundary.
+- `BlockNode` snapshots come from a CommonMark block parser (see `docs/block-parser.md`) that keeps the same append-only / snapshot / `ParseDelta` boundary.
 - Unfinished fenced code blocks may appear in non-final snapshots with `isClosed = false`.
 - `finish()` finalizes EOF state, but `isClosed = false` still means the source never emitted an explicit closing fence.
 - `BlockNode.Heading` now records `HeadingStyle` so ATX and setext upgrades stay distinguishable.
+- `BlockNode.ListBlock.type` is `ListType.Bullet(bulletChar)` or `ListType.Ordered(startNumber, delimiter)`; items carry no marker text, so ordered items are numbered from the list's start number.
 - `BlockNode.ListItem` can carry nullable `taskState` for task-list syntax.
+- `BlockNode.IndentedCodeBlock` holds indented code; it has no info string.
 - `BlockNode.TableBlock`, `BlockNode.TableRow`, and `BlockNode.TableCell` represent pipe tables.
 - `InlineNode.Link` and `InlineNode.Image` can record `referenceLabel` when resolved from definitions.
 - Reference definitions are intentionally non-rendering; they live in the engine dependency index instead of the public document block list.
-- Raw HTML remains disabled for every preset in this stage.
+- Raw HTML is not parsed in any preset; it stays literal text.
 
 These types are intentionally not part of the public API so a real parser can replace the placeholder implementation without breaking consumers.

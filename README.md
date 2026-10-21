@@ -78,9 +78,10 @@ fun Thread(snapshot: MarkdownSnapshot) {
 
 ## Notes
 
-- presets: `ChatFast`, `CommonMarkCore`, `GfmCompat`
+- presets: `ChatFast`, `CommonMarkCore`, `GfmCompat`, `GfmMath`
 - good fit: chat UIs, streaming previews, Compose apps
-- out of scope: raw HTML, arbitrary in-place editing, full CommonMark parity
+- CommonMark 0.31.2 and GFM table conformance apart from raw HTML
+- out of scope: raw HTML, arbitrary in-place editing
 - docs: `docs/compatibility-report.md`, `docs/known-limitations.md`
 
 ## License

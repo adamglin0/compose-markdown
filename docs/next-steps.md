@@ -2,8 +2,6 @@
 
 ## Priority 1 - Tighten Compatibility Edges
 
-- grow the block-level pass sets in `SpecConformanceTest` (indented code, lists, multi-line reference definitions, tables)
-- decide whether reference-link behavior needs stricter title parsing or should stay intentionally one-line only
 - document any preset-level behavior that is intentionally divergent before a public `0.2.x` cut
 
 ## Priority 2 - Reduce Incremental Cost
