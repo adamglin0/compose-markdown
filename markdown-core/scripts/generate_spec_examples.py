@@ -11,7 +11,7 @@ import pathlib
 import urllib.request
 
 COMMONMARK_URL = "https://spec.commonmark.org/0.31.2/spec.json"
-GFM_URL = "https://raw.githubusercontent.com/github/cmark-gfm/master/test/spec.txt"
+GFM_URL = "https://raw.githubusercontent.com/github/cmark-gfm/0.29.0.gfm.13/test/spec.txt"
 GFM_EXTENSIONS = {"strikethrough", "autolink", "table"}
 OUTPUT_DIR = pathlib.Path(__file__).resolve().parent.parent / (
     "src/commonTest/kotlin/com/adamglin/compose/markdown/core/spec"
