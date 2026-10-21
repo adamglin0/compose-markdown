@@ -45,6 +45,15 @@ sealed interface BlockNode {
         val isClosed: Boolean,
     ) : BlockNode
 
+    /** A code block made of lines indented by four or more columns; it has no info string. */
+    @Immutable
+    data class IndentedCodeBlock(
+        override val id: BlockId,
+        override val range: TextRange,
+        override val lineRange: LineRange,
+        val literal: String,
+    ) : BlockNode
+
     data class BlockQuote(
         override val id: BlockId,
         override val range: TextRange,
@@ -52,11 +61,16 @@ sealed interface BlockNode {
         val children: List<BlockNode>,
     ) : BlockNode
 
+    /**
+     * A bullet or ordered list. [type] carries the list marker (bullet character, or start number and
+     * delimiter); a list is loose when any of its items are separated by blank lines or any item directly
+     * contains two block children with a blank line between them.
+     */
     data class ListBlock(
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
-        val style: ListStyle,
+        val type: ListType,
         val items: List<ListItem>,
         val isLoose: Boolean,
     ) : BlockNode
@@ -65,7 +79,6 @@ sealed interface BlockNode {
         override val id: BlockId,
         override val range: TextRange,
         override val lineRange: LineRange,
-        val marker: String,
         val children: List<BlockNode>,
         val taskState: TaskState? = null,
     ) : BlockNode
@@ -103,23 +116,6 @@ sealed interface BlockNode {
     ) : BlockNode
 
     @Immutable
-    data class UnsupportedBlock(
-        override val id: BlockId,
-        override val range: TextRange,
-        override val lineRange: LineRange,
-        val literal: String,
-        val reason: String? = null,
-    ) : BlockNode
-
-    @Immutable
-    data class RawTextBlock(
-        override val id: BlockId,
-        override val range: TextRange,
-        override val lineRange: LineRange,
-        val literal: String,
-    ) : BlockNode
-
-    @Immutable
     data class MathBlock(
         override val id: BlockId,
         override val range: TextRange,
@@ -130,9 +126,14 @@ sealed interface BlockNode {
     ) : BlockNode
 }
 
-enum class ListStyle {
-    Unordered,
-    Ordered,
+sealed interface ListType {
+    /** A bullet list; [bulletChar] is `-`, `+` or `*`. */
+    @Immutable
+    data class Bullet(val bulletChar: Char) : ListType
+
+    /** An ordered list starting at [startNumber]; [delimiter] is `.` or `)`. */
+    @Immutable
+    data class Ordered(val startNumber: Int, val delimiter: Char) : ListType
 }
 
 enum class HeadingStyle {

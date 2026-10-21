@@ -52,12 +52,12 @@ private fun StringBuilder.appendBlock(block: BlockNode, depth: Int) {
         )
 
         is BlockNode.ListBlock -> {
-            appendLine("${indent}ListBlock(style=${block.style}, loose=${block.isLoose}) id=${block.id.raw} range=${block.range.start}..${block.range.endExclusive}")
+            appendLine("${indent}ListBlock(type=${block.type}, loose=${block.isLoose}) id=${block.id.raw} range=${block.range.start}..${block.range.endExclusive}")
             block.items.forEach { item -> appendBlock(item, depth + 1) }
         }
 
         is BlockNode.ListItem -> {
-            appendLine("${indent}ListItem(marker=${block.marker}) id=${block.id.raw} range=${block.range.start}..${block.range.endExclusive}")
+            appendLine("${indent}ListItem(task=${block.taskState ?: "-"}) id=${block.id.raw} range=${block.range.start}..${block.range.endExclusive}")
             block.children.forEach { child -> appendBlock(child, depth + 1) }
         }
 
@@ -80,16 +80,12 @@ private fun StringBuilder.appendBlock(block: BlockNode, depth: Int) {
             block.cells.forEach { cell -> appendBlock(cell, depth + 1) }
         }
 
-        is BlockNode.RawTextBlock -> appendLine(
-            "${indent}RawTextBlock id=${block.id.raw} literal=${block.literal.debugLiteral()} range=${block.range.start}..${block.range.endExclusive}",
+        is BlockNode.IndentedCodeBlock -> appendLine(
+            "${indent}IndentedCodeBlock id=${block.id.raw} literal=${block.literal.debugLiteral()} range=${block.range.start}..${block.range.endExclusive}",
         )
 
         is BlockNode.ThematicBreak -> appendLine(
             "${indent}ThematicBreak id=${block.id.raw} marker=${block.marker.debugLiteral()} range=${block.range.start}..${block.range.endExclusive}",
-        )
-
-        is BlockNode.UnsupportedBlock -> appendLine(
-            "${indent}UnsupportedBlock id=${block.id.raw} literal=${block.literal.debugLiteral()} reason=${block.reason ?: "-"} range=${block.range.start}..${block.range.endExclusive}",
         )
 
         is BlockNode.MathBlock -> appendLine(

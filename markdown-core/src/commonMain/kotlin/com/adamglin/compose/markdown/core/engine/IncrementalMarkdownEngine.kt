@@ -306,7 +306,7 @@ internal class IncrementalMarkdownEngine(
     }
 
     private fun shouldBackUpForRetroactiveInterpretation(block: BlockNode): Boolean = when (block) {
-        is BlockNode.Paragraph -> dialect.blockFeatures.setextHeadings || dialect.blockFeatures.tables
+        is BlockNode.Paragraph -> true
         is BlockNode.TableBlock -> dialect.blockFeatures.tables
         is BlockNode.BlockQuote,
         is BlockNode.ListBlock,
@@ -385,12 +385,11 @@ internal class IncrementalMarkdownEngine(
             is BlockNode.TableRow -> block.cells.forEach { cell -> collectFlattenedBlocks(cell, destination) }
             is BlockNode.TableCell,
             is BlockNode.FencedCodeBlock,
+            is BlockNode.IndentedCodeBlock,
             is BlockNode.Heading,
             is BlockNode.MathBlock,
             is BlockNode.Paragraph,
-            is BlockNode.RawTextBlock,
             is BlockNode.ThematicBreak,
-            is BlockNode.UnsupportedBlock,
             -> Unit
         }
     }
@@ -588,10 +587,9 @@ internal class IncrementalMarkdownEngine(
 
         is BlockNode.Document,
         is BlockNode.FencedCodeBlock,
+        is BlockNode.IndentedCodeBlock,
         is BlockNode.MathBlock,
-        is BlockNode.RawTextBlock,
         is BlockNode.ThematicBreak,
-        is BlockNode.UnsupportedBlock,
         -> InlineHydration(
             block = block,
             referenceLabels = emptySet(),

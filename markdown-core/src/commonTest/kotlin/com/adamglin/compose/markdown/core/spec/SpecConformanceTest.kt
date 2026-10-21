@@ -75,30 +75,22 @@ internal sealed interface SectionExpectation {
         override fun expectsPass(number: Int): Boolean = number !in exclusions
     }
 
-    /** Exactly these examples pass today; block-level sections grow this set as the block parser improves. */
-    data class Passing(val numbers: Set<Int>) : SectionExpectation {
-        override fun expectsPass(number: Int): Boolean = number in numbers
-    }
-
     /** The whole section is out of scope by design. */
     data class Excluded(val reason: String) : SectionExpectation {
         override fun expectsPass(number: Int): Boolean = false
     }
 }
 
-private const val RAW_HTML = "Raw HTML is unsupported by design (every preset has rawHtml = false), so tags render as escaped text."
-private const val INDENTED_CODE = "Block level: indented code blocks are not produced by the block parser."
-private const val LIST_TIGHTNESS = "Block level: list tightness / item structure is decided by the block parser."
-private const val MULTILINE_DEFINITION = "Block level: link reference definitions spanning several lines are not recognized by the block parser."
+private const val RAW_HTML = "Raw HTML is unsupported by design (no HTML blocks or inline HTML), so tags render as escaped text."
 
 private val commonMarkExpectations: Map<String, SectionExpectation> = mapOf(
-    // Inline sections: fully green apart from raw HTML and block-level constructs used by the example.
+    // Every section is fully green apart from examples that need raw HTML.
     "Inlines" to SectionExpectation.AllExcept(),
     "Backslash escapes" to SectionExpectation.AllExcept(
-        mapOf(18 to INDENTED_CODE, 21 to RAW_HTML),
+        mapOf(21 to RAW_HTML),
     ),
     "Entity and numeric character references" to SectionExpectation.AllExcept(
-        mapOf(31 to RAW_HTML, 36 to INDENTED_CODE, 38 to LIST_TIGHTNESS),
+        mapOf(31 to RAW_HTML),
     ),
     "Code spans" to SectionExpectation.AllExcept(
         mapOf(344 to RAW_HTML),
@@ -112,7 +104,6 @@ private val commonMarkExpectations: Map<String, SectionExpectation> = mapOf(
             494 to RAW_HTML,
             524 to RAW_HTML,
             536 to RAW_HTML,
-            541 to MULTILINE_DEFINITION,
         ),
     ),
     "Images" to SectionExpectation.AllExcept(),
@@ -124,31 +115,28 @@ private val commonMarkExpectations: Map<String, SectionExpectation> = mapOf(
     "Soft line breaks" to SectionExpectation.AllExcept(),
     "Textual content" to SectionExpectation.AllExcept(),
 
-    // Block sections: tracked pass sets.
-    "Tabs" to SectionExpectation.Passing(setOf(11)),
-    "Precedence" to SectionExpectation.Passing(emptySet()),
-    "Thematic breaks" to SectionExpectation.Passing(setOf(43, 44, 45, 46, 47, 50, 52, 55, 58, 59)),
-    "ATX headings" to SectionExpectation.Passing(setOf(62, 63, 64, 65, 66, 68, 72, 73, 74, 77, 78)),
-    "Setext headings" to SectionExpectation.Passing(
-        setOf(80, 81, 82, 84, 86, 88, 89, 90, 91, 92, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 106),
-    ),
-    "Indented code blocks" to SectionExpectation.Passing(setOf(108, 113)),
-    "Fenced code blocks" to SectionExpectation.Passing(
-        setOf(119, 120, 121, 122, 123, 124, 125, 126, 129, 130, 135, 136, 138, 140, 141, 142, 143, 144, 145, 146, 147),
-    ),
+    "Tabs" to SectionExpectation.AllExcept(),
+    "Precedence" to SectionExpectation.AllExcept(),
+    "Thematic breaks" to SectionExpectation.AllExcept(),
+    "ATX headings" to SectionExpectation.AllExcept(),
+    "Setext headings" to SectionExpectation.AllExcept(),
+    "Indented code blocks" to SectionExpectation.AllExcept(),
+    "Fenced code blocks" to SectionExpectation.AllExcept(),
     "HTML blocks" to SectionExpectation.Excluded(RAW_HTML),
-    "Link reference definitions" to SectionExpectation.Passing(
-        setOf(192, 194, 197, 199, 200, 202, 203, 204, 205, 206, 207, 209, 210, 212, 213, 214, 215, 216, 218),
+    "Link reference definitions" to SectionExpectation.AllExcept(
+        mapOf(201 to RAW_HTML),
     ),
-    "Paragraphs" to SectionExpectation.Passing(setOf(219, 220, 221, 223, 226)),
-    "Blank lines" to SectionExpectation.Passing(setOf(227)),
-    "Block quotes" to SectionExpectation.Passing(setOf(228, 229, 230, 234, 237, 239, 240, 241, 243, 244, 245, 246, 248, 249)),
-    "List items" to SectionExpectation.Passing(setOf(256, 261, 262, 269, 285, 298, 299)),
-    "Lists" to SectionExpectation.Passing(setOf(306, 314, 316, 317, 324, 326)),
+    "Paragraphs" to SectionExpectation.AllExcept(),
+    "Blank lines" to SectionExpectation.AllExcept(),
+    "Block quotes" to SectionExpectation.AllExcept(),
+    "List items" to SectionExpectation.AllExcept(),
+    "Lists" to SectionExpectation.AllExcept(
+        mapOf(308 to RAW_HTML, 309 to RAW_HTML),
+    ),
 )
 
 private val gfmExpectations: Map<String, SectionExpectation> = mapOf(
     "Strikethrough (extension)" to SectionExpectation.AllExcept(),
     "Autolinks (extension)" to SectionExpectation.AllExcept(),
-    "Tables (extension)" to SectionExpectation.Passing(setOf(198, 199, 201, 203, 205)),
+    "Tables (extension)" to SectionExpectation.AllExcept(),
 )

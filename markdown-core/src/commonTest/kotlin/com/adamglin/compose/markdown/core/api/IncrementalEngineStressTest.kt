@@ -1,7 +1,10 @@
 package com.adamglin.compose.markdown.core.api
 
+import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
+import com.adamglin.compose.markdown.core.itemMarker
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.InlineNode
+import com.adamglin.compose.markdown.core.styleName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -46,6 +49,25 @@ class IncrementalEngineStressTest {
 
         assertEquals(0, fallbackCount)
         assertEquals(fullSnapshot.document.blocks.debugShape(), incrementalSnapshot.document.blocks.debugShape())
+    }
+
+    @Test
+    fun charByCharAppendMatchesOneShotParseForContainerAndLeafBlocks() {
+        val text = "Title\n===\n\n- a\n  - b\n\n  - c\nlazy\n\n    code\n\tmore\n\n> quote\ncontinued\n> - item\n\n" +
+            "1. one\n1) two\n\n[ref]: /url\n\"title\"\n\nsee [ref]\n\n| a | b |\n|---|---|\nrow\n\n$$\nx\n$$\n- [ ] task\n  ```\n  fenced\n"
+
+        listOf(MarkdownDialect.ChatFast, MarkdownDialect.CommonMarkCore, MarkdownDialect.GfmMath).forEach { dialect ->
+            val incremental = MarkdownEngine(dialect = dialect)
+            text.forEach { char -> incremental.append(char.toString()) }
+            val full = MarkdownEngine(dialect = dialect)
+            full.append(text)
+
+            assertEquals(
+                full.finish().snapshot.document.blocks.debugShape(),
+                incremental.finish().snapshot.document.blocks.debugShape(),
+                "dialect: ${dialect.id}",
+            )
+        }
     }
 
     @Test
@@ -134,15 +156,19 @@ private fun BlockNode.debugShape(depth: Int): String {
         is BlockNode.FencedCodeBlock -> "${indent}fence(info=${infoString ?: "-"}, closed=$isClosed, literal=${literal.replace("\n", "\\n")})"
         is BlockNode.Heading -> "${indent}heading(level=$level, text=${children.inlineLiteral()})"
         is BlockNode.ListBlock -> buildString {
-            append("${indent}list(style=$style, loose=$isLoose)")
-            items.forEach { item ->
+            append("${indent}list(style=$styleName, loose=$isLoose)")
+            items.forEachIndexed { index, item ->
                 append('\n')
-                append(item.debugShape(depth + 1))
+                append("$indent  item(marker=${itemMarker(index)})")
+                item.children.forEach { child ->
+                    append('\n')
+                    append(child.debugShape(depth + 2))
+                }
             }
         }
 
         is BlockNode.ListItem -> buildString {
-            append("${indent}item(marker=$marker)")
+            append("${indent}item")
             children.forEach { child ->
                 append('\n')
                 append(child.debugShape(depth + 1))
@@ -150,12 +176,11 @@ private fun BlockNode.debugShape(depth: Int): String {
         }
 
         is BlockNode.Paragraph -> "${indent}paragraph(text=${children.inlineLiteral()})"
-        is BlockNode.RawTextBlock -> "${indent}raw(${literal.replace("\n", "\\n")})"
+        is BlockNode.IndentedCodeBlock -> "${indent}code(${literal.replace("\n", "\\n")})"
         is BlockNode.TableBlock -> "${indent}table(columns=${header.cells.size}, rows=${rows.size})"
         is BlockNode.TableCell -> "${indent}cell(${children.inlineLiteral()})"
         is BlockNode.TableRow -> "${indent}row(${cells.joinToString(separator = "|") { it.children.inlineLiteral() }})"
         is BlockNode.ThematicBreak -> "${indent}break($marker)"
-        is BlockNode.UnsupportedBlock -> "${indent}unsupported(${literal.replace("\n", "\\n")})"
         is BlockNode.MathBlock -> "${indent}math(${latex.replace("\n", "\\n")})"
     }
 }

@@ -2,7 +2,7 @@ package com.adamglin.compose.markdown.core.spec
 
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.InlineNode
-import com.adamglin.compose.markdown.core.model.ListStyle
+import com.adamglin.compose.markdown.core.model.ListType
 import com.adamglin.compose.markdown.core.model.TableAlignment
 
 internal data class SpecExample(
@@ -67,6 +67,12 @@ internal object SpecHtmlRenderer {
                     cr()
                 }
 
+                is BlockNode.IndentedCodeBlock -> {
+                    cr()
+                    builder.append("<pre><code>").append(escape(block.literal)).append("\n</code></pre>")
+                    cr()
+                }
+
                 is BlockNode.BlockQuote -> {
                     cr()
                     builder.append("<blockquote>")
@@ -79,18 +85,18 @@ internal object SpecHtmlRenderer {
 
                 is BlockNode.ListBlock -> {
                     cr()
-                    val start = block.items.firstOrNull()?.marker?.takeWhile { it.isDigit() }?.toIntOrNull()
+                    val type = block.type
                     builder.append(
                         when {
-                            block.style == ListStyle.Unordered -> "<ul>"
-                            start == null || start == 1 -> "<ol>"
-                            else -> "<ol start=\"$start\">"
+                            type !is ListType.Ordered -> "<ul>"
+                            type.startNumber == 1 -> "<ol>"
+                            else -> "<ol start=\"${type.startNumber}\">"
                         },
                     )
                     cr()
                     block.items.forEach { block(it, tight = !block.isLoose) }
                     cr()
-                    builder.append(if (block.style == ListStyle.Unordered) "</ul>" else "</ol>")
+                    builder.append(if (block.type is ListType.Ordered) "</ol>" else "</ul>")
                     cr()
                 }
 
@@ -129,17 +135,6 @@ internal object SpecHtmlRenderer {
                     cr()
                 }
 
-                is BlockNode.RawTextBlock -> {
-                    cr()
-                    builder.append(escape(block.literal))
-                    cr()
-                }
-
-                is BlockNode.UnsupportedBlock -> {
-                    cr()
-                    builder.append(escape(block.literal))
-                    cr()
-                }
             }
         }
 

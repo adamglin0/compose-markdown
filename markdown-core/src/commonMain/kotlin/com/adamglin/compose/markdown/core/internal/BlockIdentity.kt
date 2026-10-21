@@ -2,9 +2,17 @@ package com.adamglin.compose.markdown.core.internal
 
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.HeadingStyle
+import com.adamglin.compose.markdown.core.model.ListType
 import com.adamglin.compose.markdown.core.model.TableAlignment
 
 internal object BlockIdentity {
+    const val LIST_ITEM_DISCRIMINATOR = "item"
+
+    fun listDiscriminator(type: ListType): String = when (type) {
+        is ListType.Bullet -> "bullet:${type.bulletChar}"
+        is ListType.Ordered -> "ordered:${type.delimiter}"
+    }
+
     fun headingDiscriminator(style: HeadingStyle, level: Int): String = "${style.name}:$level"
 
     fun tableDiscriminator(alignments: List<TableAlignment>): String = alignments.joinToString(separator = ",") { it.name }
@@ -38,12 +46,11 @@ internal object BlockIdentity {
             }
             is BlockNode.TableCell,
             is BlockNode.FencedCodeBlock,
+            is BlockNode.IndentedCodeBlock,
             is BlockNode.Heading,
             is BlockNode.MathBlock,
             is BlockNode.Paragraph,
-            is BlockNode.RawTextBlock,
             is BlockNode.ThematicBreak,
-            is BlockNode.UnsupportedBlock,
             -> Unit
         }
     }
@@ -61,10 +68,10 @@ internal object BlockIdentity {
             start = block.range.start,
             discriminator = headingDiscriminator(style = block.style, level = block.level),
         )
-        is BlockNode.ListBlock -> BlockIdentityKey(kind = "list-block", start = block.range.start, discriminator = block.style.name)
-        is BlockNode.ListItem -> BlockIdentityKey(kind = "list-item", start = block.range.start, discriminator = block.marker)
+        is BlockNode.IndentedCodeBlock -> BlockIdentityKey(kind = "indented-code", start = block.range.start, discriminator = "indented")
+        is BlockNode.ListBlock -> BlockIdentityKey(kind = "list-block", start = block.range.start, discriminator = listDiscriminator(block.type))
+        is BlockNode.ListItem -> BlockIdentityKey(kind = "list-item", start = block.range.start, discriminator = LIST_ITEM_DISCRIMINATOR)
         is BlockNode.Paragraph -> BlockIdentityKey(kind = "paragraph", start = block.range.start, discriminator = "paragraph")
-        is BlockNode.RawTextBlock -> BlockIdentityKey(kind = "raw-text", start = block.range.start, discriminator = block.literal.take(16))
         is BlockNode.TableBlock -> BlockIdentityKey(
             kind = "table",
             start = block.range.start,
@@ -84,7 +91,6 @@ internal object BlockIdentity {
             discriminator = tableRowDiscriminator(isHeader = block.isHeader),
         )
         is BlockNode.ThematicBreak -> BlockIdentityKey(kind = "thematic-break", start = block.range.start, discriminator = block.marker.filterNot(Char::isWhitespace))
-        is BlockNode.UnsupportedBlock -> BlockIdentityKey(kind = "unsupported", start = block.range.start, discriminator = block.reason.orEmpty())
         is BlockNode.MathBlock -> BlockIdentityKey(kind = "math-block", start = block.range.start, discriminator = block.delimiter.name)
     }
 }

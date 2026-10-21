@@ -1,16 +1,18 @@
 package com.adamglin.compose.markdown.core.api
 
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
+import com.adamglin.compose.markdown.core.itemMarker
 import com.adamglin.compose.markdown.core.model.BlockId
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.InlineNode
+import com.adamglin.compose.markdown.core.styleName
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.test.assertFailsWith
 
 class MarkdownEngineTest {
     @Test
@@ -251,15 +253,14 @@ private fun List<BlockNode>.debugShape(): String = joinToString(separator = "\n"
         is BlockNode.Document -> "document(${block.children.debugShape()})"
         is BlockNode.FencedCodeBlock -> "fence(${block.literal.replace("\n", "\\n")},${block.isClosed})"
         is BlockNode.Heading -> "heading(${block.level},${block.children.inlineLiteral()})"
-        is BlockNode.ListBlock -> "list(${block.style},${block.items.debugShape()})"
-        is BlockNode.ListItem -> "item(${block.marker},${block.children.debugShape()})"
+        is BlockNode.ListBlock -> "list(${block.styleName},${block.items.withIndex().joinToString(separator = "\n") { (index, item) -> "item(${block.itemMarker(index)},${item.children.debugShape()})" }})"
+        is BlockNode.ListItem -> "item(${block.children.debugShape()})"
         is BlockNode.Paragraph -> "paragraph(${block.children.inlineLiteral()})"
-        is BlockNode.RawTextBlock -> "raw(${block.literal.replace("\n", "\\n")})"
+        is BlockNode.IndentedCodeBlock -> "code(${block.literal.replace("\n", "\\n")})"
         is BlockNode.TableBlock -> "table(${block.header.cells.size},${block.rows.size})"
         is BlockNode.TableCell -> "cell(${block.children.inlineLiteral()})"
         is BlockNode.TableRow -> "row(${block.cells.joinToString(separator = "|") { it.children.inlineLiteral() }})"
         is BlockNode.ThematicBreak -> "break(${block.marker})"
-        is BlockNode.UnsupportedBlock -> "unsupported(${block.literal.replace("\n", "\\n")})"
         is BlockNode.MathBlock -> "math(${block.latex.replace("\n", "\\n")})"
     }
 }
