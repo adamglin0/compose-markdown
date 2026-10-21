@@ -9,7 +9,10 @@
 
 - raw HTML is disabled for every preset
 - indented code blocks, footnotes, and HTML export are not implemented
-- delimiter handling focuses on common chat and README cases, not the full CommonMark edge-case matrix
+- inline parsing follows the CommonMark 0.31.2 reference algorithm and passes every inline spec section except examples that need raw HTML or block-level constructs the block parser does not produce yet (see `docs/compatibility-report.md`)
+- GFM extended `www.` / URL autolinks are not recognized while a `[` or `![` bracket is open (cmark-gfm behaviour), so URLs inside unmatched brackets stay text
+- inline nodes nested deeper than 32 levels are kept as literal text to bound tree depth
+- delimiter flanking classifies UTF-16 code units, so astral characters such as emoji next to `*`/`_` count as neither whitespace nor punctuation
 - reference definitions are single-line only
 - tables implement the common pipe-table subset rather than full GFM edge behavior; delimiter cells do accept one or more hyphens (`|-|`, `|--|`, `|---|`)
 

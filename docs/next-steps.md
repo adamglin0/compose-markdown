@@ -2,7 +2,7 @@
 
 ## Priority 1 - Tighten Compatibility Edges
 
-- expand the curated regression suite with more CommonMark/GFM edge examples for delimiters, link destinations, and table corner cases
+- grow the block-level pass sets in `SpecConformanceTest` (indented code, lists, multi-line reference definitions, tables)
 - decide whether reference-link behavior needs stricter title parsing or should stay intentionally one-line only
 - document any preset-level behavior that is intentionally divergent before a public `0.2.x` cut
 

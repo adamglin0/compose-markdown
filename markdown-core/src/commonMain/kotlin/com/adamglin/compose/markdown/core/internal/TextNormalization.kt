@@ -1,37 +1,26 @@
 package com.adamglin.compose.markdown.core.internal
 
+/**
+ * CommonMark link label normalization: strip surrounding whitespace, collapse internal runs of spaces,
+ * tabs and line endings to one space, and Unicode case fold (approximated as lowercase-then-uppercase,
+ * which maps `ẞ` and `SS` to the same key). Returns `null` for labels without non-whitespace content.
+ */
 internal fun normalizeReferenceLabel(raw: CharSequence): String? {
-    if (raw.isEmpty()) {
-        return null
-    }
-
-    var start = 0
-    var endExclusive = raw.length
-    while (start < endExclusive && raw[start].isWhitespace()) {
-        start += 1
-    }
-    while (endExclusive > start && raw[endExclusive - 1].isWhitespace()) {
-        endExclusive -= 1
-    }
-    if (start >= endExclusive) {
-        return null
-    }
-
-    val builder = StringBuilder(endExclusive - start)
+    val builder = StringBuilder(raw.length)
     var pendingSpace = false
-    var hasContent = false
-    for (index in start until endExclusive) {
-        val char = raw[index]
-        if (char.isWhitespace()) {
-            pendingSpace = hasContent
+    for (char in raw) {
+        if (char == ' ' || char == '\t' || char == '\n' || char == '\r') {
+            pendingSpace = builder.isNotEmpty()
             continue
         }
         if (pendingSpace) {
             builder.append(' ')
             pendingSpace = false
         }
-        builder.append(char.lowercaseChar())
-        hasContent = true
+        builder.append(char)
     }
-    return builder.toString()
+    if (builder.isEmpty()) {
+        return null
+    }
+    return builder.toString().lowercase().uppercase()
 }

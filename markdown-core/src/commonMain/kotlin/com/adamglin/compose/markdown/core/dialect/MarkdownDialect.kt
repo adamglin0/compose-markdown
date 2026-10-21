@@ -114,7 +114,7 @@ sealed class MarkdownPreset(
             inlineLinks = true,
             referenceLinks = true,
             autolinks = true,
-            bareAutolinks = true,
+            bareAutolinks = false,
             images = true,
             softBreaks = true,
             hardBreaks = true,

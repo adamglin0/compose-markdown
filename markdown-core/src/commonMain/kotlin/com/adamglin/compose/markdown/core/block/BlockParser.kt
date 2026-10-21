@@ -1,6 +1,11 @@
 package com.adamglin.compose.markdown.core.block
 
 import com.adamglin.compose.markdown.core.dialect.MarkdownDialect
+import com.adamglin.compose.markdown.core.inline.scanLinkDestination
+import com.adamglin.compose.markdown.core.inline.scanLinkLabel
+import com.adamglin.compose.markdown.core.inline.scanLinkTitle
+import com.adamglin.compose.markdown.core.inline.skipSpacesAndTabs
+import com.adamglin.compose.markdown.core.inline.unescapeString
 import com.adamglin.compose.markdown.core.internal.LinkReferenceDefinition
 import com.adamglin.compose.markdown.core.internal.OpenBlockFrame
 import com.adamglin.compose.markdown.core.internal.BlockIdentity
@@ -724,28 +729,25 @@ internal class BlockParser(
             if (!dialect.inlineFeatures.referenceLinks) {
                 return null
             }
-            val trimmed = line.content.trimStart()
-            if (!trimmed.startsWith('[')) {
+            val content = line.content
+            val labelStart = skipSpacesAndTabs(content, 0, content.length)
+            val labelEnd = scanLinkLabel(content, labelStart, content.length) ?: return null
+            if (content.getOrNull(labelEnd) != ':') {
                 return null
             }
-            val labelEnd = trimmed.indexOf(']')
-            if (labelEnd <= 1 || trimmed.getOrNull(labelEnd + 1) != ':' ) {
+            val label = normalizeReferenceLabel(content.substring(labelStart + 1, labelEnd - 1)) ?: return null
+            val destinationStart = skipSpacesAndTabs(content, labelEnd + 1, content.length)
+            val destination = scanLinkDestination(content, destinationStart, content.length, allowEmptyBare = false) ?: return null
+            val titleStart = skipSpacesAndTabs(content, destination.endExclusive, content.length)
+            val title = if (titleStart > destination.endExclusive) scanLinkTitle(content, titleStart, content.length) else null
+            val end = title?.endExclusive ?: destination.endExclusive
+            if (skipSpacesAndTabs(content, end, content.length) != content.length) {
                 return null
             }
-            val label = normalizeReferenceLabel(trimmed.substring(1, labelEnd)) ?: return null
-            val remainder = trimmed.substring(labelEnd + 2).trim()
-            if (remainder.isEmpty()) {
-                return null
-            }
-            val destination = remainder.substringBefore(' ').trim().trim('<', '>')
-            if (destination.isEmpty()) {
-                return null
-            }
-            val title = remainder.removePrefix(destination).trim().trim().takeIf { it.isNotEmpty() }?.trim('"', '\'')
             return LinkReferenceDefinition(
                 label = label,
-                destination = destination,
-                title = title,
+                destination = destination.value,
+                title = title?.value,
                 range = line.range,
             )
         }
@@ -837,10 +839,15 @@ internal class BlockParser(
         if (fenceLength < 3) {
             return null
         }
+        val rawInfo = trimmed.drop(fenceLength).trim()
+        // The info string of a backtick fence may not contain backticks (otherwise ```foo`` is inline code).
+        if (marker == '`' && '`' in rawInfo) {
+            return null
+        }
         return FenceMatch(
             fenceChar = marker,
             fenceLength = fenceLength,
-            infoString = trimmed.drop(fenceLength).trim(),
+            infoString = unescapeString(rawInfo),
         )
     }
 

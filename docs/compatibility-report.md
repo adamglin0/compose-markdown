@@ -9,7 +9,7 @@ This report is the Stage 9 compatibility and acceptance summary for the current 
 - sample scope: `sample-chat`
 - benchmark scope: JVM-only `benchmarks`
 - spec baseline: CommonMark 0.31.2 and GitHub Flavored Markdown 0.29-gfm
-- regression style: curated representative cases mapped to AST-shaped assertions, plus repository-specific streaming chunk splits
+- regression style: a vendored CommonMark 0.31.2 / GFM extension spec conformance suite, curated representative cases mapped to AST-shaped assertions, plus repository-specific streaming chunk splits
 
 This repository targets predictable append-only rendering first, not full spec parity.
 
@@ -27,9 +27,9 @@ This repository targets predictable append-only rendering first, not full spec p
 | Task list items | Supported | parsed in core, rendered as textual markers |
 | Tables | Supported | pipe-table subset only |
 | Thematic breaks | Supported | dedicated block node |
-| Emphasis / strong / code / links | Supported | common inline forms covered |
-| Strikethrough | Supported | enabled by preset |
-| Autolinks / bare URLs | Supported | heuristic rather than strict full-spec matching |
+| Emphasis / strong / code / links | Supported | CommonMark inline algorithm (delimiter + bracket stacks) |
+| Strikethrough | Supported | GFM `~` / `~~` |
+| Autolinks / bare URLs | Supported | CommonMark `<...>` autolinks plus GFM extended `www.` / URL / email autolinks |
 | Reference links / definitions | Not supported | disabled by preset |
 | Raw HTML | Not supported | explicitly disabled |
 | Incremental streaming | Supported | regression covers text, quote, list, fence, table |
@@ -42,10 +42,10 @@ This repository targets predictable append-only rendering first, not full spec p
 | Paragraphs / headings / quotes / lists / fences / thematic breaks | Supported | core CommonMark-style block surface |
 | Tables | Not supported | lines remain ordinary paragraph text |
 | Task list items | Not supported | markers remain plain list text |
-| Emphasis / strong / code / links | Supported | common inline forms covered |
+| Emphasis / strong / code / links | Supported | every inline spec section passes except raw-HTML and block-dependent examples |
 | Reference links / definitions | Supported | one-line definitions only |
 | Strikethrough | Not supported | disabled by preset |
-| Autolinks / bare URLs | Supported | pragmatic heuristics |
+| Autolinks | Supported | CommonMark `<scheme:...>` / `<email>` autolinks only; bare URLs are a GFM extension and stay text |
 | Raw HTML | Not supported | explicitly disabled |
 | Incremental streaming | Supported | regression covers text, quote, list, fence, reference links |
 | Compose renderer | Partial | renderer consumes produced nodes, but no HTML/export path |
@@ -58,24 +58,50 @@ This repository targets predictable append-only rendering first, not full spec p
 | Tables | Supported | pipe-table subset with alignment metadata |
 | Task list items | Supported | parsed in core, rendered as textual markers |
 | Reference links / definitions | Supported | one-line definitions only |
-| Strikethrough | Supported | enabled by preset |
-| Autolinks / bare URLs | Supported | pragmatic heuristics |
+| Strikethrough | Supported | GFM `~` / `~~`; all GFM strikethrough examples pass |
+| Autolinks / bare URLs | Supported | GFM extended autolinks; all GFM autolink extension examples pass |
 | Raw HTML | Not supported | explicitly disabled |
 | Incremental streaming | Supported | regression covers text, quote, list, fence, table, reference links |
 | Compose renderer | Partial | table layout uses content-based column widths and alignment; not full GitHub chrome |
+
+## Spec Conformance
+
+Pass counts from `SpecConformanceTest` (`CommonMarkCore` for CommonMark 0.31.2, `GfmCompat` for the GFM extension examples). Inline-section failures are only the documented exclusions: raw HTML (unsupported by design) and examples that depend on block-level constructs (indented code blocks, list tightness, multi-line reference definitions).
+
+| Section | Passing | Excluded examples |
+| --- | --- | --- |
+| Backslash escapes | 11 / 13 | 18 (indented code), 21 (raw HTML) |
+| Entity and numeric character references | 14 / 17 | 31 (raw HTML), 36 (indented code), 38 (list tightness) |
+| Code spans | 21 / 22 | 344 (raw HTML) |
+| Emphasis and strong emphasis | 129 / 132 | 475, 476, 477 (raw HTML) |
+| Links | 85 / 90 | 491, 494, 524, 536 (raw HTML), 541 (multi-line definition) |
+| Images | 22 / 22 | |
+| Autolinks | 19 / 19 | |
+| Hard line breaks | 13 / 15 | 642, 643 (raw HTML) |
+| Soft line breaks | 2 / 2 | |
+| Textual content | 3 / 3 | |
+| Inlines | 1 / 1 | |
+| Raw HTML | excluded | unsupported by design |
+| GFM Strikethrough (extension) | 2 / 2 | |
+| GFM Autolinks (extension) | 11 / 11 | |
+| GFM Tables (extension) | 5 / 8 | block level, tracked |
+
+Block-level sections are tracked with exact pass sets (for example Fenced code blocks 21 / 29, Link reference definitions 19 / 27, List items 7 / 48); see `SpecConformanceTest` for the full table.
 
 ## Supported
 
 - append-only chunked parsing with immutable snapshots and explicit dirty-region reporting
 - stable top-level block IDs across ordinary tail growth, including headings, lists, fences, and tables
 - paragraphs, ATX headings, setext headings, thematic breaks, fenced code blocks, block quotes, and lists
-- inline emphasis, strong emphasis, code spans, inline links, autolinks, bare URLs, soft breaks, hard breaks, images, and GFM strikethrough where enabled
+- CommonMark inline parsing per the spec's reference algorithm: emphasis and strong emphasis (flanking rules, rule of 3), code spans, inline and reference links and images with titles, autolinks, backslash escapes, entity and numeric character references, soft and hard breaks
+- GFM strikethrough and extended autolinks where enabled; inline math (`$...$`, `\(...\)`) in `GfmMath`
+- linear-time inline parsing on pathological input (nested brackets, unmatched backticks, `$`, `\(`, `[`)
 - localized invalidation for setext upgrades, table delimiter upgrades, and late reference-definition resolution
 - Compose block rendering for paragraphs, headings, quotes, lists, fenced code blocks, thematic breaks, tables, and clickable links
 
 ## Partially Supported
 
-- CommonMark compatibility: common examples work, but delimiter edge cases and several advanced constructs are intentionally not implemented
+- CommonMark compatibility: all inline spec sections pass except raw-HTML and block-dependent examples; several block-level sections (indented code, list edge cases, multi-line definitions, tabs) are still partial, see the per-section pass sets in `SpecConformanceTest`
 - GFM compatibility: tables, task lists, and strikethrough are covered, but only the lightweight pipe-table subset is implemented
 - GFM table delimiter cells accept one or more hyphens (for example `|-|-|` and `|--|--|`), matching the tables extension rather than the three-hyphen docs examples only
 - Compose tables measure preferred cell widths, keep short columns when space remains, shrink tall columns first on overflow, and apply left/center/right alignment
@@ -90,12 +116,12 @@ This repository targets predictable append-only rendering first, not full spec p
 - indented code block support
 - footnotes, HTML sanitization, HTML export, and rich-text editor behavior
 - full CommonMark title parsing for multi-line reference definitions
-- heavyweight external spec runners or large generated fixture pipelines
 
 ## Known Deviations
 
-- autolink and bare-URL detection uses pragmatic heuristics and can differ from strict CommonMark/GFM expectations
-- delimiter handling is simplified; nested emphasis precedence does not aim for full CommonMark edge-case parity
+- raw inline HTML is not parsed, so spec examples that rely on it render the tags as text
+- GFM extended `www.` / URL autolinks are suppressed while a link bracket is open (as in cmark-gfm)
+- inline nodes nested deeper than 32 levels stay literal text
 - reference definitions are single-line only, so valid multi-line spec examples intentionally degrade to plain text
 - tables cover common pipe-table syntax only; GitHub-specific layout quirks and richer table edge cases are out of scope
 - task list rendering uses read-only checkbox UI rather than plain textual markers
@@ -103,11 +129,13 @@ This repository targets predictable append-only rendering first, not full spec p
 
 ## Regression Suite
 
-`markdown-core/src/commonTest/kotlin/com/adamglin/compose/markdown/core/api/CompatibilityRegressionTest.kt` is the canonical lightweight compatibility regression suite.
+`markdown-core/src/commonTest/kotlin/com/adamglin/compose/markdown/core/spec/SpecConformanceTest.kt` runs every CommonMark 0.31.2 example and the cmark-gfm strikethrough, autolink and table extension examples (vendored as generated Kotlin by `markdown-core/scripts/generate_spec_examples.py`) through a test-only HTML renderer. Inline sections must pass in full except documented exclusions; block sections track an exact per-section pass set that the test enforces in both directions.
+
+`markdown-core/src/commonTest/kotlin/com/adamglin/compose/markdown/core/api/CompatibilityRegressionTest.kt` remains the lightweight AST-shape and streaming regression suite.
 
 Coverage policy:
 
-- prefer representative official and semi-official cases over importing an entire spec harness
+- official spec examples are checked through the conformance suite; curated cases cover AST shape and streaming
 - map examples to AST-shape assertions so tests stay stable and readable across platforms
 - add repository-specific chunk splits only where streaming behavior is the actual acceptance target
 
