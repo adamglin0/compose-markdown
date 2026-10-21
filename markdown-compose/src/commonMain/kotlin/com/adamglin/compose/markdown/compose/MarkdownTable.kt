@@ -1,34 +1,29 @@
 package com.adamglin.compose.markdown.compose
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.ScrollableDefaults
-import androidx.compose.foundation.gestures.rememberScrollableState
-import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.adamglin.compose.markdown.core.model.BlockNode
 import com.adamglin.compose.markdown.core.model.TableAlignment
-import kotlin.math.roundToInt
 
 /**
  * A GFM table laid out as a grid. Column widths come from the cells' intrinsic widths: columns keep
@@ -36,7 +31,9 @@ import kotlin.math.roundToInt
  * not, and the table scrolls horizontally when even the narrowest layout is wider than the space.
  *
  * Plain [Layout] with intrinsic queries on the cells, so every cell is composed once and the table
- * can sit inside any parent (including ones that ask for intrinsics).
+ * can sit inside any parent (including ones that ask for intrinsics). The grid sits in a regular
+ * `horizontalScroll`, which gives it unbounded width, so the viewport width is captured in front of
+ * the scroll and read by the grid's measurement.
  */
 @Composable
 internal fun TableBlock(
@@ -48,8 +45,7 @@ internal fun TableBlock(
     if (columnCount == 0) return
     val rows = listOf(block.header) + block.rows
     val borderColor = context.colors.border
-    val scroll = remember { TableScrollState() }
-    val scrollableState = rememberScrollableState { delta -> scroll.consume(delta) }
+    var viewportWidth by remember { mutableIntStateOf(Constraints.Infinity) }
 
     Layout(
         content = {
@@ -77,16 +73,12 @@ internal fun TableBlock(
             .fillMaxWidth()
             .border(1.dp, borderColor, RoundedCornerShape(10.dp))
             .padding(10.dp)
-            .clipToBounds()
-            .scrollable(
-                state = scrollableState,
-                orientation = Orientation.Horizontal,
-                reverseDirection = ScrollableDefaults.reverseDirection(
-                    layoutDirection = LocalLayoutDirection.current,
-                    orientation = Orientation.Horizontal,
-                    reverseScrolling = false,
-                ),
-            ),
+            .layout { measurable, constraints ->
+                if (viewportWidth != constraints.maxWidth) viewportWidth = constraints.maxWidth
+                val placeable = measurable.measure(constraints)
+                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+            }
+            .horizontalScroll(rememberScrollState()),
     ) { measurables, constraints ->
         val cellMeasurables = measurables.subList(0, measurables.size - 1)
         val dividerMeasurable = measurables.last()
@@ -102,8 +94,8 @@ internal fun TableBlock(
             preferred[column] = maxOf(preferred[column], cell.maxIntrinsicWidth(Constraints.Infinity))
             minimum[column] = maxOf(minimum[column], cell.minIntrinsicWidth(Constraints.Infinity))
         }
-        val viewportWidth = if (constraints.hasBoundedWidth) constraints.maxWidth else preferred.sum() + totalSpacing
-        val widths = resolveTableColumnWidths(preferred, minimum, (viewportWidth - totalSpacing).coerceAtLeast(0))
+        val available = if (viewportWidth != Constraints.Infinity) viewportWidth else preferred.sum() + totalSpacing
+        val widths = resolveTableColumnWidths(preferred, minimum, (available - totalSpacing).coerceAtLeast(0))
         val contentWidth = widths.sum() + totalSpacing
 
         val placeables = cellMeasurables.mapIndexed { index, cell ->
@@ -115,46 +107,21 @@ internal fun TableBlock(
             (0 until columnCount).maxOf { column -> placeables[row * columnCount + column].height }
         }
         val height = rowHeights.sum() + rowSpacing * (rowCount - 1) + rowSpacing + divider.height
-        val layoutWidth = minOf(contentWidth, viewportWidth).coerceIn(constraints.minWidth, constraints.maxWidth)
-        scroll.maxOffset = (contentWidth - layoutWidth).coerceAtLeast(0).toFloat()
-
-        layout(layoutWidth, height.coerceIn(constraints.minHeight, constraints.maxHeight)) {
-            val offset = scroll.offset.roundToInt()
+        layout(contentWidth, height) {
             var y = 0
             for (row in 0 until rowCount) {
-                var x = -offset
+                var x = 0
                 for (column in 0 until columnCount) {
                     placeables[row * columnCount + column].placeRelative(x, y)
                     x += widths[column] + columnSpacing
                 }
                 y += rowHeights[row] + rowSpacing
                 if (row == 0) {
-                    divider.placeRelative(-offset, y)
+                    divider.placeRelative(0, y)
                     y += divider.height + rowSpacing
                 }
             }
         }
-    }
-}
-
-/** Horizontal scroll position of a table that is wider than its viewport. */
-@Stable
-private class TableScrollState {
-    var offset by mutableFloatStateOf(0f)
-        private set
-
-    /** Written during measurement; not observable state because nothing recomposes on it. */
-    var maxOffset: Float = 0f
-        set(value) {
-            field = value
-            if (offset > value) offset = value
-        }
-
-    fun consume(delta: Float): Float {
-        val target = (offset - delta).coerceIn(0f, maxOffset)
-        val consumed = offset - target
-        offset = target
-        return consumed
     }
 }
 
