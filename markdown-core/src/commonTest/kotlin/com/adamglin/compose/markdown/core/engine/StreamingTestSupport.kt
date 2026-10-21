@@ -55,6 +55,9 @@ private fun stepViolation(previous: MarkdownSnapshot, delta: ParseDelta, expecte
     if (snapshot.document.sourceLength != expected.document.sourceLength || snapshot.document.lineCount != expected.document.lineCount) {
         return "source length/line count differ from one-shot parse"
     }
+    if (snapshot.stablePrefixEnd != expected.stablePrefixEnd) {
+        return "stable prefix ends at ${snapshot.stablePrefixEnd}, one-shot parse at ${expected.stablePrefixEnd}"
+    }
     if (snapshot.stablePrefixEnd < previous.stablePrefixEnd) {
         return "stable prefix moved backward ${previous.stablePrefixEnd} -> ${snapshot.stablePrefixEnd}"
     }

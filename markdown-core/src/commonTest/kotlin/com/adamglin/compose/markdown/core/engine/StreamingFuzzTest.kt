@@ -20,7 +20,17 @@ class StreamingFuzzTest {
         "\n", "\n", "\n", "line  \n", "back\\\n", "\uD83D\uDE00 emoji\n", "<div>\n", "-\n", "#\n", "-1 deg\n",
         "*** x\n", "1.5 is\n", "-- dash\n", "```inline``` text\n", "> \n", "===x\n", "| no pipe end\n",
         "- item\n\n  ```\n  code\n  ```\n", "\r\n", "a\r", "\t- tab\n",
-    )
+    ) + listOf(
+        // Lines that probe the block parser's edge cases; each gets a line ending.
+        "", "", "", "Foo", "bar *baz*", "lazy", "   three spaces", "===", "---", "--", "***", "* * *", "# Heading", "## h ##",
+        "- a", "- b", "-", "* c", "+ d", "1. one", "2) two", "1.", "  - nested", "   1. deep", "    code", "\tcode", "      wide",
+        "> quote", "> > inner", ">", "> - item", "> ```", ">\tcode?", "  > indented quote", "```", "```kt", "~~~", "````",
+        "\$\$", "\$\$x\$\$", "a \$\$", "\$\$5", "\\[", "\\]", "\\[x\\]", "x\\]", "| a | b |", "|---|:-:|", "a | b", "--- | ---", "x\\|y | `a|b`",
+        "[ref]: /url", "[ref]: /other \"t\"", "\"title\"", "[ref]:", "see [ref]", "- [ ] task", "- [x] done", "- [ ]", "  ```",
+        "  code in item", "\t- tab item", "-\tfoo", "10. ten", "<div>", "a  ", "b\\",
+        "  |a|b|", "    b|c", "2) b|c", "-|-", "[a]: /u '", "'", "  [ref]: /x", "> [ref]: /q", "- [ref]: /l", "|", "x|",
+        "> > > - a", "1. - a", "- > a", "   ```", "~~~ ~", "  \$\$", "\$\$ ", "> \$\$", "- \$\$", "[a]", "[ref]", "  ", "\t\t", " - x", "[ref]: /o \"t\"",
+    ).map { "$it\n" }
 
     @Test
     fun randomDocumentsStreamLikeOneShotParse() {
@@ -28,7 +38,7 @@ class StreamingFuzzTest {
         allDialects.forEach { dialect ->
             for (seed in 0 until SEEDS) {
                 val random = Random(seed)
-                val text = buildString { repeat(random.nextInt(2, 9)) { append(fragments[random.nextInt(fragments.size)]) } }
+                val text = buildString { repeat(random.nextInt(2, 13)) { append(fragments[random.nextInt(fragments.size)]) } }
                     .let { if (random.nextBoolean()) it.trimEnd('\n') else it }
                 val chunkings = listOf(charChunks(text), randomChunks(text, random, minSize = 1, maxSize = 12))
                 if (chunkings.any { streamingViolation(dialect, it) != null }) {
@@ -77,6 +87,6 @@ class StreamingFuzzTest {
     }
 
     private companion object {
-        const val SEEDS = 150
+        const val SEEDS = 300
     }
 }

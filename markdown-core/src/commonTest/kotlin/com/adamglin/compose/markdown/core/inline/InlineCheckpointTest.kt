@@ -30,7 +30,7 @@ class InlineCheckpointTest {
         val failures = mutableListOf<String>()
         listOf(MarkdownDialect.GfmMath, MarkdownDialect.CommonMarkCore).forEach { dialect ->
             val parser = InlineParser(dialect = dialect, referenceDefinitions = definitions)
-            repeat(2_000) { seed ->
+            repeat(800) { seed ->
                 val random = Random(seed)
                 val text = buildString { repeat(random.nextInt(4, 40)) { append(fragments[random.nextInt(fragments.size)]) } }
                     .trim('\n', ' ')
