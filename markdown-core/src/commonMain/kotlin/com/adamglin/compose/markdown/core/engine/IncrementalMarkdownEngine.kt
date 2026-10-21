@@ -89,14 +89,13 @@ internal class IncrementalMarkdownEngine(
         val previousDefinitions = state.dependencyIndex.definitionsByLabel.toMap()
         val previousDependentByLabel = state.dependencyIndex.dependentBlocksByLabel.mapValues { it.value.toSet() }
         val previousUnresolvedByLabel = state.dependencyIndex.unresolvedBlocksByLabel.mapValues { it.value.toSet() }
-        val reparsePlan = createReparsePlan(
-            previousSnapshot = previousSnapshot,
-            previousRecords = previousRecords,
-        )
+        // The parser reports every block later input can still change as open, so the previous stable prefix
+        // ends at a top-level line boundary and everything before it keeps its interpretation.
+        val dirtyStart = previousSnapshot.stablePrefixEnd
         val preservedRecords = previousRecords
-            .takeWhile { it.block.range.endExclusive <= reparsePlan.dirtyStart }
+            .takeWhile { it.block.range.endExclusive <= dirtyStart }
         val blockIdLookup = previousFlatBlocks
-            .filter { it.range.endExclusive > reparsePlan.dirtyStart }
+            .filter { it.range.endExclusive > dirtyStart }
             .let(BlockIdentity::blockIdLookup)
         val parser = BlockParser(
             sourceBuffer = state.source,
@@ -111,7 +110,7 @@ internal class IncrementalMarkdownEngine(
                 )
             },
         )
-        val parseRange = TextRange(start = reparsePlan.dirtyStart, endExclusive = state.source.length)
+        val parseRange = TextRange(start = dirtyStart, endExclusive = state.source.length)
         val parseResult = if (parseRange.isEmpty) {
             BlockParseResult(
                 blocks = emptyList(),
@@ -129,9 +128,14 @@ internal class IncrementalMarkdownEngine(
         val effectiveDefinitions = linkedMapOf<String, LinkReferenceDefinition>().apply {
             previousDefinitions
                 .values
-                .filter { it.range.endExclusive <= reparsePlan.dirtyStart }
+                .filter { it.range.endExclusive <= dirtyStart }
                 .forEach { definition -> put(definition.label, definition) }
-            putAll(parseResult.parsedDefinitions)
+            // The first definition of a label wins, and preserved definitions precede the reparsed range.
+            parseResult.parsedDefinitions.forEach { (label, definition) ->
+                if (label !in this) {
+                    put(label, definition)
+                }
+            }
         }
         val inlineParser = InlineParser(
             dialect = dialect,
@@ -208,7 +212,7 @@ internal class IncrementalMarkdownEngine(
         val insertedBlockIds = changedBlocks.filter { it.oldIndex == null }.map { it.id }
         val updatedBlockIds = changedBlocks.filter { it.oldIndex != null }.map { it.id }
         val stablePrefixRange = TextRange(start = 0, endExclusive = stablePrefixEnd)
-        val dirtyRegion = TextRange(start = reparsePlan.dirtyStart, endExclusive = state.source.length)
+        val dirtyRegion = TextRange(start = dirtyStart, endExclusive = state.source.length)
         val snapshot = MarkdownSnapshot(
             version = state.version,
             dialect = dialect,
@@ -279,51 +283,6 @@ internal class IncrementalMarkdownEngine(
             ),
             hasStateChange = snapshot != previousSnapshot,
         )
-    }
-
-    private fun createReparsePlan(
-        previousSnapshot: MarkdownSnapshot,
-        previousRecords: List<CachedBlockRecord>,
-    ): ReparsePlan {
-        val previousLength = previousSnapshot.document.sourceLength
-        val mutableTailStart = previousSnapshot.stablePrefixEnd
-        if (previousLength == 0) {
-            return ReparsePlan(dirtyStart = 0)
-        }
-        if (mutableTailStart >= previousLength) {
-            val retroactiveStart = if (canRetroactivelyExtendPreviousBlock(previousLength)) {
-                previousRecords.lastOrNull()?.block?.takeIf(::shouldBackUpForRetroactiveInterpretation)?.range?.start
-            } else {
-                null
-            }
-            return ReparsePlan(dirtyStart = retroactiveStart ?: previousLength)
-        }
-
-        val boundary = previousRecords.firstOrNull { record ->
-            mutableTailStart >= record.block.range.start && mutableTailStart < record.block.range.endExclusive
-        }?.block?.range?.start
-        // Outside every block (blank lines, or an open paragraph holding only link reference definitions,
-        // which has no block node), the stable prefix end is already a top-level line boundary.
-        return ReparsePlan(dirtyStart = boundary ?: mutableTailStart)
-    }
-
-    private fun shouldBackUpForRetroactiveInterpretation(block: BlockNode): Boolean = when (block) {
-        is BlockNode.Paragraph -> true
-        is BlockNode.TableBlock -> dialect.blockFeatures.tables
-        is BlockNode.BlockQuote,
-        is BlockNode.ListBlock,
-        -> true
-        else -> false
-    }
-
-    private fun canRetroactivelyExtendPreviousBlock(previousLength: Int): Boolean {
-        if (previousLength <= 0) {
-            return false
-        }
-        if (previousLength > state.source.length || state.source[previousLength - 1] != '\n') {
-            return false
-        }
-        return previousLength == 1 || state.source[previousLength - 2] != '\n'
     }
 
     private fun normalizeChunk(chunk: String): String {
@@ -741,10 +700,6 @@ internal class IncrementalMarkdownEngine(
     private data class InlineResolutionStats(
         var parsedBlockCount: Int = 0,
         var cacheHitBlockCount: Int = 0,
-    )
-
-    private data class ReparsePlan(
-        val dirtyStart: Int,
     )
 
     private data class ResolvedInline(

@@ -136,7 +136,16 @@ internal sealed class OpenBlock(val startLine: Int) {
         var isClosed: Boolean = isSingleLine
     }
 
-    class Table(startLine: Int, val alignments: List<TableAlignment>, val header: TableRowDraft) : OpenBlock(startLine) {
+    /**
+     * A table whose header was the last line of the paragraph starting at [paragraphStartLine]; reparsing
+     * must restart there, because the header line alone may parse differently (as a paragraph's first line).
+     */
+    class Table(
+        startLine: Int,
+        val paragraphStartLine: Int,
+        val alignments: List<TableAlignment>,
+        val header: TableRowDraft,
+    ) : OpenBlock(startLine) {
         val rows: MutableList<TableRowDraft> = mutableListOf()
     }
 
@@ -277,7 +286,8 @@ internal class BlockParserSession(
     fun openBlockFrames(): List<OpenBlockFrame> = buildList {
         var block = document.children.lastOrNull()
         while (block != null && block.isOpen && block.canGrow) {
-            add(OpenBlockFrame(marker = block.frameMarker(), startOffset = lines[block.startLine].range.start))
+            val startLine = if (block is OpenBlock.Table) block.paragraphStartLine else block.startLine
+            add(OpenBlockFrame(marker = block.frameMarker(), startOffset = lines[startLine].range.start))
             block = block.children.lastOrNull()
         }
     }
@@ -611,6 +621,7 @@ internal class BlockParserSession(
         val parent = container.parent!!
         val table = OpenBlock.Table(
             startLine = headerLine.lineIndex,
+            paragraphStartLine = container.startLine,
             alignments = alignments,
             header = TableRowDraft(lineIndex = headerLine.lineIndex, sourceStart = headerLine.sourceStart, cells = headerCells),
         )

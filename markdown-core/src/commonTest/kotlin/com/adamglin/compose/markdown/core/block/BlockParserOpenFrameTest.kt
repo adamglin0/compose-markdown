@@ -76,6 +76,30 @@ class BlockParserOpenFrameTest {
         assertEquals("<p>See <a href=\"/a\">a</a> and <a href=\"/b\">b</a>.</p>\n", SpecHtmlRenderer.render(listOf(paragraph)))
     }
 
+    @Test
+    fun aTableStaysOpenFromTheStartOfTheParagraphItsHeaderCameFrom() {
+        // Reparsed alone, the indented header line would start an indented code block.
+        assertEquals(listOf(OpenBlockFrame(marker = "table", startOffset = 0)), openFrames("a\n    b|c\n-|-\n", MarkdownDialect.GfmCompat))
+    }
+
+    @Test
+    fun streamingKeepsTheFirstDefinitionOfALabel() {
+        val engine = MarkdownEngine(dialect = MarkdownDialect.CommonMarkCore)
+        engine.append("[a]: /first\n\n")
+        engine.append("[a]: /second\n\n")
+        engine.append("[a]\n")
+
+        assertEquals("<p><a href=\"/first\">a</a></p>\n", SpecHtmlRenderer.render(engine.finish().snapshot.document.blocks))
+    }
+
+    @Test
+    fun finishingAfterAWhitespaceOnlyBlankLineKeepsTheParsedBlocks() {
+        val engine = MarkdownEngine(dialect = MarkdownDialect.CommonMarkCore)
+        engine.append("[a]: /u\n     - w\n  \n")
+
+        assertEquals("<p>- w</p>\n", SpecHtmlRenderer.render(engine.finish().snapshot.document.blocks))
+    }
+
     private fun openFrames(
         source: String,
         dialect: MarkdownDialect = MarkdownDialect.CommonMarkCore,
