@@ -16,8 +16,10 @@ import com.adamglin.compose.markdown.core.model.MarkdownDocument
  * Styling comes from the enclosing [MarkdownTheme]. Wrap in a `SelectionContainer` to make the
  * text selectable. For long documents inside a `LazyColumn`, use [LazyListScope.markdown].
  *
- * @param codeHighlighter colors closed fenced code blocks; `null` disables highlighting.
- * @param mathRenderer renders LaTeX; `null` shows math source text.
+ * @param codeHighlighter colors closed fenced code blocks; `null` disables highlighting. Pass a
+ *   long-lived instance: highlight results are cached per highlighter instance.
+ * @param mathRenderer renders LaTeX; `null` shows math source text. Pass a long-lived instance
+ *   (e.g. `remember`ed): a new instance recomposes every block.
  * @param imageContent renders images; `null` shows their alt text.
  * @param onLinkClick handles link clicks; `null` opens links with `LocalUriHandler`.
  */
@@ -65,12 +67,13 @@ fun Markdown(
  * Adds the top-level blocks of [document] as lazy items keyed by their stable block ids, so only
  * visible blocks compose and streamed updates recompose only the blocks that changed.
  *
- * @param key prefix of the item keys; give each document in the same list a distinct key.
+ * @param key identifies [document] among the other items of the list (e.g. a message id); item
+ *   keys are `"$key:<block id>"`, so every document in one list needs a distinct key.
  * @see Markdown for the other parameters.
  */
 fun LazyListScope.markdown(
     document: MarkdownDocument,
-    key: String = "markdown",
+    key: Any,
     codeHighlighter: CodeHighlighter? = DefaultCodeHighlighter,
     mathRenderer: MathRenderer? = null,
     imageContent: (@Composable (MarkdownImage) -> Unit)? = null,

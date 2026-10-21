@@ -71,7 +71,7 @@ fun StreamingReply(chunks: Flow<String>) {
     Markdown(state.document)
 }
 
-// Long documents: one lazy item per top-level block, keyed by stable block id.
+// Long documents: one lazy item per top-level block, keyed by `key` plus the stable block id.
 @Composable
 fun LongReply(chunks: Flow<String>) {
     val state = rememberMarkdownState()
@@ -81,12 +81,12 @@ fun LongReply(chunks: Flow<String>) {
         state.finish()
     }
     LazyColumn {
-        markdown(state.document)
+        markdown(state.document, key = "reply")
     }
 }
 ```
 
-Links open through `LocalUriHandler`; pass `onLinkClick` to handle them yourself. Optional slots: `codeHighlighter` (`null` disables highlighting), `mathRenderer` (LaTeX, e.g. with the `GfmMath` dialect), and `imageContent` (render images with your own loader; alt text by default).
+Links open through `LocalUriHandler`; pass `onLinkClick` to handle them yourself. Optional slots: `codeHighlighter` (`null` disables highlighting), `mathRenderer` (LaTeX, e.g. with the `GfmMath` dialect), and `imageContent` (render images with your own loader; alt text by default). Pass long-lived `codeHighlighter` and `mathRenderer` instances (objects or `remember`ed); lambdas may be fresh on every call.
 
 ## Modules
 

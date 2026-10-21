@@ -415,6 +415,7 @@ private fun PreviewCanvas(
                     ) {
                         markdown(
                             document = document,
+                            key = "preview",
                             mathRenderer = mathRenderer,
                             onLinkClick = onLinkClick,
                         )
