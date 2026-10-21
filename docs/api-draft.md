@@ -112,7 +112,7 @@ data class BlockChange(
 data class ParseStats(
     val appendedChars: Int,
     val processedLines: Int,
-    val reparsedBlocks: Int,
+    val builtBlocks: Int,
     val preservedBlocks: Int,
     val inlineParsedBlockCount: Int,
     val inlineCacheHitBlockCount: Int,
@@ -129,8 +129,8 @@ data class ParseStats(
 - `snapshot()` is always safe to call after any `append()`.
 - streaming is invisible: after every `append()` the snapshot equals a one-shot parse of the same source, and after `finish()` it equals a one-shot parse followed by `finish()`, however the input was split into chunks.
 - `append()` after `finish()` fails with a clear error until `reset()` is called or a new engine is created.
-- block IDs stay stable while a block's identity is preserved across reparses.
-- `dirtyRegion` is the source range the call parsed: from the previous stable prefix end to the end of input.
+- block IDs stay stable while a block's identity is preserved across appends.
+- `dirtyRegion` is the source range the call parsed: from the start of the previous unterminated last line to the end of input.
 - top-level blocks not listed in `changedBlocks` are unchanged; `removedBlockIds` lists every block id, at any depth, that left the document.
 - snapshots are safe for UI read access because they expose immutable values only.
 
@@ -140,13 +140,13 @@ data class ParseStats(
 
 - it ends at a top-level block boundary: the start of the first top-level block that later input can still change (or the end of the last complete line when no block is open);
 - it never moves backward unless `reset()` is called, and it covers the whole source after `finish()`;
-- its top-level blocks keep their index, id, range and structure in every later snapshot and are never re-parsed;
+- its top-level blocks keep their index, id, range and structure in every later snapshot and are never parsed again;
 - their inline content changes only when a link reference definition later in the document defines a label they use; the block is then reported in `changedBlocks` with the same index.
 
 ## Incremental Metrics
 
 - `ParseDelta.changedBlocks` is reported at the top-level block list only; nested children are reflected through the replacement block payloads.
-- `ParseStats.reparsedBlocks` counts the top-level blocks the block parser produced for the call, plus stable blocks whose inline content was resolved again for a changed definition.
+- `ParseStats.builtBlocks` counts the blocks, at any depth, built by the call instead of taken from the cache of closed blocks, including blocks rebuilt for a changed definition.
 - `ParseStats.preservedBlocks` counts stable top-level blocks carried over untouched.
 - `ParseStats.inlineParsedBlockCount` and `inlineCacheHitBlockCount` count leaf blocks (paragraphs, headings, table cells) at any depth whose inline content was parsed or reused from the cache.
 

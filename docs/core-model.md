@@ -36,14 +36,14 @@ This document tracks the Stage 7 core model boundary in `markdown-core`.
 - `finish()` closes the current append session and marks the entire source as stable.
 - After `finish()`, `append()` is invalid until `reset()` is called or a new engine is created.
 - `MarkdownSnapshot.stablePrefixRange` covers the top-level blocks that no later input can change; it never moves backward (see `incremental-model.md`).
-- `ParseDelta.dirtyRegion` is the source range the latest call parsed: from the previous stable prefix end to the end of input.
-- Every append re-parses only the mutable tail, the top-level blocks from the first one that can still change.
+- `ParseDelta.dirtyRegion` is the source range the latest call parsed: from the start of the previous unterminated last line to the end of input.
+- Every append parses only the lines it completes and the unterminated last line; closed blocks are built once, and the open top-level block is rebuilt from the cached nodes of its closed children.
 - Late reference definitions do not trigger whole-document reparsing; only the stable blocks that use the defined label get their inline content resolved again.
 
 ## Delta Metrics
 
 - `changedBlocks` is top-level only; nested structure changes are represented through the changed parent block payload.
-- `ParseStats` counts re-parsed and preserved blocks at that same top-level granularity, plus inline parses and inline cache hits at any depth.
+- `ParseStats` counts the blocks built by a call (at any depth), the preserved stable top-level blocks, and inline parses and inline cache hits at any depth.
 
 ## Internal Reserved State
 

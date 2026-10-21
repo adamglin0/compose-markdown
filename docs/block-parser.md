@@ -6,11 +6,11 @@ For the repository-wide support boundary, `docs/compatibility-report.md` is the 
 
 ## Structure
 
-- `BlockParser.kt`: the line-by-line state machine (`BlockParserSession`) over a mutable tree of open blocks.
+- `BlockParser.kt`: the resumable line-by-line state machine over a mutable tree of open blocks (`OpenBlock.kt`).
 - `BlockSyntax.kt`: pure scanners for block starts (thematic breaks, ATX headings, code fences, setext underlines, list markers).
 - `TableSyntax.kt`: GFM row and delimiter-row splitting.
 - `LinkReferenceDefinitionSyntax.kt`: link reference definitions, built on the shared link scanners in `inline/LinkSyntax.kt`.
-- `BlockTreeBuilder.kt`: converts the finished tree into immutable `BlockNode`s and allocates block IDs (parent first, in document order).
+- `BlockTreeBuilder.kt`: converts the tree into immutable `BlockNode`s with resolved inline content, caching the nodes of closed blocks, and requests block IDs by identity key.
 
 ## Algorithm
 
@@ -23,7 +23,7 @@ Each line goes through three steps:
 
 Tabs advance to the next multiple of four columns; a tab that is only partly consumed by a container marker contributes the remaining columns as spaces.
 
-When a block closes it is finalized: a paragraph moves its leading link reference definitions into the parse result (first definition of a label wins, definitions may span lines), a list decides whether it is loose, and an indented code block drops trailing blank lines.
+When a block closes it is finalized: a paragraph hands its leading link reference definitions to the engine (first definition of a label wins, definitions may span lines), a list decides whether it is loose, and an indented code block drops trailing blank lines.
 
 ## Block Rules Worth Knowing
 
@@ -34,16 +34,16 @@ When a block closes it is finalized: a paragraph moves its leading link referenc
 - **Display math** (`mathBlocks`, `GfmMath`): a line that is exactly `$$` or `\[` opens a block that ends at a line ending in `$$` / `\]` (text before the closer belongs to the formula) or at the end of its container. A line that starts with the opener and whose first closer ends the line (`$$x^2$$`, `\[a + b\]`) is a single-line block. Every other line stays paragraph text, so `\[note] see` or `$$x$$ and text` never swallow content; inline math applies there instead. Math openers interrupt paragraphs.
 - **Raw HTML** is not a block construct: HTML stays literal paragraph text in every preset.
 
-## Streaming Contract
+## Streaming
 
-`BlockParser.parse(isFinal, range)` parses the lines of `range`, which the engine always starts at a top-level block boundary. Unless `isFinal`, `BlockParseResult.openBlockStack` lists the open blocks that later input can still change, outermost first, each with the offset of its first line:
+The parser is resumable: `incorporate(line)` adds one complete line for good, and only the open blocks (the rightmost path of the tree) can change after it. Lines are never parsed twice, so streaming yields the same tree as a one-shot parse by construction.
 
-- a paragraph is open until a blank line or another block closes it, so a trailing line ending does not make it stable (`Foo\n` can still become a setext heading);
-- tables, lists, list items, block quotes and unclosed fenced code or math stay open until a following line does not continue them; an open table reports the start of the paragraph its header line came from, because the header line alone could parse differently;
-- headings, thematic breaks, single-line math and closed fences are never open, because no later line can change them;
-- when the last line has no line ending yet, it may still grow into a different block start, so the blocks it closed are reported as open.
+- a paragraph is open until a blank line or another block closes it, so a trailing line ending does not make it final (`Foo\n` can still become a setext heading or a table header);
+- tables, lists, list items, block quotes and unclosed fenced code or math stay open until a following line does not continue them;
+- headings, thematic breaks and single-line math are closed right after their line, closed fences and math blocks on their closing line;
+- an unterminated last line may still grow into something else, so the engine parses it in a `fork()`, which copies only the open path and shares every closed block, and finishes the fork as if the input ended there.
 
-The engine uses the first frame's offset as the end of the stable prefix (capped at the start of an unterminated last line) and restarts the next parse there, so parsing from a top-level block boundary must yield the same blocks as parsing from the start of the document. See `incremental-engine.md`.
+Closed top-level blocks are final and leave the parser (`takeClosedBlocks()`). See `incremental-engine.md`.
 
 ## Limitations
 

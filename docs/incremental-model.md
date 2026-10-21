@@ -17,12 +17,14 @@ The source prefix `[0, stablePrefixEnd)` whose top-level blocks are final.
 
 - it ends where the first top-level block that later input can change begins;
 - it never moves backward within a session and covers the whole source after `finish()`;
-- its blocks keep their index, id, structure and ranges, and are never re-parsed;
+- its blocks keep their index, id, structure and ranges, and are never parsed or built again;
 - their inline content can still change, but only when a link reference definition later in the document
   defines a label they use (CommonMark resolves references document-wide).
 
 In CommonMark only the last top-level block can be open, so the stable prefix is everything before the last
 top-level block while that block is open, and everything up to the last complete line once it is closed.
+The block parser is resumable and never closes a block because of the unterminated last line, so a closed
+block is final.
 
 ### Mutable Tail
 
@@ -36,7 +38,8 @@ The top-level blocks after the stable prefix. Typical reasons a block stays in t
 
 ### Dirty Region
 
-The source range parsed by the latest call: from the previous stable prefix end to the end of input.
+The source range parsed by the latest call: from the start of the previous unterminated last line to the end
+of input. Lines before it are never parsed again.
 
 ## Incremental Flow
 
@@ -44,22 +47,20 @@ For every `append(chunk)`:
 
 1. normalize line endings and hold back a split surrogate pair;
 2. append the text to the source buffer and line index;
-3. parse the mutable tail;
-4. move the blocks before the first open block into the stable prefix;
-5. update the link reference definitions in effect and re-resolve stable blocks that use a changed label;
-6. resolve inline content of the tail, reusing cached results for unchanged blocks;
+3. add the completed lines to the resumable block parser, and parse the unterminated last line in a fork;
+4. move the top-level blocks the parser closed into the stable prefix;
+5. update the link reference definitions in effect and rebuild cached blocks that use a changed label;
+6. build the tail from the fork, reusing the cached nodes of closed blocks and cached inline results;
 7. emit a new immutable `MarkdownSnapshot` and `ParseDelta`.
 
 ## Stable ID Rules
 
-- stable blocks keep their ids;
-- a re-parsed block keeps its id when the parser requests the same identity key (kind, start offset and a
-  discriminator such as heading level or list marker type) as in the previous tail parse;
-- ids are unique within a snapshot; ids of the previous tail that are not reused are reported as removed.
+- closed blocks keep their ids for good, also when they are rebuilt for a changed definition;
+- a block of the tail keeps its id when it has the same identity key (kind, start offset, depth and a
+  discriminator such as heading level or list marker type) as a block built in the previous call;
+- ids are unique within a snapshot; ids of the previous tail that are not built again are reported as removed.
 
 ## Non-Goals
 
 - arbitrary insertion or deletion inside the source;
-- parsing a single huge open block in time independent of its size (it is re-parsed from its start on every
-  append; see `incremental-engine.md`);
 - HTML DOM diffing.

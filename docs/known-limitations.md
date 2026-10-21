@@ -20,7 +20,8 @@
 
 ## Incremental Model And Performance
 
-- the mutable tail is re-parsed from its first block on every append, so one huge open top-level block (a 100KB list, fence or paragraph) costs time proportional to its size per append; documents made of many ordinary blocks stream in time proportional to the tail
+- every append copies the text of the open code block or paragraph into its new node (an immutable `String`), so a single huge open leaf costs a memory copy of its size per append; parsing itself is proportional to the new text
+- a growing paragraph is inline-parsed again from its last line start where nothing before can change; an unmatched emphasis opener, open bracket or unclosed code span early in a long paragraph makes every append parse it from there
 - a link reference definition on the unterminated last line takes effect only once the line ends (or at `finish()`)
 - performance measurements are documented from the JVM benchmark runner only; no equivalent native or JS benchmark suite ships yet
 - `ParseStats` is diagnostic surface area, not a hard complexity guarantee
