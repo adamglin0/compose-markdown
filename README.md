@@ -17,7 +17,7 @@ This library is developing by AI.
 
 ```toml
 [versions]
-compose-markdown = "2.0.0"
+compose-markdown = "2.1.0"
 
 [libraries]
 compose-markdown = { module = "com.adamglin.compose.markdown:markdown-compose", version.ref = "compose-markdown" }
