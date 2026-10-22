@@ -1,6 +1,5 @@
 @file:OptIn(ExperimentalWasmDsl::class, ExperimentalAbiValidation::class)
 
-import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
@@ -12,16 +11,12 @@ plugins {
 
 kotlin {
     explicitApi()
-    abiValidation {
-        enabled = true
-        klib { enabled = true }
-    }
+    abiValidation()
 
     // The parser has no Java 21 dependencies; keep it consumable from Java 17.
     jvmToolchain(17)
 
-    @Suppress("UnstableApiUsage")
-    androidLibrary {
+    android {
         namespace = "com.adamglin.compose.markdown.core"
         compileSdk = libs.versions.androidCompileSdk.get().toInt()
         minSdk = libs.versions.androidMinSdk.get().toInt()
@@ -32,18 +27,14 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
-    js(compiler = IR) {
-        browser {
-            // Performance tests assert their own time bounds; mocha's 2 s default is too tight for CI browsers.
-            testTask { useMocha { timeout = "30s" } }
-        }
+    js {
+        // Browser tests run in Karma; karma.config.d/mocha-timeout.js raises mocha's per-test timeout.
+        browser()
     }
 
     wasmJs {
-        browser {
-            // Performance tests assert their own time bounds; mocha's 2 s default is too tight for CI browsers.
-            testTask { useMocha { timeout = "30s" } }
-        }
+        // Browser tests run in Karma; karma.config.d/mocha-timeout.js raises mocha's per-test timeout.
+        browser()
     }
 
     sourceSets {

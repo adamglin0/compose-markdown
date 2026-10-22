@@ -46,6 +46,6 @@
 - CI runs `ciCheck` on Linux plus the library iOS simulator tests on macOS
 - benchmark tasks are for local measurement and smoke verification, not for hard pass/fail release gating
 - `markdown-compose` requires Java 21 on desktop JVM because `dev.snipme:highlights` ships Java 21 bytecode; `markdown-core` targets Java 17
-- both libraries are built against Compose Multiplatform 1.11.1, which is therefore the minimum Compose version for consumers
+- both libraries are built against Compose Multiplatform 1.12.1, which is therefore the minimum Compose version for consumers; Android consumers need `compileSdk` 37 or later
 
 For spec conformance, see [compatibility-report.md](compatibility-report.md).

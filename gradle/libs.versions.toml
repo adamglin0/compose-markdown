@@ -1,15 +1,15 @@
 [versions]
-kotlin = "2.3.20"
-compose-multiplatform = "1.11.1"
+kotlin = "2.4.21"
+compose-multiplatform = "1.12.1"
 highlights = "1.1.0"
-android-gradle = "8.13.2"
+android-gradle = "9.3.3"
 androidx-activity-compose = "1.13.0"
 kotlinx-browser = "0.5.0"
-androidCompileSdk = "36"
+androidCompileSdk = "37"
 androidMinSdk = "23"
-vanniktech-maven-publish = "0.36.0"
-huarangmeng-latex = "1.4.7"
-ratex = "0.1.11"
+vanniktech-maven-publish = "0.37.0"
+huarangmeng-latex = "1.5.6"
+ratex = "0.1.15"
 
 [libraries]
 highlights = { module = "dev.snipme:highlights", version.ref = "highlights" }

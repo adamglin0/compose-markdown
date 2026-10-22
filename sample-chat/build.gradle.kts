@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.multiplatform.android.library)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
 }
@@ -69,11 +69,15 @@ val generateBundledSampleScripts by tasks.registering {
 
 @OptIn(ExperimentalWasmDsl::class)
 kotlin {
-    androidTarget()
+    android {
+        namespace = "com.adamglin.compose.markdown.sample.chat"
+        compileSdk = libs.versions.androidCompileSdk.get().toInt()
+        minSdk = libs.versions.androidMinSdk.get().toInt()
+    }
     jvm()
     val iosArm64 = iosArm64()
     val iosSimulatorArm64 = iosSimulatorArm64()
-    js(IR) {
+    js {
         browser()
         binaries.executable()
     }
@@ -93,7 +97,7 @@ kotlin {
 
     sourceSets {
         val commonMain by getting {
-            kotlin.srcDir(generatedSampleExamplesDir)
+            kotlin.srcDir(generateBundledSampleScripts)
 
             dependencies {
                 implementation(project(":markdown-compose"))
@@ -109,11 +113,6 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-            }
-        }
-        val androidMain by getting {
-            dependencies {
-                implementation(libs.androidx.activity.compose)
             }
         }
         val jsMain by getting {
@@ -135,39 +134,6 @@ kotlin {
                 runtimeOnly(libs.ratex.native.linux.x64)
                 runtimeOnly(libs.ratex.native.windows.x64)
             }
-        }
-    }
-}
-
-tasks.configureEach {
-    if (name.startsWith("compile") && name.contains("Kotlin")) {
-        dependsOn(generateBundledSampleScripts)
-    }
-}
-
-android {
-    namespace = "com.adamglin.compose.markdown.sample.chat"
-    compileSdk = libs.versions.androidCompileSdk.get().toInt()
-
-    defaultConfig {
-        applicationId = "com.adamglin.compose.markdown.sample.chat"
-        minSdk = libs.versions.androidMinSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
-    }
-
-    buildFeatures {
-        compose = true
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
 }

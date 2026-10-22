@@ -115,6 +115,7 @@ tasks.register("ciCheck") {
         ":markdown-core:build",
         ":markdown-compose:build",
         ":sample-chat:build",
+        ":sample-chat-android:build",
         ":benchmarks:build",
         "test",
         "benchmarkSmoke",

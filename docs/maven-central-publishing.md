@@ -43,8 +43,8 @@ export ORG_GRADLE_PROJECT_signingInMemoryKeyPassword="your-gpg-password"
 - `markdown-core` targets Java 17 bytecode.
 - `markdown-compose` targets Java 21 bytecode because `dev.snipme:highlights` (1.1.0) ships Java 21 class files; desktop JVM consumers of `markdown-compose` therefore need Java 21.
 - Gradle runs on JDK 21 (`mise.toml`, CI); the JDK 17 toolchain is auto-provisioned through the foojay resolver if it is not installed.
-- The publish workflow and the CI iOS job run on `macos-26`: Compose Multiplatform 1.11 UIKit code references iOS 26 SDK symbols (`UIViewLayoutRegion`), so linking iOS test binaries fails with older Xcode versions.
-- The libraries are built against Compose Multiplatform 1.11.1, which is therefore the minimum Compose version for consumers. The library and `sample-chat` share one version on purpose: the Compose Gradle plugin is applied build-wide at a single version and unpacks the skiko wasm runtime matching that version, so compiling the libraries against a different Compose version than the plugin reproduces the skiko skew that silently broke the wasmJs browser tests. `sample-chat` needs 1.11.1 for RaTeX (`io.github.darriousliu:ratex`).
+- The publish workflow and the CI iOS job run on `macos-26`: Compose Multiplatform UIKit code (1.11 and later) references iOS 26 SDK symbols (`UIViewLayoutRegion`), so linking iOS test binaries fails with older Xcode versions.
+- The libraries are built against Compose Multiplatform 1.12.1, which is therefore the minimum Compose version for consumers; Android consumers need `compileSdk` 37 or later, as Compose 1.12 requires. The library and `sample-chat` share one version on purpose: the Compose Gradle plugin is applied build-wide at a single version and unpacks the skiko wasm runtime matching that version, so compiling the libraries against a different Compose version than the plugin reproduces the skiko skew that silently broke the wasmJs browser tests. RaTeX (`io.github.darriousliu:ratex`) in `sample-chat` pins the Compose version it needs, so bump both together.
 
 `automaticRelease` is enabled automatically for non-`-SNAPSHOT` versions.
 

@@ -23,4 +23,5 @@ rootProject.name = "compose-markdown"
 include(":markdown-core")
 include(":markdown-compose")
 include(":sample-chat")
+include(":sample-chat-android")
 include(":benchmarks")
