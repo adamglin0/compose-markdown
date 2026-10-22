@@ -1,6 +1,5 @@
 @file:OptIn(ExperimentalWasmDsl::class, ExperimentalAbiValidation::class)
 
-import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
@@ -14,16 +13,12 @@ plugins {
 
 kotlin {
     explicitApi()
-    abiValidation {
-        enabled = true
-        klib { enabled = true }
-    }
+    abiValidation()
 
     // dev.snipme:highlights ships Java 21 bytecode, so JVM consumers of this module need Java 21.
     jvmToolchain(21)
 
-    @Suppress("UnstableApiUsage")
-    androidLibrary {
+    android {
         namespace = "com.adamglin.compose.markdown.compose"
         compileSdk = libs.versions.androidCompileSdk.get().toInt()
         minSdk = libs.versions.androidMinSdk.get().toInt()
@@ -33,12 +28,15 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
-    js(compiler = IR) {
+    // Compose UI tests on the web load the Skiko runtime from a webpack bundle, which needs an executable binary.
+    js {
         browser()
+        binaries.executable()
     }
 
     wasmJs {
         browser()
+        binaries.executable()
     }
 
     sourceSets {

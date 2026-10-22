@@ -5,8 +5,11 @@ Desktop-first Compose sample app for exercising the append-only streaming workfl
 ## Run
 
 ```bash
-./gradlew :sample-chat:run
+./gradlew :sample-chat:run                       # desktop
+./gradlew :sample-chat-android:installDebug     # Android
 ```
+
+The shared UI lives in this Kotlin Multiplatform module; the Android app is the separate `:sample-chat-android` module, because AGP 9 keeps application modules out of Kotlin Multiplatform.
 
 Current responsibilities:
 

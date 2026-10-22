@@ -29,7 +29,7 @@ commonMain.dependencies {
 }
 ```
 
-`markdown-compose` brings in `markdown-core`. Depend on `markdown-core` alone to parse without Compose. The libraries are built against Compose Multiplatform 1.11.1, and the JVM artifact of `markdown-compose` needs Java 21.
+`markdown-compose` brings in `markdown-core`. Depend on `markdown-core` alone to parse without Compose. The libraries are built against Compose Multiplatform 1.12.1, Android apps need `compileSdk` 37 or later, and the JVM artifact of `markdown-compose` needs Java 21.
 
 ## Render a string
 

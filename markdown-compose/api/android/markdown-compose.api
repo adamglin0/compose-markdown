@@ -5,17 +5,17 @@ public abstract interface class com/adamglin/compose/markdown/compose/CodeHighli
 public final class com/adamglin/compose/markdown/compose/ComposableSingletons$MarkdownComponentsKt {
 	public static final field INSTANCE Lcom/adamglin/compose/markdown/compose/ComposableSingletons$MarkdownComponentsKt;
 	public fun <init> ()V
-	public final fun getLambda$-1013461962$markdown_compose ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-13057324$markdown_compose ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-1445704642$markdown_compose ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-1754779817$markdown_compose ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-2084547395$markdown_compose ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-433979947$markdown_compose ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-56077015$markdown_compose ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-920795748$markdown_compose ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$142362785$markdown_compose ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$1813587084$markdown_compose ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$562328501$markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1013461962$com_adamglin_compose_markdown_markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-13057324$com_adamglin_compose_markdown_markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1445704642$com_adamglin_compose_markdown_markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1754779817$com_adamglin_compose_markdown_markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-2084547395$com_adamglin_compose_markdown_markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-433979947$com_adamglin_compose_markdown_markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-56077015$com_adamglin_compose_markdown_markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-920795748$com_adamglin_compose_markdown_markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$142362785$com_adamglin_compose_markdown_markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1813587084$com_adamglin_compose_markdown_markdown_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$562328501$com_adamglin_compose_markdown_markdown_compose ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class com/adamglin/compose/markdown/compose/DefaultCodeHighlighter : com/adamglin/compose/markdown/compose/CodeHighlighter {
