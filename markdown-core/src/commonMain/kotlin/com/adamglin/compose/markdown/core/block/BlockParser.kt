@@ -104,6 +104,19 @@ internal class BlockParser private constructor(
     /** The open top-level block, if any: the only top-level block that later lines can still change. */
     fun openBlock(): OpenBlock? = document.children.lastOrNull()?.takeIf { it.isOpen }
 
+    /** Whether the last incorporated line went into a table, as its delimiter row or as a row. */
+    fun endsInTable(): Boolean = tip is OpenBlock.Table
+
+    /**
+     * Whether the last incorporated line is a paragraph line starting with `|` that a delimiter row on the
+     * next line could still turn into a table header.
+     */
+    fun endsInTableHeaderCandidate(): Boolean {
+        val paragraph = tip as? OpenBlock.Paragraph ?: return false
+        val last = paragraph.lines.last()
+        return dialect.blockFeatures.tables && !paragraph.triedTableHeader && last.lineIndex == lineNumber && last.text.startsWith('|')
+    }
+
     /**
      * A speculative copy for parsing a line that may still change. Only the open blocks are copied, with
      * forked child and line lists; closed blocks are shared, and the copy never writes to anything shared.

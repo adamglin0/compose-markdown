@@ -94,6 +94,8 @@ fun LongReply(chunks: Flow<String>) {
 
 `MarkdownState` is plain observable state, so it can also live in a view model.
 
+Pass `holdUnsettledLines = true` to `rememberMarkdownState` or `MarkdownState` to keep the rendered structure from jumping while streaming. A table row appears once its line ends, a line that is still only a marker such as `-` or `#` appears once it has content, and a line starting with `|` waits for the next line, so a table header never shows as a paragraph first. A held line never waits longer than `holdTimeout` (500 ms by default); after that it shows as it is. `rememberMarkdownState` runs that timeout; for a `MarkdownState` in a view model, run `state.releaseHeldLinesOnTimeout()` in the view model's scope.
+
 ## Dialects
 
 Pass a `MarkdownDialect` to `Markdown(text, dialect = …)` or `rememberMarkdownState(dialect)`.

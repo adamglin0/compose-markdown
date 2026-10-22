@@ -2,13 +2,14 @@ public abstract interface class com/adamglin/compose/markdown/core/api/MarkdownE
 	public abstract fun append (Ljava/lang/String;)Lcom/adamglin/compose/markdown/core/model/ParseDelta;
 	public abstract fun finish ()Lcom/adamglin/compose/markdown/core/model/ParseDelta;
 	public abstract fun getDialect ()Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;
+	public abstract fun releaseHeldLines ()Lcom/adamglin/compose/markdown/core/model/ParseDelta;
 	public abstract fun reset ()V
 	public abstract fun snapshot ()Lcom/adamglin/compose/markdown/core/model/MarkdownSnapshot;
 }
 
 public final class com/adamglin/compose/markdown/core/api/MarkdownEngineKt {
-	public static final fun MarkdownEngine (Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;)Lcom/adamglin/compose/markdown/core/api/MarkdownEngine;
-	public static synthetic fun MarkdownEngine$default (Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;ILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/api/MarkdownEngine;
+	public static final fun MarkdownEngine (Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;Z)Lcom/adamglin/compose/markdown/core/api/MarkdownEngine;
+	public static synthetic fun MarkdownEngine$default (Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;ZILjava/lang/Object;)Lcom/adamglin/compose/markdown/core/api/MarkdownEngine;
 }
 
 public abstract class com/adamglin/compose/markdown/core/dialect/MarkdownDialect {
@@ -479,9 +480,11 @@ public final class com/adamglin/compose/markdown/core/model/MarkdownSnapshot {
 	public final fun component3 ()Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;
 	public final fun component4 ()I
 	public final fun component5 ()Z
+	public final fun component6 ()Z
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDialect ()Lcom/adamglin/compose/markdown/core/dialect/MarkdownDialect;
 	public final fun getDocument ()Lcom/adamglin/compose/markdown/core/model/MarkdownDocument;
+	public final fun getHasHeldLines ()Z
 	public final fun getStablePrefixEnd ()I
 	public final fun getVersion ()J
 	public fun hashCode ()I
