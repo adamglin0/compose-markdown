@@ -1,6 +1,9 @@
 package com.adamglin.compose.markdown.core.model
 
-/** The parsed document at one snapshot: its top-level [blocks] and the size of the source they cover. */
+/**
+ * The parsed document at one snapshot: its top-level [blocks] and the size of the source they cover. That is
+ * all the source so far, unless the engine holds back unsettled lines at its end.
+ */
 @ConsistentCopyVisibility
 public data class MarkdownDocument internal constructor(
     val sourceLength: Int,

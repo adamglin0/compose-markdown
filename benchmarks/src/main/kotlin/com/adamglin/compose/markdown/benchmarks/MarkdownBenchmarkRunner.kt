@@ -30,7 +30,7 @@ private class MarkdownBenchmarkRunner(
         val results = BenchmarkScenario.all(smoke = options.smoke).map(::measureScenario)
         return BenchmarkReport(
             generatedAt = java.time.Instant.now().toString(),
-            mode = if (options.smoke) "smoke" else "full",
+            mode = (if (options.smoke) "smoke" else "full") + (if (options.holdUnsettledLines) ", holdUnsettledLines" else ""),
             warmupIterations = options.warmupIterations,
             measuredIterations = options.measureIterations,
             results = results,
@@ -61,7 +61,7 @@ private class MarkdownBenchmarkRunner(
     }
 
     private fun executeScenario(scenario: BenchmarkScenario): ScenarioMeasurement {
-        val engine = MarkdownEngine(dialect = MarkdownDialect.GfmCompat)
+        val engine = MarkdownEngine(dialect = MarkdownDialect.GfmCompat, holdUnsettledLines = options.holdUnsettledLines)
         val input = scenario.input
         var appendTotalTimeNanos = 0L
         var finishTimeNanos = 0L
@@ -142,6 +142,7 @@ private class BenchmarkScenario(
                     "long-list" to BenchmarkCorpus.longListDocument(chars = 100_000),
                     "long-paragraph" to BenchmarkCorpus.longParagraphDocument(chars = 100_000),
                     "long-quote" to BenchmarkCorpus.longQuoteDocument(chars = 100_000),
+                    "long-table" to BenchmarkCorpus.longTableDocument(chars = 100_000),
                 ).forEach { (name, document) ->
                     add(
                         BenchmarkScenario(
@@ -160,6 +161,7 @@ private data class BenchmarkOptions(
     val smoke: Boolean,
     val warmupIterations: Int,
     val measureIterations: Int,
+    val holdUnsettledLines: Boolean,
     val outputPath: Path?,
 ) {
     companion object {
@@ -170,6 +172,7 @@ private data class BenchmarkOptions(
                 smoke = smoke,
                 warmupIterations = if (smoke) 1 else 3,
                 measureIterations = if (smoke) 2 else 8,
+                holdUnsettledLines = args.contains("--hold-unsettled-lines"),
                 outputPath = outputArgument?.substringAfter('=')?.let(Path::of),
             )
         }

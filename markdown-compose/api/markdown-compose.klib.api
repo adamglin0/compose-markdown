@@ -190,7 +190,7 @@ final class com.adamglin.compose.markdown.compose/MarkdownImage { // com.adamgli
 }
 
 final class com.adamglin.compose.markdown.compose/MarkdownState { // com.adamglin.compose.markdown.compose/MarkdownState|null[0]
-    constructor <init>(com.adamglin.compose.markdown.core.dialect/MarkdownDialect = ...) // com.adamglin.compose.markdown.compose/MarkdownState.<init>|<init>(com.adamglin.compose.markdown.core.dialect.MarkdownDialect){}[0]
+    constructor <init>(com.adamglin.compose.markdown.core.dialect/MarkdownDialect = ..., kotlin/Boolean = ...) // com.adamglin.compose.markdown.compose/MarkdownState.<init>|<init>(com.adamglin.compose.markdown.core.dialect.MarkdownDialect;kotlin.Boolean){}[0]
 
     final var document // com.adamglin.compose.markdown.compose/MarkdownState.document|{}document[0]
         final fun <get-document>(): com.adamglin.compose.markdown.core.model/MarkdownDocument // com.adamglin.compose.markdown.compose/MarkdownState.document.<get-document>|<get-document>(){}[0]
@@ -198,6 +198,12 @@ final class com.adamglin.compose.markdown.compose/MarkdownState { // com.adamgli
     final fun append(kotlin/String) // com.adamglin.compose.markdown.compose/MarkdownState.append|append(kotlin.String){}[0]
     final fun finish() // com.adamglin.compose.markdown.compose/MarkdownState.finish|finish(){}[0]
     final fun reset() // com.adamglin.compose.markdown.compose/MarkdownState.reset|reset(){}[0]
+    final suspend fun releaseHeldLinesOnTimeout(kotlin.time/Duration = ...) // com.adamglin.compose.markdown.compose/MarkdownState.releaseHeldLinesOnTimeout|releaseHeldLinesOnTimeout(kotlin.time.Duration){}[0]
+
+    final object Companion { // com.adamglin.compose.markdown.compose/MarkdownState.Companion|null[0]
+        final val DefaultHoldTimeout // com.adamglin.compose.markdown.compose/MarkdownState.Companion.DefaultHoldTimeout|{}DefaultHoldTimeout[0]
+            final fun <get-DefaultHoldTimeout>(): kotlin.time/Duration // com.adamglin.compose.markdown.compose/MarkdownState.Companion.DefaultHoldTimeout.<get-DefaultHoldTimeout>|<get-DefaultHoldTimeout>(){}[0]
+    }
 }
 
 final class com.adamglin.compose.markdown.compose/MarkdownTypography { // com.adamglin.compose.markdown.compose/MarkdownTypography|null[0]
@@ -284,4 +290,5 @@ final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_co
 final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTheme$stableprop_getter(): kotlin/Int // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTheme$stableprop_getter|com_adamglin_compose_markdown_compose_MarkdownTheme$stableprop_getter(){}[0]
 final fun com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTypography$stableprop_getter(): kotlin/Int // com.adamglin.compose.markdown.compose/com_adamglin_compose_markdown_compose_MarkdownTypography$stableprop_getter|com_adamglin_compose_markdown_compose_MarkdownTypography$stableprop_getter(){}[0]
 final fun com.adamglin.compose.markdown.compose/rememberMarkdownDocument(kotlin/String, com.adamglin.compose.markdown.core.dialect/MarkdownDialect?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): com.adamglin.compose.markdown.core.model/MarkdownDocument // com.adamglin.compose.markdown.compose/rememberMarkdownDocument|rememberMarkdownDocument(kotlin.String;com.adamglin.compose.markdown.core.dialect.MarkdownDialect?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
-final fun com.adamglin.compose.markdown.compose/rememberMarkdownState(com.adamglin.compose.markdown.core.dialect/MarkdownDialect?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): com.adamglin.compose.markdown.compose/MarkdownState // com.adamglin.compose.markdown.compose/rememberMarkdownState|rememberMarkdownState(com.adamglin.compose.markdown.core.dialect.MarkdownDialect?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun com.adamglin.compose.markdown.compose/rememberMarkdownState(com.adamglin.compose.markdown.core.dialect/MarkdownDialect?, kotlin/Boolean, kotlin.time/Duration, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): com.adamglin.compose.markdown.compose/MarkdownState // com.adamglin.compose.markdown.compose/rememberMarkdownState|rememberMarkdownState(com.adamglin.compose.markdown.core.dialect.MarkdownDialect?;kotlin.Boolean;kotlin.time.Duration;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun com.adamglin.compose.markdown.compose/rememberMarkdownState(com.adamglin.compose.markdown.core.dialect/MarkdownDialect?, kotlin/Boolean, kotlin.time/Duration?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): com.adamglin.compose.markdown.compose/MarkdownState // com.adamglin.compose.markdown.compose/rememberMarkdownState|rememberMarkdownState(com.adamglin.compose.markdown.core.dialect.MarkdownDialect?;kotlin.Boolean;kotlin.time.Duration?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]

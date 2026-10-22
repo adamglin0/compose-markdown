@@ -14,17 +14,27 @@ public interface MarkdownEngine {
 
     public fun append(chunk: String): ParseDelta
     public fun finish(): ParseDelta
+    public fun releaseHeldLines(): ParseDelta
     public fun snapshot(): MarkdownSnapshot
     public fun reset()
 }
 
-public fun MarkdownEngine(dialect: MarkdownDialect = MarkdownDialect.ChatFast): MarkdownEngine
+public fun MarkdownEngine(
+    dialect: MarkdownDialect = MarkdownDialect.ChatFast,
+    holdUnsettledLines: Boolean = false,
+): MarkdownEngine
 ```
 
 - `append(chunk)` adds source text and returns what changed. Line endings are normalized to `\n`, also across chunk boundaries.
 - `finish()` marks the end of input, so open constructs such as fences and math blocks close.
 - `append()` after `finish()` throws until `reset()` is called or a new engine is created.
 - `snapshot()` returns the latest snapshot without changing the engine.
+- By default every snapshot equals a one-shot parse of the source so far. With `holdUnsettledLines = true`, a line shows only once more text can no longer change its block structure or that of the lines above it, so the rendered structure does not jump while streaming:
+  - An unterminated table row appears when its `\n` arrives, so a table changes once per row instead of once per chunk.
+  - An unterminated line that is still only block markers (`-`, `#`, `>`, `1.`, a fence, `$$`, `- [ ]`, …) appears once it has content, so a lone `-` never shows the paragraph above as a setext heading.
+  - A paragraph line starting with `|` appears once the next line shows whether it is a table header, so a header never shows as a paragraph first.
+
+  The snapshot's document is then a one-shot parse of the source before the held lines, `[0, document.sourceLength)`, and `hasHeldLines` is true. While held text grows without settling, the call builds nothing and returns the same document instance. `releaseHeldLines()` shows the held lines right away; they stay shown while they grow, and lines that start later can be held again. `finish()` shows everything. Inline syntax (unclosed `**`, code spans, links) is not held.
 - `reset()` drops all source and state. Ids from before the reset carry no guarantee.
 - An engine is single-writer: call it from one thread at a time. Snapshots are immutable and can be read from any thread.
 
@@ -53,6 +63,7 @@ public data class MarkdownSnapshot internal constructor(
     val dialect: MarkdownDialect,
     val document: MarkdownDocument,
     val stablePrefixEnd: Int,
+    val hasHeldLines: Boolean,
     val isFinal: Boolean,
 )
 
@@ -154,13 +165,19 @@ public fun LazyListScope.markdown(document: MarkdownDocument, key: Any, /* same 
 // Documents
 @Composable public fun rememberMarkdownDocument(text: String, dialect: MarkdownDialect = MarkdownDialect.ChatFast): MarkdownDocument
 
-@Stable public class MarkdownState(dialect: MarkdownDialect = MarkdownDialect.ChatFast) {
+@Stable public class MarkdownState(dialect: MarkdownDialect = MarkdownDialect.ChatFast, holdUnsettledLines: Boolean = false) {
     public var document: MarkdownDocument // private set
     public fun append(chunk: String)
     public fun finish()
     public fun reset()
+    public suspend fun releaseHeldLinesOnTimeout(timeout: Duration = DefaultHoldTimeout)
+    public companion object { public val DefaultHoldTimeout: Duration } // 500 ms
 }
-@Composable public fun rememberMarkdownState(dialect: MarkdownDialect = MarkdownDialect.ChatFast): MarkdownState
+@Composable public fun rememberMarkdownState(
+    dialect: MarkdownDialect = MarkdownDialect.ChatFast,
+    holdUnsettledLines: Boolean = false,
+    holdTimeout: Duration = MarkdownState.DefaultHoldTimeout,
+): MarkdownState
 
 // Theming
 @Composable public fun MarkdownTheme(

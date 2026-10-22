@@ -53,7 +53,7 @@ fun ComposeMarkdownSampleApp(
         val colors = SampleChatTheme.colors
         val uriHandler = LocalUriHandler.current
         val scope = rememberCoroutineScope()
-        val markdownState = rememberMarkdownState(dialect = SampleChatDefaults.dialect)
+        val markdownState = rememberMarkdownState(dialect = SampleChatDefaults.dialect, holdUnsettledLines = true)
 
         var selectedScriptIndex by remember { mutableIntStateOf(0) }
         var chunkDelayMs by remember { mutableFloatStateOf(120f) }

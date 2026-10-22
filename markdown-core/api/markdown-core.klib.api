@@ -69,6 +69,7 @@ abstract interface com.adamglin.compose.markdown.core.api/MarkdownEngine { // co
 
     abstract fun append(kotlin/String): com.adamglin.compose.markdown.core.model/ParseDelta // com.adamglin.compose.markdown.core.api/MarkdownEngine.append|append(kotlin.String){}[0]
     abstract fun finish(): com.adamglin.compose.markdown.core.model/ParseDelta // com.adamglin.compose.markdown.core.api/MarkdownEngine.finish|finish(){}[0]
+    abstract fun releaseHeldLines(): com.adamglin.compose.markdown.core.model/ParseDelta // com.adamglin.compose.markdown.core.api/MarkdownEngine.releaseHeldLines|releaseHeldLines(){}[0]
     abstract fun reset() // com.adamglin.compose.markdown.core.api/MarkdownEngine.reset|reset(){}[0]
     abstract fun snapshot(): com.adamglin.compose.markdown.core.model/MarkdownSnapshot // com.adamglin.compose.markdown.core.api/MarkdownEngine.snapshot|snapshot(){}[0]
 }
@@ -609,6 +610,8 @@ final class com.adamglin.compose.markdown.core.model/MarkdownSnapshot { // com.a
         final fun <get-dialect>(): com.adamglin.compose.markdown.core.dialect/MarkdownDialect // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.dialect.<get-dialect>|<get-dialect>(){}[0]
     final val document // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.document|{}document[0]
         final fun <get-document>(): com.adamglin.compose.markdown.core.model/MarkdownDocument // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.document.<get-document>|<get-document>(){}[0]
+    final val hasHeldLines // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.hasHeldLines|{}hasHeldLines[0]
+        final fun <get-hasHeldLines>(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.hasHeldLines.<get-hasHeldLines>|<get-hasHeldLines>(){}[0]
     final val isFinal // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.isFinal|{}isFinal[0]
         final fun <get-isFinal>(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.isFinal.<get-isFinal>|<get-isFinal>(){}[0]
     final val stablePrefixEnd // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.stablePrefixEnd|{}stablePrefixEnd[0]
@@ -621,6 +624,7 @@ final class com.adamglin.compose.markdown.core.model/MarkdownSnapshot { // com.a
     final fun component3(): com.adamglin.compose.markdown.core.model/MarkdownDocument // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.component3|component3(){}[0]
     final fun component4(): kotlin/Int // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.component4|component4(){}[0]
     final fun component5(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.component5|component5(){}[0]
+    final fun component6(): kotlin/Boolean // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.component6|component6(){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // com.adamglin.compose.markdown.core.model/MarkdownSnapshot.toString|toString(){}[0]
@@ -730,4 +734,4 @@ sealed class com.adamglin.compose.markdown.core.dialect/MarkdownDialect { // com
     }
 }
 
-final fun com.adamglin.compose.markdown.core.api/MarkdownEngine(com.adamglin.compose.markdown.core.dialect/MarkdownDialect = ...): com.adamglin.compose.markdown.core.api/MarkdownEngine // com.adamglin.compose.markdown.core.api/MarkdownEngine|MarkdownEngine(com.adamglin.compose.markdown.core.dialect.MarkdownDialect){}[0]
+final fun com.adamglin.compose.markdown.core.api/MarkdownEngine(com.adamglin.compose.markdown.core.dialect/MarkdownDialect = ..., kotlin/Boolean = ...): com.adamglin.compose.markdown.core.api/MarkdownEngine // com.adamglin.compose.markdown.core.api/MarkdownEngine|MarkdownEngine(com.adamglin.compose.markdown.core.dialect.MarkdownDialect;kotlin.Boolean){}[0]

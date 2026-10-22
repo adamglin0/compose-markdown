@@ -15,6 +15,12 @@ public data class MarkdownSnapshot internal constructor(
      * once [isFinal].
      */
     val stablePrefixEnd: Int,
+    /**
+     * Whether the engine holds back unsettled lines at the end of the source (see
+     * `MarkdownEngine(holdUnsettledLines = true)`): [document] then covers only the source before them,
+     * `[0, document.sourceLength)`, which ends at a line start.
+     */
+    val hasHeldLines: Boolean,
     val isFinal: Boolean,
 ) {
     init {

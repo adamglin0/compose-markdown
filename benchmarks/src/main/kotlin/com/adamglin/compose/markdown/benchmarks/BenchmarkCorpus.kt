@@ -100,6 +100,17 @@ internal object BenchmarkCorpus {
         }
     }
 
+    /** One table of many rows with inline markup, about [chars] characters long. */
+    fun longTableDocument(chars: Int): String = buildString(chars + 80) {
+        append("| id | name | note |\n| --- | :--- | ---: |\n")
+        var row = 0
+        while (length < chars) {
+            append("| ")
+            append(row++)
+            append(" | row *name* | some `code` and text |\n")
+        }
+    }
+
     /** One paragraph of many lines with inline markup, about [chars] characters long. */
     fun longParagraphDocument(chars: Int): String = buildString(chars + 80) {
         var line = 0
