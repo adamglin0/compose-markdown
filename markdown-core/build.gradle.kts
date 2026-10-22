@@ -28,17 +28,13 @@ kotlin {
     iosSimulatorArm64()
 
     js {
-        browser {
-            // Performance tests assert their own time bounds; mocha's 2 s default is too tight for CI browsers.
-            testTask { useMocha { timeout = "30s" } }
-        }
+        // Browser tests run in Karma; karma.config.d/mocha-timeout.js raises mocha's per-test timeout.
+        browser()
     }
 
     wasmJs {
-        browser {
-            // Performance tests assert their own time bounds; mocha's 2 s default is too tight for CI browsers.
-            testTask { useMocha { timeout = "30s" } }
-        }
+        // Browser tests run in Karma; karma.config.d/mocha-timeout.js raises mocha's per-test timeout.
+        browser()
     }
 
     sourceSets {
